@@ -7,6 +7,8 @@ using System.Diagnostics.Tracing;
 
 public partial class MapManager : Node
 {
+    private Planet ownerPlanet;
+
     MapNode[] map = new MapNode[Planet.MAP_SIZE];
 
     public Texture2D tex {get; private set;}
@@ -14,6 +16,9 @@ public partial class MapManager : Node
     private const int STATES_COUNT = 60;
     private const int MIN_STATE_SIZE = 10;
     private const int MAX_IMAGE_SIZE = 16380; // Max is 16384 but rounding down for reasons (no)
+    private const float STATE_SELECTED_UV_VALUE = 1.0f;
+    private const float STATE_ALLY_UV_VALUE = 2.0f;
+    private const float STATE_ENEMY_UV_VALUE = -1.0f;
 
     public static List<Color> statesColor = _generateStatesColors(); // new(){ new(0.0f, 1.0f, 0.0f), new(1.0f,1.0f,0.0f), new(1.0f, 0.5f, 0.5f) };
 
@@ -21,6 +26,8 @@ public partial class MapManager : Node
     public List<List<int>> landMassesStatesIndices = new(); // will store lists of stateIDs. Each list will represent a landmass of states connected by land. This will later be used to define continents.
 
     public static Color shallowSeaColor = new(0.1f, 0.3f, 0.7f);
+
+    public MapManager(Planet _owner){ ownerPlanet = _owner; }
     public void RegisterMap(float[] planetMap, ref List<Vector2> uvs)
     {
         for(int mapIndex = 0; mapIndex < planetMap.Length; ++mapIndex)
@@ -35,24 +42,18 @@ public partial class MapManager : Node
         _buildStates();
         _buildTexture();
 
+        // last addition test(s)
         foreach(State s in states)
         {
-            if(s.neighbors.Count <= 4)
+            if(s.shores.Count == 0)
                 continue;
+            State nearest = _findClosestSeaNeighbor(s, out float dist);
+            if(nearest != null)
+                GD.Print("SquaredDist from State_" + s.id + " to State_" + nearest.id + ": " + dist);
 
-            foreach(MapNode n in s.land)
-            {
-                uvs[n.fullMapIndex] = new(uvs[n.fullMapIndex].X, 1.0f);
-            }
-            bool friendly = true;
-            foreach(int stateID in s.neighbors)
-            {
-                foreach(MapNode n in _getStateByStateID(stateID).land)
-                {
-                    uvs[n.fullMapIndex] = new(uvs[n.fullMapIndex].X, friendly ? 2.0f : -1.0f);
-                }
-                friendly = !friendly;
-            }
+            _setStateYUV(s, STATE_SELECTED_UV_VALUE, ref uvs); // display result on Valcatyr
+            _setStateYUV(nearest, STATE_ALLY_UV_VALUE, ref uvs);
+
             break;
         }
     }
@@ -352,21 +353,16 @@ public partial class MapManager : Node
         List<int> statesToScan = new();
         List<int> scannedIDs = new();
 
-        // TODO repalce two first WHILE by a single elegant FOR
         for(int i = 0; i < states.Count; ++i)
         {
-            //if i scanned -> continue
-            // else start graph search
-        } 
+            // If already scanned, continue
+            if(scannedIDs.Contains(states[i].id))
+                continue;
 
-        // Scan all states in our full list
-        while(scannedIDs.Count < states.Count)
-        {
-            // Find a state not already scanned
-            int i = 0;
-            while(i < states.Count && scannedIDs.Contains(states[i].id))
-                ++i;
+            // Start graph search
+            statesToScan.Clear();
             statesToScan.Add(states[i].id);
+
             int landMassIndex = landMassesStatesIndices.Count;
             landMassesStatesIndices.Add(new());
 
@@ -376,34 +372,71 @@ public partial class MapManager : Node
                 State state = _getStateByStateID(statesToScan[0]);
                 statesToScan.RemoveAt(0);
                 scannedIDs.Add(state.id);
+                state.landMassID = landMassIndex;
                 landMassesStatesIndices[landMassIndex].Add(state.id);
-                GD.Print("Adding State_" + state.id + " to landMass_" + landMassIndex + "(" + landMassesStatesIndices[landMassIndex].Count + ")");
+                //GD.Print("Adding State_" + state.id + " to landMass_" + landMassIndex + "(" + landMassesStatesIndices[landMassIndex].Count + ")");
 
                 foreach(int nghbID in state.neighbors)
                 {
                     if( !statesToScan.Contains(nghbID) // if not already registered to be scanned
-                    && !landMassesStatesIndices[landMassIndex].Contains(nghbID) ) // and not already scanned
+                    && !landMassesStatesIndices[landMassIndex].Contains(nghbID) ) // and not already in landMass
                     {
                         // Register to scan
                         statesToScan.Add(nghbID);
                     }
                 }
+                //GD.Print("LandMass_" + landMassIndex + " registered " + landMassesStatesIndices[landMassIndex].Count + " states.");
             }
-
-            GD.Print("LandMass_" + landMassIndex + " registered " + landMassesStatesIndices[landMassIndex].Count + " states.");
+            //GD.Print("Registered " + landMassesStatesIndices.Count + " land masses");
         }
-        GD.Print("Registered " + landMassesStatesIndices.Count + " land masses");
     }
 
-/*
+
     // This will ignore all land direct and indirect neighbors
-    private float _findClosestSeaNeighbor(State state)
+    private State _findClosestSeaNeighbor(State _state, out float _distance)
     {
-        List<int> blackListIDs = new(){ state.id };
-        List<int> scanStates = new(){ state.id };
-        while(scanStates.Count > 0)
+        _distance = -1.0f;
+
+        if(ownerPlanet == null)
+            return null;
+
+        if(_state.shores.Count == 0)
+        {
+            GD.PrintErr("Called _findClosestSeaNeighbor on State_" + _state.id + " which has no shores");
+            return null;
+        }
+
+        if(_state.landMassID >= landMassesStatesIndices.Count)
+            return null;
+
+        List<int> blackListIDs = landMassesStatesIndices[_state.landMassID];
+
+        State closest = null;
+
+        foreach(State s in states)
+        {
+            if(blackListIDs.Contains(s.id)) // this will exclude our starting state as well, which is nice
+                continue;
+            if(s.shores.Count == 0)
+                continue;
+            // Evaluated state s has shores and is not on the same landMass as our starting state
+            // Compare each of its shores with ours
+            foreach(int ourLandID in _state.shores)
+            {
+                foreach(int otherLandID in s.shores)
+                {
+                    float distance = ownerPlanet.getSquareDistance(_state.land[ourLandID].fullMapIndex, s.land[otherLandID].fullMapIndex);
+                    if(closest == null || _distance > distance)
+                    {
+                        closest = s;
+                        _distance = distance;
+                    }
+                }
+            }
+        }
+        return closest;
     }
-*/
+
     private static List<Color> _generateStatesColors()
     {
         List<Color> colors = new();
@@ -412,6 +445,14 @@ public partial class MapManager : Node
             colors.Add(new(GD.Randf(), GD.Randf(), GD.Randf()));
         }
         return colors;
+    }
+
+    private void _setStateYUV(State _state, float _value, ref List<Vector2> _uvs)
+    {
+        foreach(MapNode node in _state.land)
+        {
+            _uvs[node.fullMapIndex] = new(_uvs[node.fullMapIndex].X, _value);
+        }
     }
 }
 
@@ -438,6 +479,7 @@ public class State
     public List<int> shores = new(); // Indices of nodes in Land with water as neighbor
     public int id = -1;
     public int continentID = -1;
+    public int landMassID = -1; // Continents may contain multiple islands, land mass only cares about direct land neighbors
 
     public static int comapreStateSize(State _a, State _b)
     {

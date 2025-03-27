@@ -48,7 +48,7 @@ public partial class Planet : MeshInstance3D
 
     Dictionary<int, Vector3> trianglesNormalsPerVertex = new(); // ease normals computation by registering triangles as we go
 
-    MapManager mapManager = new();
+    MapManager mapManager;
 
     public const int MAP_SIZE = FACE_WIDTH * FACE_HEIGHT * SIDE_COUNT + CORNERS_COUNT;
 
@@ -123,6 +123,7 @@ public partial class Planet : MeshInstance3D
         _stichFacesAndCorners();
         _assignNormals();
 
+        mapManager = new(this);
         mapManager.RegisterMap(map, ref uvs);
 
         surfaceArrays[(int)Mesh.ArrayType.Vertex] = vertices.ToArray();
@@ -136,6 +137,22 @@ public partial class Planet : MeshInstance3D
         Callable callable = new(this, MethodName.setMesh);
         callable.Call();
 
+    }
+
+    // if terrain is later an issue we might normalize vertex pos on a bool parameter
+    /// <summary>
+    /// This will return a straight line (throught the planet) squared distance between two vertices, including terrain elevation
+    /// </summary>
+    public float getSquareDistance(int _vertexIDFrom, int _vertexIDTo)
+    {
+        if(_vertexIDFrom < vertices.Count
+        && _vertexIDTo < vertices.Count
+        && _vertexIDFrom >= 0
+        && _vertexIDTo >= 0)
+        {
+            return vertices[_vertexIDFrom].DistanceSquaredTo(vertices[_vertexIDTo]);
+        }
+        return -1.0f;
     }
 
     private void _appendSurface(Vector3 _localUp, Vector3 _localForward, int side)
