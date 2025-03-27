@@ -124,7 +124,7 @@ public partial class Planet : MeshInstance3D
         _assignNormals();
 
         mapManager = new(this);
-        mapManager.RegisterMap(map, ref uvs);
+        mapManager.RegisterMap(map);
 
         surfaceArrays[(int)Mesh.ArrayType.Vertex] = vertices.ToArray();
         surfaceArrays[(int)Mesh.ArrayType.TexUV] = uvs.ToArray();
@@ -153,6 +153,12 @@ public partial class Planet : MeshInstance3D
             return vertices[_vertexIDFrom].DistanceSquaredTo(vertices[_vertexIDTo]);
         }
         return -1.0f;
+    }
+
+    public void setUVYAtIndex(int _index, float _value)
+    {
+        if(_index >= 0 && _index < uvs.Count)
+            uvs[_index] = new(uvs[_index].X, _value);
     }
 
     private void _appendSurface(Vector3 _localUp, Vector3 _localForward, int side)

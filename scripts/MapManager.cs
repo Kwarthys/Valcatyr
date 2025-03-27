@@ -14,7 +14,8 @@ public partial class MapManager : Node
     public Texture2D tex {get; private set;}
 
     private const int STATES_COUNT = 60;
-    private const int MIN_STATE_SIZE = 10;
+    private const int MIN_STATE_SIZE = 100;
+    private const float MAX_SQUARED_DISTANCE_FOR_STATE_MERGE = 1.5f;
     private const int MAX_IMAGE_SIZE = 16380; // Max is 16384 but rounding down for reasons (no)
     private const float STATE_SELECTED_UV_VALUE = 1.0f;
     private const float STATE_ALLY_UV_VALUE = 2.0f;
@@ -28,7 +29,7 @@ public partial class MapManager : Node
     public static Color shallowSeaColor = new(0.1f, 0.3f, 0.7f);
 
     public MapManager(Planet _owner){ ownerPlanet = _owner; }
-    public void RegisterMap(float[] planetMap, ref List<Vector2> uvs)
+    public void RegisterMap(float[] planetMap)
     {
         for(int mapIndex = 0; mapIndex < planetMap.Length; ++mapIndex)
         {
@@ -41,21 +42,6 @@ public partial class MapManager : Node
 
         _buildStates();
         _buildTexture();
-
-        // last addition test(s)
-        foreach(State s in states)
-        {
-            if(s.shores.Count == 0)
-                continue;
-            State nearest = _findClosestSeaNeighbor(s, out float dist);
-            if(nearest != null)
-                GD.Print("SquaredDist from State_" + s.id + " to State_" + nearest.id + ": " + dist);
-
-            _setStateYUV(s, STATE_SELECTED_UV_VALUE, ref uvs); // display result on Valcatyr
-            _setStateYUV(nearest, STATE_ALLY_UV_VALUE, ref uvs);
-
-            break;
-        }
     }
 
     private void _buildTexture()
@@ -75,22 +61,26 @@ public partial class MapManager : Node
             //img.SetPixel(i,0, new(c,0,0));
             int x = i % MAX_IMAGE_SIZE;
             int y = i / MAX_IMAGE_SIZE;
-            if(map[i].nodeType == MapNode.NodeType.Land)
+            Color color;
+            switch(map[i].nodeType)
             {
-                if(map[i].stateID == -1)
-                    img.SetPixel(x, y, Colors.Green);
-                else
+                case MapNode.NodeType.Land:
                 {
-                    Color c = statesColor[map[i].stateID%STATES_COUNT];
-                    if(map[i].isBorder() || map[i].waterBorder)
-                        c = c.Lerp(Colors.Black, 0.6f); // make border darker for nice display
-                    img.SetPixel(x, y, c);
+                    if(map[i].stateID == -1)
+                        color = Colors.Green;
+                    else
+                    {
+                        color = statesColor[map[i].stateID%STATES_COUNT];
+                        if(map[i].isBorder() || map[i].waterBorder)
+                            color = color.Lerp(Colors.Black, 0.6f); // make border darker for nice display
+                    }
+                    break;
                 }
+                case MapNode.NodeType.RogueIsland: color = new(0.8f, 0.4f, 0.0f); break;
+                case MapNode.NodeType.Water:
+                default: color = shallowSeaColor; break;
             }
-            else
-            {
-                img.SetPixel(x,y, shallowSeaColor);
-            }
+            img.SetPixel(x,y, color);
         }
         tex = ImageTexture.CreateFromImage(img);
         //img.SavePng("img.png"); // funny to look at it "flat"
@@ -103,10 +93,10 @@ public partial class MapManager : Node
         // Start by creating a lot of tiny states
         _buildTinyStates();
         _computeStatesBoundaries();
+        _computeLandMassesStates();
         Debug.Print("Finished creating tiny states and their boundaries");
         // Then merge most of them until a good amount is reached
         _mergeUntilEnoughStates();
-        _computeLandMassesStates();
     }
 
     private void _mergeUntilEnoughStates()
@@ -128,13 +118,36 @@ public partial class MapManager : Node
             int stateID = stateIDs[0];
             stateIDs.RemoveAt(0);
             State currentState = _getStateByStateID(stateID);
-
-            if(currentState.neighbors.Count == 0) // No merging possible TODO: MERGE ACCROSS SEE IF DISTANCE BELOW THRESHOLD
-                continue;
-            
             State mergeState = null;
-            // Marging can happen: Per boundary size or Per size ? Flip a coin to know
-            if(GD.Randf() > 0.0f)
+
+            if(currentState.neighbors.Count == 0) // Island state, merge accross sea if distance to closest is below threshold, or make rogue island (non played land)
+            {
+                if(currentState.land.Count > MIN_STATE_SIZE) // State island already has an acceptable size, no need to merge
+                    continue;
+
+                State nearest = _findClosestSeaNeighbor(currentState, out float distanceSquared);
+                if(nearest == null)
+                {
+                    GD.PrintErr("Could not _findClosestSeaNeighbor for State_" + currentState.id);
+                    continue;
+                }
+                if(distanceSquared < MAX_SQUARED_DISTANCE_FOR_STATE_MERGE)
+                {
+                    mergeState = nearest; // TODO Spawn a bridge to link the island(s)
+                    _setStateYUV(currentState, STATE_SELECTED_UV_VALUE);
+                    _setStateYUV(mergeState, STATE_ALLY_UV_VALUE);
+                    GD.Print("Island merge between island State_" + currentState.id + " to State_" + mergeState.id);
+                }
+                else
+                {
+                    GD.Print("State_" + currentState.id + " set to RogueIsland");
+                    _setStateYUV(currentState, STATE_ENEMY_UV_VALUE);
+                    currentState.makeRogueIsland();
+                    states.Remove(currentState);
+                    landMassesStatesIndices[currentState.landMassID].Remove(currentState.id);
+                }
+            }
+            else if(GD.Randf() > 0.0f) // Merging land neighbor can happen: Per boundary size or Per size ? Flip a coin to know
             {
                 // Merge with neighbor with most common boundary
                 Dictionary<int, int> borderLenghtPerStateID = _computeSharedBoundaries(currentState);
@@ -171,11 +184,8 @@ public partial class MapManager : Node
             }
 
             if(mergeState == null)
-            {
-                GD.PrintErr("Ooops");
                 continue;
-            }
-            
+
             stateIDs.Remove(mergeState.id); // we removed both state merging from stateIndices
             State newState = _mergeStates(currentState, mergeState);
 
@@ -214,6 +224,10 @@ public partial class MapManager : Node
         }
 
         states.Remove(giver);
+
+        // Remove giver from landmasses: special cases for island state ? Issues for states on multiple landmasses ?
+        // Should be ok to just remove reference to deleted state: some landmasses won't have any states left, keep it in mind but should no be bad
+        landMassesStatesIndices[giver.landMassID].Remove(giver.id);
 
         if(!receiver.verifyBoundaryIntegrity())
             GD.Print("Error on State_" + receiver.id + " after completing its merge with State_" + giver.id);
@@ -447,16 +461,16 @@ public partial class MapManager : Node
         return colors;
     }
 
-    private void _setStateYUV(State _state, float _value, ref List<Vector2> _uvs)
+    private void _setStateYUV(State _state, float _value)
     {
         foreach(MapNode node in _state.land)
         {
-            _uvs[node.fullMapIndex] = new(_uvs[node.fullMapIndex].X, _value);
+            ownerPlanet.setUVYAtIndex(node.fullMapIndex, _value);
         }
     }
 }
 
-public class MapNode
+public class MapNode // this is not a struct only because i could not bother create a constructor for all those members
 {
     public const int INVALID_ID = -1;
     public enum NodeType{Water, Land, RogueIsland};
@@ -469,145 +483,4 @@ public class MapNode
     public int continentID = INVALID_ID;
     public float height = 0.0f;
     public int fullMapIndex = INVALID_ID;
-}
-
-public class State
-{
-    public List<MapNode> land = new();
-    public List<int> boundaries = new(); // boundaries array contains index to MapNode in land
-    public List<int> neighbors = new(); // StateIds of neighboring states
-    public List<int> shores = new(); // Indices of nodes in Land with water as neighbor
-    public int id = -1;
-    public int continentID = -1;
-    public int landMassID = -1; // Continents may contain multiple islands, land mass only cares about direct land neighbors
-
-    public static int comapreStateSize(State _a, State _b)
-    {
-        int sizeA = _a.land.Count;
-        int sizeB = _b.land.Count;
-        if(sizeA == sizeB)
-            return 0;
-        return sizeA > sizeB ? 1 : -1;
-    }
-
-    public void absordState(State _giver)
-    {
-        if(!verifyBoundaryIntegrity())
-            GD.Print("Error on receiver State_" + id + " at the start of _mergeStates");
-        if(!_giver.verifyBoundaryIntegrity())
-            GD.Print("Error on giver State_" + _giver.id + " at the start of _mergeStates");
-
-        int borderOffset = land.Count;
-
-        foreach(MapNode node in _giver.land)
-        {
-            node.stateID = id;
-            land.Add(node);
-        }
-
-        // Offset giver references to its own land by the amounf of land previously in receiver,
-        // as giver's land will be shifted by that amount -> this counts for shores and boundaries
-        foreach(int shoreID in _giver.shores)
-        {
-            shores.Add(shoreID + borderOffset);
-        }
-
-        removeBoundaryToState(_giver.id); // Receiver state removes all reference to giver state in its neighboring data
-
-        foreach(int borderIndex in _giver.boundaries)
-        {
-            if(_giver.land[borderIndex].borderingStateIds.Count == 0)
-            {
-                GD.PrintErr("State_" + _giver.id + " boundary has no borders");
-                continue;
-            }
-
-            if(_giver.land[borderIndex].borderingStateIds.Contains(id))
-            {
-                _giver.land[borderIndex].borderingStateIds.Remove(id);
-            }
-            if(_giver.land[borderIndex].borderingStateIds.Count > 0)
-            {
-                boundaries.Add(borderIndex + borderOffset); // Only add border if it still have neighbors after removing receiving state
-            }
-        }
-
-        foreach(int neighborID in _giver.neighbors)
-        {
-            if(neighborID != id && neighbors.Contains(neighborID) == false)
-                neighbors.Add(neighborID);
-        }
-
-        if(!verifyBoundaryIntegrity())
-            GD.Print("Error on State_" + id + " after absorbing State_" + _giver.id);
-    }
-
-    public void removeBoundaryToState(int stateToRemove)
-    {
-        if(neighbors.Contains(stateToRemove))
-            neighbors.Remove(stateToRemove);
-
-        foreach(int i in boundaries)
-        {
-            if(land[i].borderingStateIds.Contains(stateToRemove))
-                land[i].borderingStateIds.Remove(stateToRemove);
-        }
-
-        for(int i = boundaries.Count - 1; i >= 0; --i)
-        {
-            if(land[boundaries[i]].isBorder() == false)
-                boundaries.RemoveAt(i);
-        }
-
-        if(!verifyBoundaryIntegrity())
-            GD.Print("Issue after removeBoundaryToState_" + stateToRemove + " on State_" + id);
-    }
-
-    public void updateBordersAfterStateMerge(int stateIDFrom, int stateIDTo)
-    {
-        if(neighbors.Contains(stateIDFrom))
-        {
-            neighbors.Remove(stateIDFrom); // Remove ref to the old state if we had it
-            if(!neighbors.Contains(stateIDTo))
-                neighbors.Add(stateIDTo); // Add ref to the new state if we did not have it already
-        }
-
-        foreach(int i in boundaries)
-        {
-            if(land[i].borderingStateIds.Contains(stateIDFrom))
-            {
-                land[i].borderingStateIds.Remove(stateIDFrom); // Remove ref to the old state if we had it
-                if(!land[i].borderingStateIds.Contains(stateIDTo))
-                    land[i].borderingStateIds.Add(stateIDTo); // Add ref to the new state if we did not have it already
-            }
-        }
-    }
-
-    public bool verifyBoundaryIntegrity() // unit test like function to help debugging
-    {
-        foreach(int i in boundaries)
-        {
-            if(i < 0 || i >= land.Count)
-            {
-                GD.PrintErr("Boundary error: Index is negative or geater than landSize: " + i + " / " + land.Count);
-                return false;
-            }
-
-            if(land[i].borderingStateIds.Count == 0)
-            {
-                GD.PrintErr("Boundary error: Node is in boundary list of State_" + id + " while not having any borders");
-                return false;
-            }
-        }
-        foreach(int i in neighbors)
-        {
-            if(i == id)
-            {
-                GD.PrintErr("Boundary error: State_" + id + " is its own neigbhour");
-                return false;
-            }
-        }
-
-        return true; // Everything is fine
-    }
 }
