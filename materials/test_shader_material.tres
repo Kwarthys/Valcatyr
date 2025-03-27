@@ -1,0 +1,23 @@
+[gd_resource type="ShaderMaterial" load_steps=5 format=3 uid="uid://67pefqa2e6rn"]
+
+[ext_resource type="Shader" path="res://materials/test_shader_material.gdshader" id="1_8fp2e"]
+
+[sub_resource type="Gradient" id="Gradient_t75fb"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_woupq"]
+
+[sub_resource type="NoiseTexture3D" id="NoiseTexture3D_rcdwe"]
+width = 400
+height = 400
+depth = 400
+seamless = true
+color_ramp = SubResource("Gradient_t75fb")
+noise = SubResource("FastNoiseLite_woupq")
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_8fp2e")
+shader_parameter/shallowWaterColor = Color(0.4, 0.6, 0.9, 1)
+shader_parameter/deepWaterColor = Color(0, 0, 0.392157, 1)
+shader_parameter/waveWaterColor = Color(0.652941, 0.774857, 0.958164, 1)
+shader_parameter/waterNoise = SubResource("NoiseTexture3D_rcdwe")

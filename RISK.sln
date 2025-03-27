@@ -1,0 +1,19 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RISK", "RISK.csproj", "{5AF18861-28E2-4230-A5DE-E36045FC688C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+	Debug|Any CPU = Debug|Any CPU
+	ExportDebug|Any CPU = ExportDebug|Any CPU
+	ExportRelease|Any CPU = ExportRelease|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5AF18861-28E2-4230-A5DE-E36045FC688C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5AF18861-28E2-4230-A5DE-E36045FC688C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5AF18861-28E2-4230-A5DE-E36045FC688C}.ExportDebug|Any CPU.ActiveCfg = ExportDebug|Any CPU
+		{5AF18861-28E2-4230-A5DE-E36045FC688C}.ExportDebug|Any CPU.Build.0 = ExportDebug|Any CPU
+		{5AF18861-28E2-4230-A5DE-E36045FC688C}.ExportRelease|Any CPU.ActiveCfg = ExportRelease|Any CPU
+		{5AF18861-28E2-4230-A5DE-E36045FC688C}.ExportRelease|Any CPU.Build.0 = ExportRelease|Any CPU
+	EndGlobalSection
+EndGlobal
