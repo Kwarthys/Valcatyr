@@ -9,6 +9,8 @@ using System.Transactions;
 
 public partial class Planet : MeshInstance3D
 {
+    [Export]
+    public  BridgeBuilder bridgeBuilder {get; private set;}
     public const int SIDE_TOP = 0;
     public const int SIDE_BACK = 1;
     public const int SIDE_LEFT = 2;
@@ -17,7 +19,7 @@ public partial class Planet : MeshInstance3D
     public const int SIDE_BOT = 5;
     public const int SIDE_COUNT = 6;
 
-    const float PLANET_RADIUS = 2.0f;
+    public const float PLANET_RADIUS = 2.0f;
     public const int MAP_RESOLUTION = 200;
     public const int FACE_WIDTH = MAP_RESOLUTION - 2;
     public const int FACE_HEIGHT = MAP_RESOLUTION;
@@ -136,7 +138,15 @@ public partial class Planet : MeshInstance3D
 
         Callable callable = new(this, MethodName.setMesh);
         callable.Call();
+    }
 
+    /// <summary>
+    /// Build a bridge from vertex at index _indices.X to vertex at index _indices.Y
+    /// </summary>
+    public void askBridgeCreation(Vector2I _indices)
+    {
+        if(_indices.X >= 0 && _indices.Y >= 0 && _indices.X < MAP_SIZE && _indices.Y < MAP_SIZE)
+            bridgeBuilder.buildBridge(vertices[_indices.X], vertices[_indices.Y]);
     }
 
     // if terrain is later an issue we might normalize vertex pos on a bool parameter

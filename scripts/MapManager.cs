@@ -125,7 +125,7 @@ public partial class MapManager : Node
                 if(currentState.land.Count > MIN_STATE_SIZE) // State island already has an acceptable size, no need to merge
                     continue;
 
-                State nearest = _findClosestSeaNeighbor(currentState, out float distanceSquared);
+                State nearest = _findClosestSeaNeighbor(currentState, out float distanceSquared, out Vector2I pointsFullMapIndices);
                 if(nearest == null)
                 {
                     GD.PrintErr("Could not _findClosestSeaNeighbor for State_" + currentState.id);
@@ -133,9 +133,13 @@ public partial class MapManager : Node
                 }
                 if(distanceSquared < MAX_SQUARED_DISTANCE_FOR_STATE_MERGE)
                 {
-                    mergeState = nearest; // TODO Spawn a bridge to link the island(s)
+                    mergeState = nearest;
                     _setStateYUV(currentState, STATE_SELECTED_UV_VALUE);
                     _setStateYUV(mergeState, STATE_ALLY_UV_VALUE);
+
+                    // Spawn a bridge to link the island(s)
+                    ownerPlanet.askBridgeCreation(pointsFullMapIndices);
+
                     GD.Print("Island merge between island State_" + currentState.id + " to State_" + mergeState.id);
                 }
                 else
@@ -407,9 +411,10 @@ public partial class MapManager : Node
 
 
     // This will ignore all land direct and indirect neighbors
-    private State _findClosestSeaNeighbor(State _state, out float _distance)
+    private State _findClosestSeaNeighbor(State _state, out float _distance, out Vector2I _verticesFullMapIndices)
     {
         _distance = -1.0f;
+        _verticesFullMapIndices = new(-1, -1);
 
         if(ownerPlanet == null)
             return null;
@@ -439,11 +444,14 @@ public partial class MapManager : Node
             {
                 foreach(int otherLandID in s.shores)
                 {
-                    float distance = ownerPlanet.getSquareDistance(_state.land[ourLandID].fullMapIndex, s.land[otherLandID].fullMapIndex);
+                    int ourIndex = _state.land[ourLandID].fullMapIndex;
+                    int otherIndex = s.land[otherLandID].fullMapIndex;
+                    float distance = ownerPlanet.getSquareDistance(ourIndex, otherIndex);
                     if(closest == null || _distance > distance)
                     {
                         closest = s;
                         _distance = distance;
+                        _verticesFullMapIndices = new(ourIndex, otherIndex);
                     }
                 }
             }

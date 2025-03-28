@@ -63,7 +63,7 @@ void fragment()
 			float fillRatio = 0.6;
 			float selectedMixAmount = step(mod(stripes, interval) / (interval - 1.0), fillRatio);
 			float timeFactor = (0.5 * cos(TIME * PI)) + 0.5; // cos from -1 1 to 0 1
-			ALBEDO = mix(ALBEDO, highlightColor, selectedMixAmount * timeFactor * 0.8);
+			ALBEDO = mix(ALBEDO, highlightColor, selectedMixAmount * timeFactor * 0.8 + 0.1);
 		}
 
 	}
