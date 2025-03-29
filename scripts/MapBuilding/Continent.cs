@@ -26,4 +26,29 @@ public class Continent
         neighborsContinentIDs.Add(continentID);
         return true;
     }
+
+    public void absorbContinent(Continent toAbsorb, Func<int, State> _getStateByID)
+    {
+        foreach(int stateID in toAbsorb.stateIDs)
+        {
+            State s = _getStateByID(stateID);
+            s.setContinentID(index);
+            addState(stateID);
+        }
+
+        foreach(int continentID in toAbsorb.neighborsContinentIDs)
+        {
+            if(continentID != index)
+                addContinentNeighbor(continentID); // won't allow duplicates
+        }
+    }
+
+    public void swapNeighborIndex(int from, int to)
+    {
+        if(neighborsContinentIDs.Contains(from))
+        {
+            neighborsContinentIDs.Remove(from);
+            addContinentNeighbor(to); // won't allow duplicates
+        }
+    }
 }

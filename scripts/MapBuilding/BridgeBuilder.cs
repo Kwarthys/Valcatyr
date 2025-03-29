@@ -27,12 +27,12 @@ public partial class BridgeBuilder : Node
         Vector3 sideDirection = _posFrom.Cross(_posTo).Normalized();
 
         // Build bridge deck
-        int brideLength = (int)Mathf.Ceil(_posFrom.DistanceSquaredTo(_posTo) * BRIDGE_VERTEX_PER_LENGTH);
-        brideLength = Math.Min(4, brideLength); // looks bad below 4
-        GD.Print("bridge lenght: " + brideLength);
-        for(int i = 0; i < brideLength + 1; ++i) // +1 as we want the last loop where i = length
+        int bridgeLength = (int)Mathf.Ceil(_posFrom.DistanceSquaredTo(_posTo) * BRIDGE_VERTEX_PER_LENGTH);
+        bridgeLength = Math.Max(4, bridgeLength); // looks bad below 4
+        GD.Print("Bridge length: " + bridgeLength);
+        for(int i = 0; i < bridgeLength + 1; ++i) // +1 as we want the last loop where i = length
         {
-            float percent = i * 1.0f / brideLength;
+            float percent = i * 1.0f / bridgeLength;
             Vector3 centerPos = _posFrom.Lerp(_posTo, percent);
 
             // Elevation

@@ -20,8 +20,8 @@ public partial class MapManager : Node
     private const float STATE_SELECTED_UV_VALUE = 1.0f;
     private const float STATE_ALLY_UV_VALUE = 2.0f;
     private const float STATE_ENEMY_UV_VALUE = -1.0f;
-    private const int CONTINENT_MIN_SIZE = 6;
-    private const int CONTINENT_MAX_SIZE = 10;
+    private const int CONTINENT_MIN_SIZE = 5;
+    private const int CONTINENT_MAX_SIZE = 12;
 
     public static List<Color> statesColor = _generateStatesColors(); // new(){ new(0.0f, 1.0f, 0.0f), new(1.0f,1.0f,0.0f), new(1.0f, 0.5f, 0.5f) };
 
@@ -244,6 +244,23 @@ public partial class MapManager : Node
         return receiver;
     }
 
+    private Continent _getContinentByID(int id)
+    {
+        if(id < 0)
+        {
+            GD.PrintErr("MapManager._getContinentByID was aksed negative id : Continent_" + id);
+            return null;
+        }
+
+        foreach(Continent c in continents)
+        {
+            if(c.index == id) return c;
+        }
+
+        GD.PrintErr("MapManager._getContinentByID could not find Continent_" + id);
+        return null;
+    }
+
     private State _getStateByStateID(int id)
     {
         if(id < 0)
@@ -376,7 +393,7 @@ public partial class MapManager : Node
 
     private void _buildContinents()
     {
-        _buildContinentsFirstPass(); // This will create continents of size [1:MAX]
+        _buildContinentsFirstPass(); // This will create continents of size [1:MIN]
         foreach(Continent c in continents)
         {
             string log = "Continent_" + c.index + " (" + c.stateIDs.Count + ")";
@@ -420,7 +437,9 @@ public partial class MapManager : Node
         continents.Add(new(continentID));
         List<int> addList = new(){seedID}; // width first graph run
 
-        while(addList.Count > 0 && continents[continentID].stateIDs.Count < CONTINENT_MAX_SIZE )
+        Continent currentContinent = continents[continents.Count - 1];
+
+        while(addList.Count > 0 && currentContinent.stateIDs.Count < CONTINENT_MIN_SIZE )
         {
             // Take state with less neighbors
             State currentState = _getStateByStateID(addList[0]);
@@ -430,11 +449,11 @@ public partial class MapManager : Node
                 // add currentContinent to the neighbors of the one we found
                 continents[currentState.continentID].addContinentNeighbor(continentID); // won't add duplicates
                 // add the continent we found to the neigbhors of the current
-                continents[continentID].addContinentNeighbor(currentState.continentID); // won't add duplicates
+                currentContinent.addContinentNeighbor(currentState.continentID); // won't add duplicates
                 continue; // this one already belongs to another continent
             }
             // Add to continent
-            continents[continentID].addState(currentState.id);
+            currentContinent.addState(currentState.id);
             currentState.setContinentID(continentID);
             // Add all its neighbors to list
             if(currentState.neighbors.Count == 0)
@@ -445,15 +464,66 @@ public partial class MapManager : Node
                 closest.neighbors.Add(currentState.id);
                 ownerPlanet.askBridgeCreation(points);
 
-                addList.Add(closest.id);
+                if(closest.continentID != -1)
+                {
+                    // closest state already part of a continent, so merge with it and leave
+                    Continent closestContinent = _getContinentByID(closest.continentID);
+                    closestContinent.absorbContinent(currentContinent, _getStateByStateID);
+                    foreach(int nghbID in currentContinent.neighborsContinentIDs)
+                        _getContinentByID(nghbID).swapNeighborIndex(currentContinent.index, closestContinent.index);
+                    continents.Remove(currentContinent);
+                    return;
+                }
+                else
+                    addList.Add(closest.id);
             }
             else
             {
                 foreach(int stateID in currentState.neighbors)
                 {
-                    if(addList.Contains(stateID) || continents[continentID].stateIDs.Contains(stateID))
+                    if(addList.Contains(stateID) || currentContinent.stateIDs.Contains(stateID))
                         continue;
                     addList.Add(stateID);
+                }
+            }
+
+            if(addList.Count == 0 && currentContinent.stateIDs.Count < CONTINENT_MIN_SIZE)
+            {
+                // Means we're on a island continent, we need to find the closest state by sea, and continue there
+                float minDistance = 0.0f;
+                State closest = null;
+                Vector2I points = new();
+                foreach(int stateID in currentContinent.stateIDs)
+                {
+                    State s = _getStateByStateID(stateID);
+                    State closestCandidate = _findClosestSeaNeighbor(s, out float distance, out Vector2I pointsCandidate);
+
+                    if(closest == null || minDistance > distance)
+                    {
+                        points = pointsCandidate;
+                        closest = closestCandidate;
+                        minDistance = distance;
+                    }
+                }
+
+                if(closest != null)
+                {
+                    ownerPlanet.askBridgeCreation(points);
+
+                    if(closest.continentID != -1)
+                    {
+                        // Main land we connected to is already a registered continent, directly merge with it and leave function
+                        Continent closestContinent = _getContinentByID(closest.continentID);
+                        closestContinent.absorbContinent(currentContinent, _getStateByStateID);
+                        foreach(int nghbID in currentContinent.neighborsContinentIDs)
+                            _getContinentByID(nghbID).swapNeighborIndex(currentContinent.index, closestContinent.index);
+                        continents.Remove(currentContinent);
+                        return;
+                    }
+                    else
+                    {
+                        addList.Add(closest.id);
+                    }
                 }
             }
         }
