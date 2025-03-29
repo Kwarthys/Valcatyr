@@ -1,0 +1,6 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://cypmok4bg16vl"]
+
+[ext_resource type="Shader" path="res://materials/SkyShader.gdshader" id="1_r3gok"]
+
+[resource]
+shader = ExtResource("1_r3gok")

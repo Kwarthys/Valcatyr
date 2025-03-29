@@ -68,7 +68,7 @@ public partial class Planet : MeshInstance3D
         if(Input.IsActionJustPressed("Rotate"))
             rotate = !rotate;
         if(rotate)
-            Rotate(Vector3.Up, (float)(delta * 1.0));
+            Rotate(Vector3.Up, (float)(delta * Math.Tau / 7.0)); // Want a turn in 7 seconds for nice looking gifs
     }
 
     public void setMesh()

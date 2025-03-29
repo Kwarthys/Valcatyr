@@ -138,13 +138,9 @@ public partial class MapManager : Node
                 if(distanceSquared < MAX_SQUARED_DISTANCE_FOR_STATE_MERGE)
                 {
                     mergeState = nearest;
-                    _setStateYUV(currentState, STATE_SELECTED_UV_VALUE);
-                    _setStateYUV(mergeState, STATE_ALLY_UV_VALUE);
-
                     // Spawn a bridge to link the island(s)
                     ownerPlanet.askBridgeCreation(pointsFullMapIndices);
-
-                    GD.Print("Island merge between island State_" + currentState.id + " to State_" + mergeState.id);
+                    //GD.Print("Island merge between island State_" + currentState.id + " to State_" + mergeState.id);
                 }
                 else
                 {
@@ -393,7 +389,9 @@ public partial class MapManager : Node
 
     private void _buildContinents()
     {
-        _buildContinentsFirstPass(); // This will create continents of size [1:MIN]
+        _buildContinentsFirstPass(); // This will create continents of mostly random sizes
+
+        /*
         foreach(Continent c in continents)
         {
             string log = "Continent_" + c.index + " (" + c.stateIDs.Count + ")";
@@ -407,7 +405,8 @@ public partial class MapManager : Node
             }
             GD.Print(log);
         }
-        // Do merging and exchanges to have continents of sze [MIN:MAX]
+        */
+        // Do merging and exchanges to have continents of size [MIN:MAX]
     }
 
     private void _buildContinentsFirstPass()

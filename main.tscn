@@ -1,13 +1,25 @@
-[gd_scene load_steps=7 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=12 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/test_shader_material.tres" id="2_4fh88"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
 [ext_resource type="Script" path="res://scripts/CameraRotator.gd" id="4_1mtfn"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/BridgeBuilder.cs" id="4_yu05o"]
+[ext_resource type="Material" uid="uid://y5bil6ynkqr7" path="res://materials/AtmosphereMaterial.tres" id="5_3hgdn"]
+[ext_resource type="Material" uid="uid://cypmok4bg16vl" path="res://materials/SkyBoxMaterial.tres" id="6_73edm"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_rqogu"]
 material = ExtResource("2_4fh88")
+
+[sub_resource type="QuadMesh" id="QuadMesh_onmyu"]
+size = Vector2(6, 6)
+
+[sub_resource type="Sky" id="Sky_anfhs"]
+sky_material = ExtResource("6_73edm")
+
+[sub_resource type="Environment" id="Environment_4tpp0"]
+background_mode = 2
+sky = SubResource("Sky_anfhs")
 
 [node name="Node3D" type="Node3D"]
 script = ExtResource("1_sm8de")
@@ -39,8 +51,17 @@ VERTICAL_SPEED = 3.0
 [node name="CameraVerticalHelper" type="Node3D" parent="CameraHorizontalHelper"]
 
 [node name="Camera3D" type="Camera3D" parent="CameraHorizontalHelper/CameraVerticalHelper"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3.4643)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
 
 [node name="DirectionalLight3D2" type="DirectionalLight3D" parent="CameraHorizontalHelper/CameraVerticalHelper"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3.7259)
 light_energy = 0.05
+
+[node name="AtmosphereQuad" type="MeshInstance3D" parent="CameraHorizontalHelper/CameraVerticalHelper"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.1)
+material_override = ExtResource("5_3hgdn")
+mesh = SubResource("QuadMesh_onmyu")
+skeleton = NodePath("../../../Planet")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_4tpp0")
