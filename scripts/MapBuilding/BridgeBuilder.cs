@@ -27,7 +27,7 @@ public partial class BridgeBuilder : Node
         Vector3 sideDirection = _posFrom.Cross(_posTo).Normalized();
 
         // Build bridge deck
-        int brideLength = (int)Mathf.Round(_posFrom.DistanceSquaredTo(_posTo) * BRIDGE_VERTEX_PER_LENGTH);
+        int brideLength = (int)Mathf.Ceil(_posFrom.DistanceSquaredTo(_posTo) * BRIDGE_VERTEX_PER_LENGTH);
         brideLength = Math.Min(4, brideLength); // looks bad below 4
         GD.Print("bridge lenght: " + brideLength);
         for(int i = 0; i < brideLength + 1; ++i) // +1 as we want the last loop where i = length

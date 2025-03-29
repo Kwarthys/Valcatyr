@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/test_shader_material.tres" id="2_4fh88"]
-[ext_resource type="Script" path="res://scripts/Planet.cs" id="2_hkox7"]
+[ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
 [ext_resource type="Script" path="res://scripts/CameraRotator.gd" id="4_1mtfn"]
-[ext_resource type="Script" path="res://scripts/BridgeBuilder.cs" id="4_yu05o"]
+[ext_resource type="Script" path="res://scripts/MapBuilding/BridgeBuilder.cs" id="4_yu05o"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_rqogu"]
 material = ExtResource("2_4fh88")
@@ -19,7 +19,6 @@ bridgeBuilder = NodePath("BridgeBuilder")
 
 [node name="BridgeBuilder" type="Node3D" parent="Planet"]
 script = ExtResource("4_yu05o")
-planetScene = null
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 9.11442)

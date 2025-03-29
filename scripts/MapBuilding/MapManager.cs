@@ -20,10 +20,13 @@ public partial class MapManager : Node
     private const float STATE_SELECTED_UV_VALUE = 1.0f;
     private const float STATE_ALLY_UV_VALUE = 2.0f;
     private const float STATE_ENEMY_UV_VALUE = -1.0f;
+    private const int CONTINENT_MIN_SIZE = 6;
+    private const int CONTINENT_MAX_SIZE = 10;
 
     public static List<Color> statesColor = _generateStatesColors(); // new(){ new(0.0f, 1.0f, 0.0f), new(1.0f,1.0f,0.0f), new(1.0f, 0.5f, 0.5f) };
 
     public List<State> states;
+    public List<Continent> continents;
     public List<List<int>> landMassesStatesIndices = new(); // will store lists of stateIDs. Each list will represent a landmass of states connected by land. This will later be used to define continents.
 
     public static Color shallowSeaColor = new(0.1f, 0.3f, 0.7f);
@@ -41,6 +44,7 @@ public partial class MapManager : Node
         }
 
         _buildStates();
+        _buildContinents();
         _buildTexture();
     }
 
@@ -70,7 +74,7 @@ public partial class MapManager : Node
                         color = Colors.Green;
                     else
                     {
-                        color = statesColor[map[i].stateID%STATES_COUNT];
+                        color = statesColor[map[i].continentID%STATES_COUNT];
                         if(map[i].isBorder() || map[i].waterBorder)
                             color = color.Lerp(Colors.Black, 0.6f); // make border darker for nice display
                     }
@@ -365,6 +369,96 @@ public partial class MapManager : Node
         return result;
     }
 
+    private int _compareStatesNeighbors(int _a, int _b)
+    {
+        return State.compareStateNeighborsNumber(_getStateByStateID(_a), _getStateByStateID(_b));
+    }
+
+    private void _buildContinents()
+    {
+        _buildContinentsFirstPass(); // This will create continents of size [1:MAX]
+        foreach(Continent c in continents)
+        {
+            string log = "Continent_" + c.index + " (" + c.stateIDs.Count + ")";
+            if(c.neighborsContinentIDs.Count > 0)
+            {
+                log += ": ";
+                foreach(int n in c.neighborsContinentIDs)
+                {
+                    log += "Continent_" + n + " ";
+                }
+            }
+            GD.Print(log);
+        }
+        // Do merging and exchanges to have continents of sze [MIN:MAX]
+    }
+
+    private void _buildContinentsFirstPass()
+    {
+        continents = new();
+        // Find state with less neighbors to seed a continent, sort states by number of neighbors
+        List<int> orderedStates = new();
+        foreach(State s in states)
+            orderedStates.Add(s.id); // not yet ordered
+        orderedStates.Sort(_compareStatesNeighbors);
+
+        while(orderedStates.Count > 0)
+        {
+            // pop state with less neigbhors
+            State seed = _getStateByStateID(orderedStates[0]);
+            orderedStates.RemoveAt(0);
+            if(seed.continentID != -1)
+                continue; // already bound to a continent
+
+            _spreadNewContinentFrom(seed.id);
+        }
+    }
+
+    private void _spreadNewContinentFrom(int seedID)
+    {
+        int continentID = continents.Count;
+        continents.Add(new(continentID));
+        List<int> addList = new(){seedID}; // width first graph run
+
+        while(addList.Count > 0 && continents[continentID].stateIDs.Count < CONTINENT_MAX_SIZE )
+        {
+            // Take state with less neighbors
+            State currentState = _getStateByStateID(addList[0]);
+            addList.RemoveAt(0);
+            if(currentState.continentID != -1)
+            {
+                // add currentContinent to the neighbors of the one we found
+                continents[currentState.continentID].addContinentNeighbor(continentID); // won't add duplicates
+                // add the continent we found to the neigbhors of the current
+                continents[continentID].addContinentNeighbor(currentState.continentID); // won't add duplicates
+                continue; // this one already belongs to another continent
+            }
+            // Add to continent
+            continents[continentID].addState(currentState.id);
+            currentState.setContinentID(continentID);
+            // Add all its neighbors to list
+            if(currentState.neighbors.Count == 0)
+            {
+                // Island State
+                State closest = _findClosestSeaNeighbor(currentState, out float distance, out Vector2I points);
+                currentState.neighbors.Add(closest.id);
+                closest.neighbors.Add(currentState.id);
+                ownerPlanet.askBridgeCreation(points);
+
+                addList.Add(closest.id);
+            }
+            else
+            {
+                foreach(int stateID in currentState.neighbors)
+                {
+                    if(addList.Contains(stateID) || continents[continentID].stateIDs.Contains(stateID))
+                        continue;
+                    addList.Add(stateID);
+                }
+            }
+        }
+    }
+
     private void _computeLandMassesStates()
     {
         landMassesStatesIndices = new();
@@ -486,7 +580,6 @@ public class MapNode // this is not a struct only because i could not bother cre
     public bool waterBorder = false;
     public List<int> borderingStateIds = new();
     public NodeType nodeType = NodeType.Land;
-    public int playerID = INVALID_ID;
     public int stateID = INVALID_ID;
     public int continentID = INVALID_ID;
     public float height = 0.0f;

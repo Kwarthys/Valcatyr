@@ -10,7 +10,8 @@ public class State
     public List<int> neighbors = new(); // StateIds of neighboring states
     public List<int> shores = new(); // Indices of nodes in Land with water as neighbor
     public int id = -1;
-    public int continentID = -1;
+    public int continentID {get; private set;} = -1;
+    public int playerID = -1;
     public int landMassID = -1; // Continents may contain multiple islands, land mass only cares about direct land neighbors
 
     public static int comapreStateSize(State _a, State _b)
@@ -20,6 +21,24 @@ public class State
         if(sizeA == sizeB)
             return 0;
         return sizeA > sizeB ? 1 : -1;
+    }
+
+    public static int compareStateNeighborsNumber(State _a, State _b)
+    {
+            int countA = _a.neighbors.Count;
+            int countB = _b.neighbors.Count;
+            if(countA > countB) return 1;
+            if(countA < countB) return -1;
+            return 0;
+    }
+
+    public void setContinentID(int _continentID)
+    {
+        continentID = _continentID;
+        foreach(MapNode n in land)
+        {
+            n.continentID = _continentID;
+        }
     }
 
     public void absordState(State _giver)
