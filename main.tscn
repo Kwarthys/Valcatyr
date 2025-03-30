@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=14 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/test_shader_material.tres" id="2_4fh88"]
@@ -6,7 +6,11 @@
 [ext_resource type="Script" path="res://scripts/CameraRotator.gd" id="4_1mtfn"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/BridgeBuilder.cs" id="4_yu05o"]
 [ext_resource type="Material" uid="uid://y5bil6ynkqr7" path="res://materials/AtmosphereMaterial.tres" id="5_3hgdn"]
+[ext_resource type="Script" path="res://scripts/PlanetInputManager.cs" id="5_qons3"]
 [ext_resource type="Material" uid="uid://cypmok4bg16vl" path="res://materials/SkyBoxMaterial.tres" id="6_73edm"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_nvriv"]
+radius = 2.0
 
 [sub_resource type="BoxMesh" id="BoxMesh_rqogu"]
 material = ExtResource("2_4fh88")
@@ -31,6 +35,14 @@ bridgeBuilder = NodePath("BridgeBuilder")
 
 [node name="BridgeBuilder" type="Node3D" parent="Planet"]
 script = ExtResource("4_yu05o")
+
+[node name="ClickCollider" type="Area3D" parent="Planet" node_paths=PackedStringArray("planet", "camera")]
+script = ExtResource("5_qons3")
+planet = NodePath("..")
+camera = NodePath("../../CameraHorizontalHelper/CameraVerticalHelper/Camera3D")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Planet/ClickCollider"]
+shape = SubResource("SphereShape3D_nvriv")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 9.11442)

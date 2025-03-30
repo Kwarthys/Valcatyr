@@ -68,11 +68,20 @@ public partial class Planet : MeshInstance3D
         if(Input.IsActionJustPressed("Rotate"))
             rotate = !rotate;
         if(rotate)
-            Rotate(Vector3.Up, (float)(delta * Math.Tau / 7.0)); // Want a turn in 7 seconds for nice looking gifs
+            Rotate(Vector3.Up, (float)(delta * Math.Tau / 7.0)); // Want a turn in 7 seconds for nice looping gifs
     }
 
     public void setMesh()
     {
+        surfaceArrays = new();
+        surfaceArrays.Resize((int)Mesh.ArrayType.Max);
+
+        surfaceArrays[(int)Mesh.ArrayType.Vertex] = vertices.ToArray();
+        surfaceArrays[(int)Mesh.ArrayType.TexUV] = uvs.ToArray();
+        surfaceArrays[(int)Mesh.ArrayType.Normal] = normals.ToArray();
+        surfaceArrays[(int)Mesh.ArrayType.Index] = indices.ToArray();
+        surfaceArrays[(int)Mesh.ArrayType.Color] = colors.ToArray();
+
         arrayMesh = new();
         arrayMesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, surfaceArrays);
         
@@ -86,9 +95,6 @@ public partial class Planet : MeshInstance3D
 
     public void generateMesh()
     {
-        surfaceArrays = new();
-        surfaceArrays.Resize((int)Mesh.ArrayType.Max);
-
         vertices.Clear();
         uvs.Clear();
         normals.Clear();
@@ -128,12 +134,6 @@ public partial class Planet : MeshInstance3D
         mapManager = new(this);
         mapManager.RegisterMap(map);
 
-        surfaceArrays[(int)Mesh.ArrayType.Vertex] = vertices.ToArray();
-        surfaceArrays[(int)Mesh.ArrayType.TexUV] = uvs.ToArray();
-        surfaceArrays[(int)Mesh.ArrayType.Normal] = normals.ToArray();
-        surfaceArrays[(int)Mesh.ArrayType.Index] = indices.ToArray();
-        surfaceArrays[(int)Mesh.ArrayType.Color] = colors.ToArray();
-
         Debug.Print("Generated " + vertices.Count.ToString() + " . " + indices.Count.ToString());
 
         Callable callable = new(this, MethodName.setMesh);
@@ -147,6 +147,22 @@ public partial class Planet : MeshInstance3D
     {
         if(_indices.X >= 0 && _indices.Y >= 0 && _indices.X < MAP_SIZE && _indices.Y < MAP_SIZE)
             bridgeBuilder.buildBridge(vertices[_indices.X], vertices[_indices.Y]);
+    }
+
+    public int getApproximateVertexAt(int side, Vector2 uv)
+    {
+        float x = Mathf.Clamp(uv.X, 0.0f, 1.0f) * FACE_WIDTH;
+        float y = Mathf.Clamp(uv.Y, 0.0f, 1.0f) * FACE_HEIGHT;
+        return (int)(x + y * FACE_WIDTH + side * FACE_SIZE);
+    }
+
+    public bool tryGetVertex(int _vertexID, out Vector3 _vertex)
+    {
+        _vertex = new();
+        if(_vertexID < 0 || _vertexID >= MAP_SIZE)
+            return false;
+        _vertex = vertices[_vertexID];
+        return true;
     }
 
     // if terrain is later an issue we might normalize vertex pos on a bool parameter
@@ -165,10 +181,18 @@ public partial class Planet : MeshInstance3D
         return -1.0f;
     }
 
+    public float getSquareDistance(int _vertexID, Vector3 localPos)
+    {
+        if(_vertexID < 0 || _vertexID >= MAP_SIZE) return -1.0f;
+        return vertices[_vertexID].DistanceSquaredTo(localPos);
+    }
+
     public void setUVYAtIndex(int _index, float _value)
     {
         if(_index >= 0 && _index < uvs.Count)
             uvs[_index] = new(uvs[_index].X, _value);
+        else
+            GD.PrintErr("Planet.setUVYAtIndex UV out of bounds");
     }
 
     private void _appendSurface(Vector3 _localUp, Vector3 _localForward, int side)
