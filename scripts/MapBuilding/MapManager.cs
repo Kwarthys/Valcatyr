@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
+using System.Net;
 
 public partial class MapManager : Node
 {
@@ -46,6 +47,35 @@ public partial class MapManager : Node
         _buildStates();
         _buildContinents();
         _buildTexture();
+    }
+
+    public void selectStateOfVertex(int _vertexID)
+    {
+        if(_vertexID < 0 || _vertexID >= map.Length)
+            return;
+
+        MapNode n = map[_vertexID];
+        List<int> updatedStates = new();
+        if(n.stateID >= 0)
+        {
+            updatedStates.Add(n.stateID);
+            State s = _getStateByStateID(n.stateID);
+            _setStateYUV(s, STATE_SELECTED_UV_VALUE);
+            foreach(int stateID in s.neighbors)
+            {
+                updatedStates.Add(stateID);
+                State nghb = _getStateByStateID(stateID);
+                _setStateYUV(nghb, s.continentID == nghb.continentID ? STATE_ALLY_UV_VALUE : STATE_ENEMY_UV_VALUE);
+            }
+        }
+
+        states.ForEach(state => 
+        {
+            if(!updatedStates.Contains(state.id))
+            {
+                _setStateYUV(state, 0.0f); // reset
+            }
+        });
     }
 
     private void _buildTexture()
@@ -490,6 +520,7 @@ public partial class MapManager : Node
             {
                 // Means we're on a island continent, we need to find the closest state by sea, and continue there
                 float minDistance = 0.0f;
+                State from = null;
                 State closest = null;
                 Vector2I points = new();
                 foreach(int stateID in currentContinent.stateIDs)
@@ -502,12 +533,15 @@ public partial class MapManager : Node
                         points = pointsCandidate;
                         closest = closestCandidate;
                         minDistance = distance;
+                        from = s;
                     }
                 }
 
                 if(closest != null)
                 {
                     ownerPlanet.askBridgeCreation(points);
+                    closest.neighbors.Add(from.id);
+                    from.neighbors.Add(closest.id);
 
                     if(closest.continentID != -1)
                     {

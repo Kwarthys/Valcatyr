@@ -28,15 +28,14 @@ public partial class PlanetInputManager : Area3D
             Vector3 worldHitPos = (Vector3)result["position"];
             Vector3 planetLocalHitPos = planet.ToLocal(worldHitPos);
 
-            int nearClicIndex = _tryNarrowVertexClicked(planetLocalHitPos);
-            nearClicIndex = _findClosestIndexViaNeighbors(nearClicIndex, planetLocalHitPos); // this is the one clicked !
+            int nearClicIndex = _dichotomyNarrowSearch(planetLocalHitPos); // narrow down vertex index via dichotomy. Output will be near actual vertex clicked
+            nearClicIndex = _findClosestIndexViaNeighbors(nearClicIndex, planetLocalHitPos); // this is the one clicked ! (i.e. closest to clic position)
 
-            planet.setUVYAtIndex(nearClicIndex, 20.0f);
-            planet.setMesh(); // Reseting the full mesh seems brutally overkill only to apply UVs (i.e. display selection), but that'll do for now
+            planet.notifySelectVertex(nearClicIndex);
         }
     }
 
-    private int _tryNarrowVertexClicked(Vector3 sphereLocalHit)
+    private int _dichotomyNarrowSearch(Vector3 sphereLocalHit)
     {
         // Start from 6 faces centers
         Vector2 uvCenter = new(0.5f, 0.5f);
@@ -49,12 +48,12 @@ public partial class PlanetInputManager : Area3D
         int closestIndex = _findClosest(samples, sphereLocalHit, out float dist);
         // Preparing the dichotomy loop
         int faceIndex = samples.IndexOf(closestIndex);
-        GD.Print("Clic detected on " + PlanetEdgeManager.sideIndexToString(faceIndex));
         Vector2 sampleCenter = uvCenter;
         Vector2[] samplePoss = new Vector2[4];
         float sampleRange = 0.25f; // Space between sample Center and samples. We start with center at 0.5,0.5, so first samples are 0.25 apart
 
-        while(sampleRange > 0.005f)
+        int iterations = 0;
+        while(iterations++ < 6) // 6 seems enough for a sphere resolution of 200
         {
             samples.Clear();
             samplePoss[0] = new(sampleCenter.X + sampleRange, sampleCenter.Y + sampleRange);
@@ -69,6 +68,7 @@ public partial class PlanetInputManager : Area3D
             sampleCenter = samplePoss[samples.IndexOf(closestIndex)];
             sampleRange *= 0.5f;
         }
+
         return closestIndex; // Can start search by neighbors from this one
     }
 
@@ -77,15 +77,17 @@ public partial class PlanetInputManager : Area3D
         int index = startingIndex;
         float refDist = planet.getSquareDistance(index, localToSphere);
         int iteration = 0;
-        while(iteration++ < 1000) // wouldn't want an infinite loop
+        while(iteration++ < 50) // wouldn't want an infinite loop
         {
             List<int> nghbs = Planet.getNeighbours(index);
             int closest = _findClosest(nghbs, localToSphere, out float dist);
             if(dist > refDist)
             {
                 // All neihbors are further than the point, we found the one
+                //GD.Print("Found clicked vertex in " + iteration + " iterations.");
                 return index;
             }
+            //GD.Print("NghbFind: ids " + index + "(" + refDist + ") -> " + closest + "(" + dist + ")");
             index = closest;
             refDist = dist;
         }

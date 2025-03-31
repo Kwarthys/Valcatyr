@@ -89,8 +89,6 @@ public partial class Planet : MeshInstance3D
         ShaderMaterial mat = (ShaderMaterial)GetActiveMaterial(0);
         mat.SetShaderParameter("customTexture", mapManager.tex);
         mat.SetShaderParameter("shallowWaterColor", MapManager.shallowSeaColor);
-
-        Debug.Print("Mesh Assigned");
     }
 
     public void generateMesh()
@@ -140,6 +138,12 @@ public partial class Planet : MeshInstance3D
         callable.Call();
     }
 
+    public void notifySelectVertex(int _vertexIndex)
+    {
+        mapManager.selectStateOfVertex(_vertexIndex);
+        setMesh(); // Reseting the full mesh seems brutally overkill only to apply UVs (i.e. display selection), but that'll do for now
+    }
+
     /// <summary>
     /// Build a bridge from vertex at index _indices.X to vertex at index _indices.Y
     /// </summary>
@@ -151,9 +155,9 @@ public partial class Planet : MeshInstance3D
 
     public int getApproximateVertexAt(int side, Vector2 uv)
     {
-        float x = Mathf.Clamp(uv.X, 0.0f, 1.0f) * FACE_WIDTH;
-        float y = Mathf.Clamp(uv.Y, 0.0f, 1.0f) * FACE_HEIGHT;
-        return (int)(x + y * FACE_WIDTH + side * FACE_SIZE);
+        int x = (int)(Mathf.Clamp(uv.X, 0.0f, 1.0f) * (FACE_WIDTH - 1));
+        int y = (int)(Mathf.Clamp(uv.Y, 0.0f, 1.0f) * (FACE_HEIGHT - 1));
+        return side * FACE_SIZE + x + y * FACE_WIDTH;
     }
 
     public bool tryGetVertex(int _vertexID, out Vector3 _vertex)
