@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=15 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/test_shader_material.tres" id="2_4fh88"]
@@ -8,6 +8,7 @@
 [ext_resource type="Material" uid="uid://y5bil6ynkqr7" path="res://materials/AtmosphereMaterial.tres" id="5_3hgdn"]
 [ext_resource type="Script" path="res://scripts/PlanetInputManager.cs" id="5_qons3"]
 [ext_resource type="Material" uid="uid://cypmok4bg16vl" path="res://materials/SkyBoxMaterial.tres" id="6_73edm"]
+[ext_resource type="Script" path="res://scripts/MapBuilding/SkyBoxBuilder.cs" id="9_gnn7f"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_nvriv"]
 radius = 2.0
@@ -57,8 +58,8 @@ mesh = SubResource("BoxMesh_rqogu")
 
 [node name="CameraHorizontalHelper" type="Node3D" parent="."]
 script = ExtResource("4_1mtfn")
-HORIZONTAL_SPEED = 3.0
-VERTICAL_SPEED = 3.0
+HORIZONTAL_SPEED = 1.0
+VERTICAL_SPEED = 1.0
 
 [node name="CameraVerticalHelper" type="Node3D" parent="CameraHorizontalHelper"]
 
@@ -77,3 +78,5 @@ skeleton = NodePath("../../../Planet")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_4tpp0")
+script = ExtResource("9_gnn7f")
+shader = ExtResource("6_73edm")

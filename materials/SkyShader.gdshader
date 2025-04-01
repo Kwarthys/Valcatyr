@@ -1,10 +1,10 @@
 shader_type sky;
 
-uniform sampler2D noise; // will have to create myself
+uniform sampler2D skyPanorama : filter_linear, source_color, hint_default_black; // will have to create myself
 // would love some cluster of stars milhyway style
 
 void sky()
 {
-	// make nice shiny stars with custom made texture noise
-	COLOR = vec3(0.0);
+	// make nice stars with custom made texture noise
+	COLOR = texture(skyPanorama, SKY_COORDS).xyz;
 }
