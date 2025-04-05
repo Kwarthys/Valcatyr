@@ -4,3 +4,5 @@
 
 [resource]
 shader = ExtResource("1_r3gok")
+shader_parameter/sunDir = Vector3(0, 0, -1)
+shader_parameter/sunColor = Color(1, 1, 1, 1)

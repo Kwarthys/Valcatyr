@@ -29,7 +29,6 @@ public partial class BridgeBuilder : Node
         // Build bridge deck
         int bridgeLength = (int)Mathf.Ceil(_posFrom.DistanceSquaredTo(_posTo) * BRIDGE_VERTEX_PER_LENGTH);
         bridgeLength = Math.Max(4, bridgeLength); // looks bad below 4
-        GD.Print("Bridge length: " + bridgeLength);
         for(int i = 0; i < bridgeLength + 1; ++i) // +1 as we want the last loop where i = length
         {
             float percent = i * 1.0f / bridgeLength;
@@ -85,11 +84,7 @@ public partial class BridgeBuilder : Node
 
         ArrayMesh arrayMesh = new();
         arrayMesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, surfaceArrays);
-
         MeshInstance3D bridge = new() { Mesh = arrayMesh };
-
-        GD.Print("Bridge Mesh Assigned");
-
         AddChild(bridge);
     }
 }

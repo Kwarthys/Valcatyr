@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=18 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/test_shader_material.tres" id="2_4fh88"]
@@ -25,6 +25,22 @@ sky_material = ExtResource("6_73edm")
 [sub_resource type="Environment" id="Environment_4tpp0"]
 background_mode = 2
 sky = SubResource("Sky_anfhs")
+
+[sub_resource type="Gradient" id="Gradient_hdbyp"]
+offsets = PackedFloat32Array(0, 0.25, 0.666667, 1)
+colors = PackedColorArray(1, 0.196078, 0.196078, 1, 1, 0.72549, 0.447059, 1, 1, 1, 1, 1, 0.784314, 0.784314, 1, 1)
+metadata/_snap_enabled = true
+metadata/_snap_count = 12
+
+[sub_resource type="Gradient" id="Gradient_stbvo"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(2.31028e-06, 0, 0.70509, 1, 0.284417, 0.639377, 0.54516, 1, 1, 0.580392, 0.313726, 1)
+metadata/_snap_enabled = true
+metadata/_snap_count = 12
+
+[sub_resource type="Curve" id="Curve_3lt5j"]
+_data = [Vector2(0.1, 0), 0.0, 0.0, 0, 0, Vector2(0.4, 1), 0.775511, 0.0, 0, 1, Vector2(1, 1), 0.0, 0.0, 1, 0]
+point_count = 3
 
 [node name="Node3D" type="Node3D"]
 script = ExtResource("1_sm8de")
@@ -58,13 +74,13 @@ mesh = SubResource("BoxMesh_rqogu")
 
 [node name="CameraHorizontalHelper" type="Node3D" parent="."]
 script = ExtResource("4_1mtfn")
-HORIZONTAL_SPEED = 1.0
-VERTICAL_SPEED = 1.0
+HORIZONTAL_SPEED = 3.0
+VERTICAL_SPEED = 3.0
 
 [node name="CameraVerticalHelper" type="Node3D" parent="CameraHorizontalHelper"]
 
 [node name="Camera3D" type="Camera3D" parent="CameraHorizontalHelper/CameraVerticalHelper"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
 
 [node name="DirectionalLight3D2" type="DirectionalLight3D" parent="CameraHorizontalHelper/CameraVerticalHelper"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3.7259)
@@ -80,3 +96,6 @@ skeleton = NodePath("../../../Planet")
 environment = SubResource("Environment_4tpp0")
 script = ExtResource("9_gnn7f")
 shader = ExtResource("6_73edm")
+starColors = SubResource("Gradient_hdbyp")
+cloudColors = SubResource("Gradient_stbvo")
+cloudsNoiseToAlpha = SubResource("Curve_3lt5j")

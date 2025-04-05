@@ -8,7 +8,11 @@ extends Node3D
 
 var vertical_helper_angle: float = 0.0
 
+var autoRotate = false;
+
 func _process(delta: float) -> void:
+	if Input.is_action_pressed("AutoRotate"):
+		autoRotate = !autoRotate
 	handle_horizontal(delta)
 	handle_vertical(delta)
 	
@@ -16,7 +20,7 @@ func handle_horizontal(dt: float) -> void:
 	var movement: float = 0.0
 	if Input.is_action_pressed("Left"):
 		movement = - HORIZONTAL_SPEED * dt
-	if Input.is_action_pressed("Right"):
+	if Input.is_action_pressed("Right") || autoRotate:
 		movement += HORIZONTAL_SPEED * dt
 	rotate(Vector3.UP, movement)
 	

@@ -120,6 +120,7 @@ public partial class Planet : MeshInstance3D
         ups[SIDE_BOT] = Vector3.Down;
         forwards[SIDE_BOT] = Vector3.Back;
 
+        float usecStart = Time.GetTicksUsec();
         for(int sideIndex = 0; sideIndex < SIDE_COUNT; ++sideIndex)
         {
             _appendSurface(ups[sideIndex], forwards[sideIndex], sideIndex);
@@ -128,12 +129,11 @@ public partial class Planet : MeshInstance3D
         _appendCorners(ups, forwards);
         _stichFacesAndCorners();
         _assignNormals();
+        GD.Print("Creating Planet took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
 
         mapManager = new(this);
         mapManager.RegisterMap(map);
-
-        Debug.Print("Generated " + vertices.Count.ToString() + " . " + indices.Count.ToString());
-
+        
         Callable callable = new(this, MethodName.setMesh);
         callable.Call();
     }

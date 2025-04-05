@@ -44,8 +44,10 @@ public partial class MapManager : Node
                 map[mapIndex].nodeType = MapNode.NodeType.Water;
         }
 
+        float usecStart = Time.GetTicksUsec();
         _buildStates();
         _buildContinents();
+        GD.Print("Creating States and Continents took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
         _buildTexture();
     }
 
