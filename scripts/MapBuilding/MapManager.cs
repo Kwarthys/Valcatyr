@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
 using System.Net;
+using System.Reflection.Emit;
 
 public partial class MapManager : Node
 {
@@ -21,7 +22,7 @@ public partial class MapManager : Node
     private const float STATE_SELECTED_UV_VALUE = 1.0f;
     private const float STATE_ALLY_UV_VALUE = 2.0f;
     private const float STATE_ENEMY_UV_VALUE = -1.0f;
-    private const int CONTINENT_MIN_SIZE = 5;
+    private const int CONTINENT_MIN_SIZE = 4;
     private const int CONTINENT_MAX_SIZE = 12;
 
     public static List<Color> statesColor = _generateStatesColors(); // new(){ new(0.0f, 1.0f, 0.0f), new(1.0f,1.0f,0.0f), new(1.0f, 0.5f, 0.5f) };
@@ -60,6 +61,8 @@ public partial class MapManager : Node
         List<int> updatedStates = new();
         if(n.stateID >= 0)
         {
+            GD.Print("Selected State_" + n.stateID + " part of Continent_" + n.continentID);
+
             updatedStates.Add(n.stateID);
             State s = _getStateByStateID(n.stateID);
             _setStateYUV(s, STATE_SELECTED_UV_VALUE);
@@ -93,8 +96,6 @@ public partial class MapManager : Node
         Debug.Print("ImgSize: " + img.GetSize());
         for(int i = 0; i < map.Length; ++i)
         {
-            //float c = i * 1.0f / map.Length;
-            //img.SetPixel(i,0, new(c,0,0));
             int x = i % MAX_IMAGE_SIZE;
             int y = i / MAX_IMAGE_SIZE;
             Color color;
@@ -106,7 +107,7 @@ public partial class MapManager : Node
                         color = Colors.Green;
                     else
                     {
-                        color = statesColor[map[i].continentID%STATES_COUNT];
+                        color = statesColor[map[i].continentID%statesColor.Count];
                         if(map[i].isBorder() || map[i].waterBorder)
                             color = color.Lerp(Colors.Black, 0.6f); // make border darker for nice display
                     }
@@ -186,23 +187,7 @@ public partial class MapManager : Node
             else if(GD.Randf() > 0.0f) // Merging land neighbor can happen: Per boundary size or Per size ? Flip a coin to know
             {
                 // Merge with neighbor with most common boundary
-                Dictionary<int, int> borderLenghtPerStateID = _computeSharedBoundaries(currentState);
-                float maxRelativeBoundarySize = 0.0f;
-                int ownBorderSize = currentState.land.Count;
-                foreach(int neighborID in borderLenghtPerStateID.Keys)
-                {
-                    State neighborState = _getStateByStateID(neighborID);
-                    int sharedBoundaryLength = borderLenghtPerStateID[neighborID];
-                    float relativeOwnBoundary = sharedBoundaryLength * 1.0f / ownBorderSize;
-                    float relativeOtherBoundary = sharedBoundaryLength * 1.0f / neighborState.boundaries.Count;
-                    float relativeCommonBoundary = Math.Max(relativeOwnBoundary, relativeOtherBoundary);
-
-                    if(mergeState == null || maxRelativeBoundarySize < relativeCommonBoundary)
-                    {
-                        maxRelativeBoundarySize = relativeCommonBoundary;
-                        mergeState = neighborState;
-                    }
-                }
+                mergeState = _findStateWithMostSharedBorders(currentState);
             }
             else
             {
@@ -242,6 +227,26 @@ public partial class MapManager : Node
         }
     }
 
+    private Continent _mergeContinents(Continent _a, Continent _b)
+    {
+        Continent receiver = _a.id > _b.id ? _b : _a;
+        Continent giver = receiver == _a ? _b : _a;
+
+        receiver.absorbContinent(giver, _getStateByStateID);
+
+        foreach(Continent c in continents)
+        {
+            if(c == receiver || c == giver)
+                continue;
+            c.swapNeighborIndex(giver.id, receiver.id);
+        }
+
+        GD.Print("Merged Continent_" + receiver.id + " to Continent_" + giver.id);
+
+        continents.Remove(giver);
+        return receiver;
+    }
+
     private State _mergeStates(State _a, State _b)
     {
         // Chose receiving State, lowest ID
@@ -272,6 +277,11 @@ public partial class MapManager : Node
         return receiver;
     }
 
+    private Continent _getNewContinent(int _id)
+    {
+        continents.Add(new(_id));
+        return continents[continents.Count - 1];
+    }
     private Continent _getContinentByID(int id)
     {
         if(id < 0)
@@ -282,7 +292,7 @@ public partial class MapManager : Node
 
         foreach(Continent c in continents)
         {
-            if(c.index == id) return c;
+            if(c.id == id) return c;
         }
 
         GD.PrintErr("MapManager._getContinentByID could not find Continent_" + id);
@@ -306,12 +316,47 @@ public partial class MapManager : Node
         return null;
     }
 
-    private Dictionary<int, int> _computeSharedBoundaries(State s)
+    private State _findStateWithMostSharedBorders(State _s, bool _bothWays = true)
+    {
+        Dictionary<int, int> borderLenghtPerStateID = _computeSharedBoundaries(_s);
+        State nghb = null;
+        float maxRelativeBoundarySize = 0.0f;
+        int ownBorderSize = _s.land.Count;
+        foreach(int neighborID in borderLenghtPerStateID.Keys)
+        {
+            State neighborState = _getStateByStateID(neighborID);
+            int sharedBoundaryLength = borderLenghtPerStateID[neighborID];
+            float relativeOwnBoundary = sharedBoundaryLength * 1.0f / ownBorderSize;
+            if(_bothWays == true)
+            {
+                // Also check relative boundary size of other state, use the biggest of the two - Preferred for state merging
+                float relativeOtherBoundary = sharedBoundaryLength * 1.0f / neighborState.boundaries.Count;
+                float relativeCommonBoundary = Math.Max(relativeOwnBoundary, relativeOtherBoundary);
+                if(nghb == null || maxRelativeBoundarySize < relativeCommonBoundary)
+                {
+                    maxRelativeBoundarySize = relativeCommonBoundary;
+                    nghb = neighborState;
+                }
+            }
+            else
+            {
+                // Only care about relative length to State _s - Preferred for continent merging
+                if(nghb == null || maxRelativeBoundarySize < relativeOwnBoundary)
+                {
+                    maxRelativeBoundarySize = relativeOwnBoundary;
+                    nghb = neighborState;
+                }
+            }
+        }
+        return nghb;
+    }
+
+    private Dictionary<int, int> _computeSharedBoundaries(State _s)
     {
         Dictionary<int, int> borderLenghtPerStateID = new();
-        foreach(int nodeIndex in s.boundaries)
+        foreach(int nodeIndex in _s.boundaries)
         {
-            foreach(int stateID in s.land[nodeIndex].borderingStateIds)
+            foreach(int stateID in _s.land[nodeIndex].borderingStateIds)
             {
                 if(!borderLenghtPerStateID.ContainsKey(stateID))
                     borderLenghtPerStateID.Add(stateID, 0);
@@ -319,6 +364,29 @@ public partial class MapManager : Node
             }
         }
         return borderLenghtPerStateID;
+    }
+
+    private Dictionary<int, int> _computeSharedBoundaries(Continent _c)
+    {
+        Dictionary<int, int> borderLenghtPerContinentID = new();
+        foreach(int stateID in _c.stateIDs)
+        {
+            State s = _getStateByStateID(stateID);
+            Dictionary<int, int> stateBorderLenghtPerStateID = _computeSharedBoundaries(s);
+            foreach(int nghbID in stateBorderLenghtPerStateID.Keys)
+            {
+                if(_c.stateIDs.Contains(nghbID) == false)
+                {
+                    // Neighboring state is part of another continent
+                    State nghb = _getStateByStateID(nghbID);
+
+                    if(borderLenghtPerContinentID.ContainsKey(nghb.continentID) == false)
+                        borderLenghtPerContinentID.Add(nghb.continentID, 0);
+                    borderLenghtPerContinentID[nghb.continentID] += stateBorderLenghtPerStateID[nghbID];
+                }
+            }
+        }
+        return borderLenghtPerContinentID;
     }
 
     private void _computeStatesBoundaries() // Used to compute boundaries and states neigbhors for the first time (deletes prior data)
@@ -421,24 +489,9 @@ public partial class MapManager : Node
 
     private void _buildContinents()
     {
-        _buildContinentsFirstPass(); // This will create continents of mostly random sizes
-
-        /*
-        foreach(Continent c in continents)
-        {
-            string log = "Continent_" + c.index + " (" + c.stateIDs.Count + ")";
-            if(c.neighborsContinentIDs.Count > 0)
-            {
-                log += ": ";
-                foreach(int n in c.neighborsContinentIDs)
-                {
-                    log += "Continent_" + n + " ";
-                }
-            }
-            GD.Print(log);
-        }
-        */
-        // Do merging and exchanges to have continents of size [MIN:MAX]
+        _buildContinentsFirstPass(); // This will create continents of mostly 2 states, but more is possible
+        _computeContinentsNeighbors();
+        _reduceContinentsNumber();
     }
 
     private void _buildContinentsFirstPass()
@@ -458,109 +511,137 @@ public partial class MapManager : Node
             if(seed.continentID != -1)
                 continue; // already bound to a continent
 
-            _spreadNewContinentFrom(seed.id);
+            _spreadNewContinentFrom(seed);
         }
     }
 
-    private void _spreadNewContinentFrom(int seedID)
+    private void _spreadNewContinentFrom(State _seedState)
     {
-        int continentID = continents.Count;
-        continents.Add(new(continentID));
-        List<int> addList = new(){seedID}; // width first graph run
-
-        Continent currentContinent = continents[continents.Count - 1];
-
-        while(addList.Count > 0 && currentContinent.stateIDs.Count < CONTINENT_MIN_SIZE )
+        State nghb = null;
+        if(_seedState.neighbors.Count == 0)
         {
-            // Take state with less neighbors
-            State currentState = _getStateByStateID(addList[0]);
-            addList.RemoveAt(0);
-            if(currentState.continentID != -1)
+            // State is an island, get closest state by sea, create continent with it or join created continent.
+            // Add bridge: No distance limitations
+            nghb = _findClosestSeaNeighbor(_seedState, out float distance, out Vector2I points);
+            if(nghb == null)
             {
-                // add currentContinent to the neighbors of the one we found
-                continents[currentState.continentID].addContinentNeighbor(continentID); // won't add duplicates
-                // add the continent we found to the neigbhors of the current
-                currentContinent.addContinentNeighbor(currentState.continentID); // won't add duplicates
-                continue; // this one already belongs to another continent
+                GD.PrintErr("MapManager._spreadNewContinentFrom failed to find sea connection");
+                return;
             }
-            // Add to continent
-            currentContinent.addState(currentState.id);
-            currentState.setContinentID(continentID);
-            // Add all its neighbors to list
-            if(currentState.neighbors.Count == 0)
+            nghb.neighbors.Add(_seedState.id);
+            _seedState.neighbors.Add(nghb.id);
+            ownerPlanet.askBridgeCreation(points);
+        }
+        else
+        {
+            // Else seed state has neighbors:
+            // Find the on with most shared boundaries and join or create continent
+            nghb = _findStateWithMostSharedBorders(_seedState, false);
+            if(nghb == null)
             {
-                // Island State
-                State closest = _findClosestSeaNeighbor(currentState, out float distance, out Vector2I points);
-                currentState.neighbors.Add(closest.id);
-                closest.neighbors.Add(currentState.id);
-                ownerPlanet.askBridgeCreation(points);
+                GD.PrintErr("MapManager._spreadNewContinentFrom failed to find most shared border");
+                return;
+            }
+        }
 
-                if(closest.continentID != -1)
-                {
-                    // closest state already part of a continent, so merge with it and leave
-                    Continent closestContinent = _getContinentByID(closest.continentID);
-                    closestContinent.absorbContinent(currentContinent, _getStateByStateID);
-                    foreach(int nghbID in currentContinent.neighborsContinentIDs)
-                        _getContinentByID(nghbID).swapNeighborIndex(currentContinent.index, closestContinent.index);
-                    continents.Remove(currentContinent);
-                    return;
-                }
-                else
-                    addList.Add(closest.id);
+        if(nghb.continentID == -1)
+        {
+            // Create Continent, add both
+            Continent c = _getNewContinent(continents.Count);
+            nghb.setContinentID(c.id);
+            c.addState(nghb.id);
+            _seedState.setContinentID(c.id);
+            c.addState(_seedState.id);
+        }
+        else
+        {
+            // Join Continent
+            Continent c = _getContinentByID(nghb.continentID);
+            c.addState(_seedState.id);
+            _seedState.setContinentID(c.id);
+        }
+    }
+
+    private void _computeContinentsNeighbors()
+    {
+        foreach(Continent c in continents)
+        {
+            c.computeNeighbors(_getStateByStateID);
+        }
+    }
+
+    private void _reduceContinentsNumber()
+    {
+        // Sort continents IDs by number of neighbors
+        List<int> orderedContinentIds = new();
+        continents.ForEach(c => orderedContinentIds.Add(c.id)); // not yet ordered
+
+        // List is now ordered
+        while(orderedContinentIds.Count > 0)
+        {
+            // Reorder each time as merges can drastically change neibhor counts for many continents
+            orderedContinentIds.Sort((idA, idB) => 
+            {
+                Continent a = _getContinentByID(idA);
+                Continent b = _getContinentByID(idB);
+                return a.neighborsContinentIDs.Count - b.neighborsContinentIDs.Count;
+            });
+
+            // current continent has the lowest (or equal) neighbors
+            Continent current = _getContinentByID(orderedContinentIds[0]);
+            GD.Print("Evaluating Continent_" + orderedContinentIds[0]);
+            orderedContinentIds.RemoveAt(0);
+
+            if(current.stateIDs.Count >= CONTINENT_MIN_SIZE)
+            {
+                // Continent has reached nice size, it won't merge on its own
+                continue;
+            }
+
+            Continent merger = null;
+            if(current.neighborsContinentIDs.Count == 0)
+            {
+                // Island Continent, merge with closest
+                State closest = _findClosestSeaNeighbor(current, out float _, out Vector2I points, out State ownState);
+                merger = _getContinentByID(closest.continentID);
+                ownerPlanet.askBridgeCreation(points);
+                closest.neighbors.Add(ownState.id);
+                ownState.neighbors.Add(closest.id);
             }
             else
             {
-                foreach(int stateID in currentState.neighbors)
+                // Find continent with most shared borders
+                Dictionary<int, int > bordersPerContinentsID = _computeSharedBoundaries(current);
+                int maxSharedBorder = 0;
+                int mergerIndex = -1;
+                foreach(int id in bordersPerContinentsID.Keys)
                 {
-                    if(addList.Contains(stateID) || currentContinent.stateIDs.Contains(stateID))
-                        continue;
-                    addList.Add(stateID);
+                    if(mergerIndex == -1 || maxSharedBorder < bordersPerContinentsID[id])
+                    {
+                        mergerIndex = id;
+                        maxSharedBorder = bordersPerContinentsID[id];
+                    }
                 }
+                
+                if(mergerIndex == -1)
+                {
+                    GD.PrintErr("Could not merge by borders in MapManager.ReduceContinentsNumber");
+                    continue;
+                }
+                merger = _getContinentByID(mergerIndex);
             }
 
-            if(addList.Count == 0 && currentContinent.stateIDs.Count < CONTINENT_MIN_SIZE)
-            {
-                // Means we're on a island continent, we need to find the closest state by sea, and continue there
-                float minDistance = 0.0f;
-                State from = null;
-                State closest = null;
-                Vector2I points = new();
-                foreach(int stateID in currentContinent.stateIDs)
-                {
-                    State s = _getStateByStateID(stateID);
-                    State closestCandidate = _findClosestSeaNeighbor(s, out float distance, out Vector2I pointsCandidate);
+            Continent newContinent = _mergeContinents(current, merger);
+            orderedContinentIds.Remove(merger.id);
 
-                    if(closest == null || minDistance > distance)
-                    {
-                        points = pointsCandidate;
-                        closest = closestCandidate;
-                        minDistance = distance;
-                        from = s;
-                    }
-                }
+            if(newContinent.stateIDs.Count < CONTINENT_MIN_SIZE)
+                orderedContinentIds.Add(newContinent.id);
+        }
 
-                if(closest != null)
-                {
-                    ownerPlanet.askBridgeCreation(points);
-                    closest.neighbors.Add(from.id);
-                    from.neighbors.Add(closest.id);
-
-                    if(closest.continentID != -1)
-                    {
-                        // Main land we connected to is already a registered continent, directly merge with it and leave function
-                        Continent closestContinent = _getContinentByID(closest.continentID);
-                        closestContinent.absorbContinent(currentContinent, _getStateByStateID);
-                        foreach(int nghbID in currentContinent.neighborsContinentIDs)
-                            _getContinentByID(nghbID).swapNeighborIndex(currentContinent.index, closestContinent.index);
-                        continents.Remove(currentContinent);
-                        return;
-                    }
-                    else
-                    {
-                        addList.Add(closest.id);
-                    }
-                }
-            }
+        GD.Print("Finished continent merging at " + continents.Count + " continents:");
+        foreach(Continent c in continents)
+        {
+            GD.Print("Continent_" + c.id + "(" + c.stateIDs.Count + ")");
         }
     }
 
@@ -608,9 +689,35 @@ public partial class MapManager : Node
         }
     }
 
+    private State _findClosestSeaNeighbor(Continent _continent, out float _distance, out Vector2I _verticesFullMapIndices, out State _ownState)
+    {
+        _distance = 0.0f;
+        _verticesFullMapIndices = new(-1, -1);
+        State closest = null;
+        _ownState = null;
+
+        foreach(int stateID in _continent.stateIDs)
+        {
+            State s = _getStateByStateID(stateID);
+            if(s.shores.Count == 0)
+                continue;
+            
+            State candidate = _findClosestSeaNeighbor(s, out float dist, out Vector2I points, _continent.stateIDs);
+            
+            if(closest == null || _distance > dist)
+            {
+                closest = candidate;
+                _distance = dist;
+                _verticesFullMapIndices = points;
+                _ownState = s;
+            }
+        }
+
+        return closest;
+    }
 
     // This will ignore all land direct and indirect neighbors
-    private State _findClosestSeaNeighbor(State _state, out float _distance, out Vector2I _verticesFullMapIndices)
+    private State _findClosestSeaNeighbor(State _state, out float _distance, out Vector2I _verticesFullMapIndices, in List<int> _preBlackListedStateIDs = null)
     {
         _distance = -1.0f;
         _verticesFullMapIndices = new(-1, -1);
@@ -628,6 +735,8 @@ public partial class MapManager : Node
             return null;
 
         List<int> blackListIDs = landMassesStatesIndices[_state.landMassID];
+        if(_preBlackListedStateIDs != null)
+            blackListIDs.AddRange(_preBlackListedStateIDs); // Don't care about duplicates, as we only use CONTAINS on this
 
         State closest = null;
 

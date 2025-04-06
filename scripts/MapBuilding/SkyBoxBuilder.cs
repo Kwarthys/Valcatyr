@@ -19,6 +19,8 @@ public partial class SkyBoxBuilder : Node
     private Gradient starColors;
     [Export]
     private Gradient cloudColors;
+    [Export]
+    private bool debugLightGeneration;
 
     public override void _Ready()
     {
@@ -27,16 +29,24 @@ public partial class SkyBoxBuilder : Node
         Image img = Image.CreateEmpty(WIDTH, HEIGHT, false, Image.Format.Rgb8);
         img.Fill(Colors.Black);
 
-        // Generating clouds takes 10 times more time than stars, due to many perlin nosie sampling and not ignoring top and bottom part, where many points overlap
-        float usecStart = Time.GetTicksUsec();
-        // making use of Alpha by layering clouds and stars
-        _starPass(ref img, 0.4f);
-        _cloudPass(ref img, 0.5f);
-        _starPass(ref img, 0.3f);
-        _cloudPass(ref img, 1.3f);
-        _cloudPass(ref img, 2.8f);
-        _starPass(ref img, 0.1f);
-        GD.Print("Creating Skybox image took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
+        if(debugLightGeneration)
+        {
+            _starPass(ref img, 1.0f);
+        }
+        else
+        {
+            // Generating clouds takes 10 times more time than stars, due to many perlin nosie sampling and not ignoring top and bottom part, where many points overlap
+            float usecStart = Time.GetTicksUsec();
+            // making use of Alpha by layering clouds and stars
+            _starPass(ref img, 0.4f);
+            _cloudPass(ref img, 0.5f);
+            _starPass(ref img, 0.3f);
+            _cloudPass(ref img, 1.3f);
+            _cloudPass(ref img, 2.8f);
+            _starPass(ref img, 0.1f);
+            GD.Print("Creating Skybox image took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
+        }
+
 
         Texture2D tex= ImageTexture.CreateFromImage(img);
         shader.SetShaderParameter("skyPanorama", tex);

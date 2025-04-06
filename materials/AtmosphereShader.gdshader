@@ -3,8 +3,8 @@ render_mode unshaded;
 
 const vec2 sphereCenter = vec2(0.5, 0.5);
 
-const float atmFadeOut = 0.38;		// Both will have to change with zoom level (when it happens)
-const float atmFadeStart = 0.35;	// They will be made uniforms and set from script
+const float atmFadeOut = 0.43;		// Both will have to change with zoom level (when it happens)
+const float atmFadeStart = 0.40;	// They will be made uniforms and set from script
 // (or just set uniform zoom and compute ?)
 
 float inlerp(float a, float b, float v)

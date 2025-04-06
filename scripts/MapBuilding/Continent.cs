@@ -7,9 +7,9 @@ public class Continent
 {
     public List<int> stateIDs { get; private set;} = new();
     public List<int> neighborsContinentIDs {get; private set;} = new();
-    public int index {get; private set;}
+    public int id {get; private set;}
 
-    public Continent(int _id) { index = _id; }
+    public Continent(int _id) { id = _id; }
 
     public bool addState(int stateID)
     {
@@ -27,28 +27,43 @@ public class Continent
         return true;
     }
 
+    public void computeNeighbors(Func<int, State> _getStateByID)
+    {
+        foreach(int stateID in stateIDs)
+        {
+            State s = _getStateByID(stateID);
+            foreach(int nghbStateID in s.neighbors)
+            {
+                State nghbState = _getStateByID(nghbStateID);
+                if(nghbState.continentID == id)
+                    continue; // Don't care about neighbors inside continent
+                addContinentNeighbor(nghbState.continentID); // won't allow duplicates
+            }
+        }
+    }
+
     public void absorbContinent(Continent toAbsorb, Func<int, State> _getStateByID)
     {
         foreach(int stateID in toAbsorb.stateIDs)
         {
             State s = _getStateByID(stateID);
-            s.setContinentID(index);
+            s.setContinentID(id);
             addState(stateID);
         }
 
         foreach(int continentID in toAbsorb.neighborsContinentIDs)
         {
-            if(continentID != index)
+            if(continentID != id)
                 addContinentNeighbor(continentID); // won't allow duplicates
         }
     }
 
-    public void swapNeighborIndex(int from, int to)
+    public void swapNeighborIndex(int _from, int _to)
     {
-        if(neighborsContinentIDs.Contains(from))
+        if(neighborsContinentIDs.Contains(_from))
         {
-            neighborsContinentIDs.Remove(from);
-            addContinentNeighbor(to); // won't allow duplicates
+            neighborsContinentIDs.Remove(_from);
+            addContinentNeighbor(_to); // won't allow duplicates
         }
     }
 }
