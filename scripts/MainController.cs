@@ -5,8 +5,12 @@ using System.Diagnostics;
 
 public partial class MainController : Node3D
 {
-    public override void _Ready()
-    {
+    [Export]
+    private Planet planet;
 
-    }    
+    private GameManager gameManager;
+    public void notifyPlanetGenerationComplete()
+    {
+        gameManager = new(planet);
+    }
 }

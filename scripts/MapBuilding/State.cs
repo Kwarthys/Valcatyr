@@ -11,7 +11,6 @@ public class State
     public List<int> shores = new(); // Indices of nodes in Land with water as neighbor
     public int id = -1;
     public int continentID {get; private set;} = -1;
-    public int playerID = -1;
     public int landMassID = -1; // Continents may contain multiple islands, land mass only cares about direct land neighbors
 
     public static int comapreStateSize(State _a, State _b)

@@ -10,7 +10,11 @@ using System.Transactions;
 public partial class Planet : MeshInstance3D
 {
     [Export]
+    private MainController mainController;
+
+    [Export]
     public  BridgeBuilder bridgeBuilder {get; private set;}
+
     public const int SIDE_TOP = 0;
     public const int SIDE_BACK = 1;
     public const int SIDE_LEFT = 2;
@@ -50,7 +54,7 @@ public partial class Planet : MeshInstance3D
 
     Dictionary<int, Vector3> trianglesNormalsPerVertex = new(); // ease normals computation by registering triangles as we go
 
-    MapManager mapManager;
+    public MapManager mapManager;
 
     public const int MAP_SIZE = FACE_WIDTH * FACE_HEIGHT * SIDE_COUNT + CORNERS_COUNT;
 
@@ -121,6 +125,7 @@ public partial class Planet : MeshInstance3D
         forwards[SIDE_BOT] = Vector3.Back;
 
         float usecStart = Time.GetTicksUsec();
+
         for(int sideIndex = 0; sideIndex < SIDE_COUNT; ++sideIndex)
         {
             _appendSurface(ups[sideIndex], forwards[sideIndex], sideIndex);
@@ -129,6 +134,7 @@ public partial class Planet : MeshInstance3D
         _appendCorners(ups, forwards);
         _stichFacesAndCorners();
         _assignNormals();
+
         GD.Print("Creating Planet took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
 
         mapManager = new(this);
@@ -136,6 +142,8 @@ public partial class Planet : MeshInstance3D
         
         Callable callable = new(this, MethodName.setMesh);
         callable.Call();
+
+        mainController.notifyPlanetGenerationComplete();
     }
 
     public void notifySelectVertex(int _vertexIndex)
@@ -158,6 +166,30 @@ public partial class Planet : MeshInstance3D
         int x = (int)(Mathf.Clamp(uv.X, 0.0f, 1.0f) * (FACE_WIDTH - 1));
         int y = (int)(Mathf.Clamp(uv.Y, 0.0f, 1.0f) * (FACE_HEIGHT - 1));
         return side * FACE_SIZE + x + y * FACE_WIDTH;
+    }
+
+    public bool getVertexAndNormal(int _vertexID, out Vector3 _vertex, out Vector3 _normal)
+    {
+        _vertex = Vector3.Zero;
+        _normal = Vector3.Zero;
+        if(_vertexID < 0 || _vertexID >= MAP_SIZE)
+        {
+            GD.PrintErr("Planet.getVertexAndNormal was asked invalid vertex: " + _vertexID);
+            return false;
+        }
+        _vertex = vertices[_vertexID];
+        _normal = normals[_vertexID];
+        return true;
+    }
+
+    public Vector3 getVertex(int _vertexID)
+    {
+        if(_vertexID < 0 || _vertexID >= MAP_SIZE)
+        {
+            GD.PrintErr("Planet.getVertex was asked invalid vertex: " + _vertexID);
+            return Vector3.Zero;
+        }
+        return vertices[_vertexID];
     }
 
     public bool tryGetVertex(int _vertexID, out Vector3 _vertex)
