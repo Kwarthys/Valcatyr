@@ -10,11 +10,12 @@ public class Country
     public int playerID = -1;
     public int stateID = -1;
     public List<ReferencePoint> referencePoints = new();
+    public int troops = 0;
 }
 
 public struct ReferencePoint
 {
-    public ReferencePoint(Vector3 _vertex, Vector3 _normal) { worldPos = _vertex; normal = _normal; }
+    public ReferencePoint(Vector3 _vertex, Vector3 _normal) { vertex = _vertex; normal = _normal; } // All local to planet
     public Vector3 normal;
-    public Vector3 worldPos;
+    public Vector3 vertex;
 }

@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=21 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/test_shader_material.tres" id="2_4fh88"]
@@ -6,15 +6,16 @@
 [ext_resource type="Script" path="res://scripts/CameraRotator.gd" id="4_1mtfn"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/BridgeBuilder.cs" id="4_yu05o"]
 [ext_resource type="Material" uid="uid://y5bil6ynkqr7" path="res://materials/AtmosphereMaterial.tres" id="5_3hgdn"]
+[ext_resource type="Script" path="res://scripts/GameManagement/TroopDisplayManager.cs" id="5_aytuo"]
 [ext_resource type="Script" path="res://scripts/PlanetInputManager.cs" id="5_qons3"]
+[ext_resource type="PackedScene" uid="uid://dnry3u2p0r6da" path="res://prefabs/level1Pawn.tscn" id="6_6k61a"]
 [ext_resource type="Material" uid="uid://cypmok4bg16vl" path="res://materials/SkyBoxMaterial.tres" id="6_73edm"]
+[ext_resource type="PackedScene" uid="uid://cjux8np2ds5ot" path="res://prefabs/Level2Pawn.tscn" id="7_7c1ts"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/SkyBoxBuilder.cs" id="9_gnn7f"]
+[ext_resource type="Script" path="res://scripts/GameManagement/GameManager.cs" id="13_37t2g"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_nvriv"]
 radius = 2.0
-
-[sub_resource type="BoxMesh" id="BoxMesh_rqogu"]
-material = ExtResource("2_4fh88")
 
 [sub_resource type="QuadMesh" id="QuadMesh_onmyu"]
 size = Vector2(6, 6)
@@ -42,18 +43,21 @@ metadata/_snap_count = 12
 _data = [Vector2(0.1, 0), 0.0, 0.0, 0, 0, Vector2(0.4, 1), 0.775511, 0.0, 0, 1, Vector2(1, 1), 0.0, 0.0, 1, 0]
 point_count = 3
 
-[node name="Node3D" type="Node3D" node_paths=PackedStringArray("planet")]
-script = ExtResource("1_sm8de")
-planet = NodePath("Planet")
+[node name="Node3D" type="Node3D"]
 
 [node name="Planet" type="MeshInstance3D" parent="." node_paths=PackedStringArray("mainController", "bridgeBuilder")]
 material_override = ExtResource("2_4fh88")
 script = ExtResource("2_hkox7")
-mainController = NodePath("..")
+mainController = NodePath("../Managers/MainController")
 bridgeBuilder = NodePath("BridgeBuilder")
 
 [node name="BridgeBuilder" type="Node3D" parent="Planet"]
 script = ExtResource("4_yu05o")
+
+[node name="TroopDisplayManager" type="Node3D" parent="Planet"]
+script = ExtResource("5_aytuo")
+level1PawnScene = ExtResource("6_6k61a")
+level2PawnScene = ExtResource("7_7c1ts")
 
 [node name="ClickCollider" type="Area3D" parent="Planet" node_paths=PackedStringArray("planet", "camera")]
 script = ExtResource("5_qons3")
@@ -65,14 +69,7 @@ shape = SubResource("SphereShape3D_nvriv")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 9.11442)
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.3, 0, 0, 0.255416)
-mesh = SubResource("BoxMesh_rqogu")
-
-[node name="MeshInstance3D2" type="MeshInstance3D" parent="."]
-transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0)
-mesh = SubResource("BoxMesh_rqogu")
+shadow_enabled = true
 
 [node name="CameraHorizontalHelper" type="Node3D" parent="."]
 script = ExtResource("4_1mtfn")
@@ -102,3 +99,14 @@ starColors = SubResource("Gradient_hdbyp")
 cloudColors = SubResource("Gradient_stbvo")
 debugLightGeneration = true
 cloudsNoiseToAlpha = SubResource("Curve_3lt5j")
+
+[node name="Managers" type="Node" parent="."]
+
+[node name="MainController" type="Node" parent="Managers" node_paths=PackedStringArray("planet", "gameManager")]
+script = ExtResource("1_sm8de")
+planet = NodePath("../../Planet")
+gameManager = NodePath("../GameManager")
+
+[node name="GameManager" type="Node" parent="Managers" node_paths=PackedStringArray("troopManager")]
+script = ExtResource("13_37t2g")
+troopManager = NodePath("../../Planet/TroopDisplayManager")

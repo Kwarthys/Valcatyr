@@ -589,7 +589,7 @@ public partial class MapManager : Node
 
             // current continent has the lowest (or equal) neighbors
             Continent current = _getContinentByID(orderedContinentIds[0]);
-            GD.Print("Evaluating Continent_" + orderedContinentIds[0]);
+            //GD.Print("Evaluating Continent_" + orderedContinentIds[0]);
             orderedContinentIds.RemoveAt(0);
 
             if(current.stateIDs.Count >= CONTINENT_MIN_SIZE)
@@ -638,11 +638,11 @@ public partial class MapManager : Node
                 orderedContinentIds.Add(newContinent.id);
         }
 
-        GD.Print("Finished continent merging at " + continents.Count + " continents:");
-        foreach(Continent c in continents)
-        {
-            GD.Print("Continent_" + c.id + "(" + c.stateIDs.Count + ")");
-        }
+        //GD.Print("Finished continent merging at " + continents.Count + " continents:");
+        //foreach(Continent c in continents)
+        //{
+        //    GD.Print("Continent_" + c.id + "(" + c.stateIDs.Count + ")");
+        //}
     }
 
     private void _computeLandMassesStates()

@@ -1,0 +1,125 @@
+using Godot;
+using System;
+using System.Collections.Generic;
+
+public partial class TroopDisplayManager : Node3D
+{
+    [Export]
+    private PackedScene level1PawnScene;
+    [Export]
+    private PackedScene level2PawnScene;
+
+    private Dictionary<int, TroopsData> troopsPerState = new();
+
+    public const int PAWN_FACTORISATION_COUNT = 10; // one level 2 PAWN will be worth this value of level 1 pawns
+
+    public void updateDisplay(ref Country _c, int _troopsScore)
+    {
+        if(troopsPerState.ContainsKey(_c.stateID) == false)
+            troopsPerState.Add(_c.stateID, new());
+        TroopsData troops = troopsPerState[_c.stateID];
+
+        int level1Needed = _troopsScore % PAWN_FACTORISATION_COUNT;
+        int level2Needed = _troopsScore / PAWN_FACTORISATION_COUNT; // hard coded 2 pawn type system, will do cleaner if more pawn type is needed
+
+        GD.Print("For Country_" + _c.stateID + " troops:" + _troopsScore + " as " + level2Needed + " + " + level1Needed);
+
+        // Manage level 1 Pawns
+        if(level1Needed > troops.level1Pawns.Count)
+        {
+            // Spawn levelones
+            _spawnLevelOnes(level1Needed - troops.level1Pawns.Count, ref _c);
+        }
+        else if(level1Needed < troops.level1Pawns.Count)
+        {
+            // Destroy levelones
+            _destroyPawnsIn(troops.level1Pawns.Count - level1Needed, ref troops.level1Pawns);
+        }
+
+        // Manage level 2 Pawns
+        if(level2Needed > troops.level2Pawns.Count)
+        {
+            // Spawn leveltwos
+            _spawnLevelTwos(level2Needed - troops.level2Pawns.Count, ref _c);
+        }
+        else if(level2Needed < troops.level2Pawns.Count)
+        {
+            // Destroy leveltwos
+            _destroyPawnsIn(troops.level2Pawns.Count - level2Needed, ref troops.level2Pawns);
+        }
+
+        troops.troops = _troopsScore;
+    }
+
+    private void _spawnLevelOnes(int _n, ref Country _c)
+    {
+        List<PawnData> pawns = troopsPerState[_c.stateID].level1Pawns;
+        _spawnPawn(_n, level1PawnScene, pawns, _c.referencePoints);
+    }
+
+    private void _spawnLevelTwos(int _n, ref Country _c)
+    {
+        List<PawnData> pawns = troopsPerState[_c.stateID].level2Pawns;
+        _spawnPawn(_n, level2PawnScene, pawns, _c.referencePoints);
+    }
+
+    private int _spawnPawn(int _n, PackedScene _pawnScene, List<PawnData> _spawnedPawns, List<ReferencePoint> _points)
+    {
+        List<int> ids = new();
+        for(int i = 0; i < _points.Count; ++i) ids.Add(i);
+        _spawnedPawns.ForEach((data) => ids.Remove(data.referencePointIndex)); // remove already taken reference points
+
+        for(int i = 0; i < _n; ++i)
+        {
+            int index = ids[(int)(GD.Randf() * ids.Count)];
+            ReferencePoint p = _points[index];
+
+            Node3D pawn = _pawnScene.Instantiate<Node3D>();
+            AddChild(pawn);
+            pawn.Position = ToGlobal(p.vertex);
+            Vector3 localForward = new(GD.Randf(), GD.Randf(), GD.Randf());
+            localForward = localForward.Normalized().Cross(p.normal);
+            pawn.LookAt(ToGlobal(p.vertex + localForward), ToGlobal(p.normal));
+
+            PawnData pawnData = new();
+            pawnData.instance = pawn;
+            pawnData.referencePointIndex = index;
+            _spawnedPawns.Add(pawnData);
+            ids.Remove(index);
+
+            if(ids.Count == 0)
+            {
+                GD.PrintErr("TroopDisplayManager._spawnPawn Ran out of ReferncePoints");
+                return i+1; // returning how many we could create. If not zero, issue occured
+            }
+        }
+        return _n;
+    }
+
+    private void _destroyPawnsIn(int _n, ref List<PawnData> _list)
+    {
+        if(_n >= _list.Count)
+            _n = _list.Count;
+        
+        for(int i = 0; i < _n; ++i)
+        {
+            int index = (int)(GD.Randf() * (_list.Count - 1));
+            RemoveChild(_list[index].instance);
+            _list.RemoveAt(index);
+        }
+    }
+
+    struct TroopsData
+    {
+        public TroopsData() { troops = 0; level1Pawns = new(); level2Pawns = new(); }
+        public int troops;
+        public List<PawnData> level1Pawns;
+        public List<PawnData> level2Pawns;
+    }
+
+    struct PawnData
+    {
+        public Node3D instance;
+        public int referencePointIndex;
+    }
+}

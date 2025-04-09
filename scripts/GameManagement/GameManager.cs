@@ -1,26 +1,31 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
-public class GameManager
+public partial class GameManager : Node
 {
+    [Export]
+    private TroopDisplayManager troopManager;
+
     private Planet planet = null;
 
     private List<Country> countries = new();
-
-    private const int PAWN_FACTORISATION_COUNT = 10; // 1 level 2 PAWN will be worth this value of level 1 pawns
     private const float REFERENCE_POINTS_MINIMAL_DISTANCE = 0.002f; // Minimal distance that must exist between any two reference points of same state
-    public GameManager(Planet _planet)
+
+    public void initialize(Planet _planet)
     {
         planet = _planet;
         _initializeCountries();
+        countries.ForEach((c) => {c.troops = (int)(GD.Randf() * 50.0 + 1); troopManager.updateDisplay(ref c, c.troops); });
     }
 
     private void _initializeCountries()
     {
         foreach(State s in planet.mapManager.states)
         {
-            Country c = new();
+            countries.Add(new());
+            Country c = countries.Last();
             c.stateID = s.id;
 
             // Find reference points, that will later be used to spawn Pawns
@@ -35,19 +40,19 @@ public class GameManager
                 float minDist = REFERENCE_POINTS_MINIMAL_DISTANCE * (1.0f - (loops / 20) * 0.1f); // reduce minimal distance over time to avoid infinite loops
                 if(loops%20 == 0)
                 {
-                    GD.Print("points dist reduced to " + minDist);
+                    //GD.Print("points dist reduced to " + minDist);
                     blackListed.Clear();
                 }
 
                 // Always keep list full, either for first loop or to replace removed point
                 int intLoops = 0;
-                while(pointIndices.Count < PAWN_FACTORISATION_COUNT + 2) // more reference point to add diversity
+                while(pointIndices.Count < TroopDisplayManager.PAWN_FACTORISATION_COUNT + 2) // more reference point to add diversity
                 {
                     intLoops++;
                     float localMinDist = minDist * (1.0f - (intLoops / 20) * 0.1f); // reduce minimal distance AGAIN over time to avoid infinite loops
                     if(intLoops%20 == 0)
                     {
-                        GD.Print("ShoreDist reduced to " + localMinDist);
+                        //GD.Print("ShoreDist reduced to " + localMinDist);
                         blackListed.Clear();
                     }
                     int indexCandidate = s.land[(int)(GD.Randf() * (s.land.Count-1))].fullMapIndex;
@@ -106,11 +111,8 @@ public class GameManager
                 {
                     planet.getVertexAndNormal(index, out Vector3 vertex, out Vector3 normal);
                     c.referencePoints.Add(new(vertex, normal));
-                    planet.setUVYAtIndex(index, 1.0f);
                 }
             }
         }
-
-        planet.setMesh(); // apply UV changes
     }
 }

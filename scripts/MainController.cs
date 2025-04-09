@@ -3,14 +3,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-public partial class MainController : Node3D
+public partial class MainController : Node
 {
     [Export]
     private Planet planet;
 
+    [Export]
     private GameManager gameManager;
+    
     public void notifyPlanetGenerationComplete()
     {
-        gameManager = new(planet);
+        gameManager.initialize(planet);
     }
 }

@@ -4,9 +4,6 @@ using System.Collections.Generic;
 
 public partial class BridgeBuilder : Node
 {
-    [Export]
-    public PackedScene planetScene { get; set;}
-
     private const float BRIDGE_VERTEX_PER_LENGTH = 75.0f;
     private const float BRIDGE_WIDTH = 0.02f;
     private const float BRIDGE_HEIGHT = 0.01f;
