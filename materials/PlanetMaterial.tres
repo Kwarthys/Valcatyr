@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" load_steps=5 format=3 uid="uid://67pefqa2e6rn"]
 
-[ext_resource type="Shader" path="res://materials/test_shader_material.gdshader" id="1_8fp2e"]
+[ext_resource type="Shader" path="res://materials/PlanetShader.gdshader" id="1_8fp2e"]
 
 [sub_resource type="Gradient" id="Gradient_t75fb"]
 
@@ -20,4 +20,5 @@ shader = ExtResource("1_8fp2e")
 shader_parameter/shallowWaterColor = Color(0.4, 0.6, 0.9, 1)
 shader_parameter/deepWaterColor = Color(0, 0, 0.392157, 1)
 shader_parameter/waveWaterColor = Color(0.652941, 0.774857, 0.958164, 1)
+shader_parameter/STRIPES_SCROLL_SPEED = 40.0
 shader_parameter/waterNoise = SubResource("NoiseTexture3D_rcdwe")

@@ -13,16 +13,16 @@ public partial class TroopDisplayManager : Node3D
 
     public const int PAWN_FACTORISATION_COUNT = 10; // one level 2 PAWN will be worth this value of level 1 pawns
 
-    public void updateDisplay(ref Country _c, int _troopsScore)
+    public void updateDisplay(ref Country _c)
     {
         if(troopsPerState.ContainsKey(_c.stateID) == false)
             troopsPerState.Add(_c.stateID, new());
+
+        int troopScore = _c.troops;
+        int level1Needed = troopScore % PAWN_FACTORISATION_COUNT;
+        int level2Needed = troopScore / PAWN_FACTORISATION_COUNT; // hard coded 2 pawn type system, will do cleaner if more pawn type is needed
+
         TroopsData troops = troopsPerState[_c.stateID];
-
-        int level1Needed = _troopsScore % PAWN_FACTORISATION_COUNT;
-        int level2Needed = _troopsScore / PAWN_FACTORISATION_COUNT; // hard coded 2 pawn type system, will do cleaner if more pawn type is needed
-
-        GD.Print("For Country_" + _c.stateID + " troops:" + _troopsScore + " as " + level2Needed + " + " + level1Needed);
 
         // Manage level 1 Pawns
         if(level1Needed > troops.level1Pawns.Count)
@@ -48,7 +48,7 @@ public partial class TroopDisplayManager : Node3D
             _destroyPawnsIn(troops.level2Pawns.Count - level2Needed, ref troops.level2Pawns);
         }
 
-        troops.troops = _troopsScore;
+        troops.troops = troopScore;
     }
 
     private void _spawnLevelOnes(int _n, ref Country _c)
@@ -76,9 +76,9 @@ public partial class TroopDisplayManager : Node3D
 
             Node3D pawn = _pawnScene.Instantiate<Node3D>();
             AddChild(pawn);
-            pawn.Position = ToGlobal(p.vertex);
-            Vector3 localForward = new(GD.Randf(), GD.Randf(), GD.Randf());
-            localForward = localForward.Normalized().Cross(p.normal);
+            pawn.Position = p.vertex;
+            Vector3 localForward = new(p.normal.Y, -p.normal.X, 0.0f); // A specific permutation of normal vector that create a perpendical vector from it
+            localForward = localForward.Rotated(p.normal, GD.Randf() * Mathf.Tau); // Rotate forward randomly around normal
             pawn.LookAt(ToGlobal(p.vertex + localForward), ToGlobal(p.normal));
 
             PawnData pawnData = new();

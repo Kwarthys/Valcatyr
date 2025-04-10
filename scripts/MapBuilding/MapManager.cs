@@ -52,25 +52,30 @@ public partial class MapManager : Node
         _buildTexture();
     }
 
-    public void selectStateOfVertex(int _vertexID)
+    public State getStateOfVertex(int _vertexID)
     {
         if(_vertexID < 0 || _vertexID >= map.Length)
-            return;
+            return null;
+        int stateID = map[_vertexID].stateID;
+        if(stateID < 0) // Exclude Water(-1) and rogue islands(-2)
+            return null;
+        return _getStateByStateID(stateID);
+    }
 
-        MapNode n = map[_vertexID];
+    public void selectStateOfVertex(int _vertexID)
+    {
+        State toSelect = getStateOfVertex(_vertexID);
+
         List<int> updatedStates = new();
-        if(n.stateID >= 0)
+        if(toSelect.id >= 0)
         {
-            GD.Print("Selected State_" + n.stateID + " part of Continent_" + n.continentID);
-
-            updatedStates.Add(n.stateID);
-            State s = _getStateByStateID(n.stateID);
-            _setStateYUV(s, STATE_SELECTED_UV_VALUE);
-            foreach(int stateID in s.neighbors)
+            updatedStates.Add(toSelect.id);
+            _setStateYUV(toSelect, STATE_SELECTED_UV_VALUE);
+            foreach(int stateID in toSelect.neighbors)
             {
                 updatedStates.Add(stateID);
                 State nghb = _getStateByStateID(stateID);
-                _setStateYUV(nghb, s.continentID == nghb.continentID ? STATE_ALLY_UV_VALUE : STATE_ENEMY_UV_VALUE);
+                _setStateYUV(nghb, toSelect.continentID == nghb.continentID ? STATE_ALLY_UV_VALUE : STATE_ENEMY_UV_VALUE);
             }
         }
 
@@ -240,8 +245,6 @@ public partial class MapManager : Node
                 continue;
             c.swapNeighborIndex(giver.id, receiver.id);
         }
-
-        GD.Print("Merged Continent_" + receiver.id + " to Continent_" + giver.id);
 
         continents.Remove(giver);
         return receiver;

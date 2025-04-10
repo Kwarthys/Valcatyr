@@ -50,7 +50,7 @@ public partial class Planet : MeshInstance3D
     List<Color> colors = new();
 
     ArrayMesh arrayMesh;
-    Godot.Collections.Array surfaceArrays;
+    Godot.Collections.Array surfaceArrays = new();
 
     Dictionary<int, Vector3> trianglesNormalsPerVertex = new(); // ease normals computation by registering triangles as we go
 
@@ -62,6 +62,7 @@ public partial class Planet : MeshInstance3D
 
     public override void _Ready()
     {
+        surfaceArrays.Resize((int)Mesh.ArrayType.Max);
         generateMesh();
     }
 
@@ -77,14 +78,20 @@ public partial class Planet : MeshInstance3D
 
     public void setMesh()
     {
-        surfaceArrays = new();
-        surfaceArrays.Resize((int)Mesh.ArrayType.Max);
+        if((refreshFlags & REFRESH_FLAG_VERTICES) != 0)
+            surfaceArrays[(int)Mesh.ArrayType.Vertex] = vertices.ToArray();
 
-        surfaceArrays[(int)Mesh.ArrayType.Vertex] = vertices.ToArray();
-        surfaceArrays[(int)Mesh.ArrayType.TexUV] = uvs.ToArray();
-        surfaceArrays[(int)Mesh.ArrayType.Normal] = normals.ToArray();
-        surfaceArrays[(int)Mesh.ArrayType.Index] = indices.ToArray();
-        surfaceArrays[(int)Mesh.ArrayType.Color] = colors.ToArray();
+        if((refreshFlags & REFRESH_FLAG_UVS) != 0)
+            surfaceArrays[(int)Mesh.ArrayType.TexUV] = uvs.ToArray();
+
+        if((refreshFlags & REFRESH_FLAG_NORMALS) != 0)
+            surfaceArrays[(int)Mesh.ArrayType.Normal] = normals.ToArray();
+
+        if((refreshFlags & REFRESH_FLAG_INDICES) != 0)
+            surfaceArrays[(int)Mesh.ArrayType.Index] = indices.ToArray();
+
+        if((refreshFlags & REFRESH_FLAG_COLORS) != 0)
+            surfaceArrays[(int)Mesh.ArrayType.Color] = colors.ToArray();
 
         arrayMesh = new();
         arrayMesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, surfaceArrays);
@@ -93,6 +100,8 @@ public partial class Planet : MeshInstance3D
         ShaderMaterial mat = (ShaderMaterial)GetActiveMaterial(0);
         mat.SetShaderParameter("customTexture", mapManager.tex);
         mat.SetShaderParameter("shallowWaterColor", MapManager.shallowSeaColor);
+
+        refreshFlags = REFRESH_FLAG_NONE;
     }
 
     public void generateMesh()
@@ -139,17 +148,13 @@ public partial class Planet : MeshInstance3D
 
         mapManager = new(this);
         mapManager.RegisterMap(map);
+
+        refreshFlags = REFRESH_FLAG_ALL;
         
         Callable callable = new(this, MethodName.setMesh);
         callable.Call();
 
         mainController.notifyPlanetGenerationComplete();
-    }
-
-    public void notifySelectVertex(int _vertexIndex)
-    {
-        mapManager.selectStateOfVertex(_vertexIndex);
-        setMesh(); // Reseting the full mesh seems brutally overkill only to apply UVs (i.e. display selection), but that'll do for now
     }
 
     /// <summary>
@@ -229,6 +234,8 @@ public partial class Planet : MeshInstance3D
             uvs[_index] = new(uvs[_index].X, _value);
         else
             GD.PrintErr("Planet.setUVYAtIndex UV out of bounds");
+
+        askUVRefresh();
     }
 
     private void _appendSurface(Vector3 _localUp, Vector3 _localForward, int side)
@@ -697,17 +704,6 @@ public partial class Planet : MeshInstance3D
             pointOnSphere *= 1.0f + Mathf.Max(0.0f, noiseValue - SEA_LEVEL);
             pointOnSphere *= PLANET_RADIUS;
 
-/*
-            // Latitude computation
-            float latitude = 0.0f;
-            if(pointOnSphere.X == 0.0f && pointOnSphere.Z == 0.0f)
-                latitude = Mathf.Pi * 0.5f * Mathf.Sign(pointOnSphere.Y);
-            else
-            {
-                Vector3 comparativeVector = new(pointOnSphere.X, 0.0f, pointOnSphere.Z);
-                latitude = comparativeVector.AngleTo(pointOnSphere) * Mathf.Sign(pointOnSphere.Y);
-            }
-*/
             map[vertices.Count] = noiseValue; // Register in complete height map (it contains all the faces) Keep it sync with the other arrays
             uvs.Add(new(noiseValue - SEA_LEVEL, 0)); // storing height on UV x for shader - later in the process, selection state will be in y
             vertices.Add(pointOnSphere);
@@ -741,4 +737,20 @@ public partial class Planet : MeshInstance3D
         trianglesNormalsPerVertex[indexB] += triangleNormal;
         trianglesNormalsPerVertex[indexC] += triangleNormal;
     }
+
+    private byte refreshFlags = 0;
+    private const byte REFRESH_FLAG_VERTICES = 0b1;
+    private const byte REFRESH_FLAG_NORMALS = 0b10;
+    private const byte REFRESH_FLAG_INDICES = 0b100;
+    private const byte REFRESH_FLAG_UVS = 0b1000;
+    private const byte REFRESH_FLAG_COLORS = 0b10000;
+    private const byte REFRESH_FLAG_ALL = 0b11111;
+    private const byte REFRESH_FLAG_NONE = 0;
+
+    public void askVerticesRefresh() { refreshFlags |= REFRESH_FLAG_VERTICES; }
+    public void askNormalsRefresh() { refreshFlags |= REFRESH_FLAG_NORMALS; }
+    public void askIndicesRefresh() { refreshFlags |= REFRESH_FLAG_INDICES; }
+    public void askUVRefresh() { refreshFlags |= REFRESH_FLAG_UVS; }
+    public void askColorsRefresh() { refreshFlags |= REFRESH_FLAG_COLORS; }
+    public void askFullRefresh() { refreshFlags |= REFRESH_FLAG_ALL; }
 }

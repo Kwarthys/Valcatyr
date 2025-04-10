@@ -5,14 +5,22 @@ using System.Collections.Generic;
 public partial class PlanetInputManager : Area3D
 {
     [Export]
-    public Planet planet {get; set;}
+    private Planet planet;
+
+    [Export]
+    public GameManager gameManager;
+    
     [Export]
     public Camera3D camera {get; set;}
 
     public override void _PhysicsProcess(double _dt)
     {
-        if(Input.IsActionJustPressed("Primary"))
+        bool primary = Input.IsActionJustPressed("Primary");
+        bool secondary = Input.IsActionJustPressed("Secondary");
+        if(primary || secondary)
         {
+            GameManager.PlanetInteraction interaction = primary ? GameManager.PlanetInteraction.Primary : GameManager.PlanetInteraction.Secondary;
+
             Vector2 mousePos = GetViewport().GetMousePosition();
             Vector3 from = camera.ProjectRayOrigin(mousePos);
             Vector3 to = from + camera.ProjectRayNormal(mousePos) * 5.0f;
@@ -23,7 +31,10 @@ public partial class PlanetInputManager : Area3D
             var result = spaceState.IntersectRay(query);
 
             if(result.Count == 0)
+            {
+                gameManager.onPlanetInteraction(interaction, -1);
                 return;
+            }
 
             Vector3 worldHitPos = (Vector3)result["position"];
             Vector3 planetLocalHitPos = planet.ToLocal(worldHitPos);
@@ -31,7 +42,7 @@ public partial class PlanetInputManager : Area3D
             int nearClicIndex = _dichotomyNarrowSearch(planetLocalHitPos); // narrow down vertex index via dichotomy. Output will be near actual vertex clicked
             nearClicIndex = _findClosestIndexViaNeighbors(nearClicIndex, planetLocalHitPos); // this is the one clicked ! (i.e. closest to clic position)
 
-            planet.notifySelectVertex(nearClicIndex);
+            gameManager.onPlanetInteraction(interaction, nearClicIndex);
         }
     }
 

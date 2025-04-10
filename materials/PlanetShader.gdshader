@@ -8,6 +8,8 @@ uniform vec4 shallowWaterColor : source_color;
 uniform vec4 deepWaterColor : source_color;
 uniform vec4 waveWaterColor : source_color;
 
+uniform float STRIPES_SCROLL_SPEED = 50.0;
+
 varying flat vec3 passedColor;
 varying vec3 vertexWorldPos;
 
@@ -47,7 +49,7 @@ void fragment()
 		ROUGHNESS = 0.5;
 		
 		// add layer for state selection ,via UV.y
-		// UV 0: nothing, 1: Selected(white), 2: Friend(gold), -1: Enemy(Violet)
+		// UV 0: nothing, 1: Selected(white), 2: Friend(Green), -1: Enemy(Red)
 		if(UV.y > 0.5 || UV.y < -0.5)
 		{
 			float stripes = FRAGCOORD.x - FRAGCOORD.y;
@@ -60,13 +62,13 @@ void fragment()
 				stripes = FRAGCOORD.x + FRAGCOORD.y;  // Reversed stripes
 			}
 			float interval = VIEWPORT_SIZE.y * 0.05;
+			stripes += mod(TIME * STRIPES_SCROLL_SPEED, interval);
 			float fillRatio = 0.6;
 			float selectedMixAmount = step(mod(stripes, interval) / (interval - 1.0), fillRatio);
 			float timeFactor = (0.5 * cos(TIME * PI)) + 0.5; // cos from -1 1 to 0 1
 			ALBEDO = mix(ALBEDO, highlightColor, selectedMixAmount * timeFactor * 0.8 + 0.1);
 			//ALBEDO = highlightColor; // useful for debug
 		}
-
 	}
 	else
 	{

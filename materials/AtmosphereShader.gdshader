@@ -19,6 +19,6 @@ void fragment()
 	float xDist = (sphereCenter.x - UV.x) * (sphereCenter.x - UV.x); // squaredDistances
 	float yDist = (sphereCenter.x - UV.y) * (sphereCenter.x - UV.y);
 	float sqrDist = xDist + yDist;
-	
+
 	ALPHA = clamp(inlerp(atmFadeOut, atmFadeStart, sqrt(sqrDist)), 0.0, 1.0);
 }

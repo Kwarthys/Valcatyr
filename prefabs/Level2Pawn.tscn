@@ -1,4 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://cjux8np2ds5ot"]
+[gd_scene load_steps=4 format=3 uid="uid://cjux8np2ds5ot"]
+
+[ext_resource type="Script" path="res://scripts/utils/AltitudeWobbler.gd" id="1_4sjgn"]
 
 [sub_resource type="PrismMesh" id="PrismMesh_fleth"]
 size = Vector3(0.05, 0.05, 0.05)
@@ -10,10 +12,18 @@ height = 0.005
 
 [node name="Level2Pawn" type="Node3D"]
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-transform = Transform3D(-1, 8.74228e-08, 0, -8.74228e-08, -1, 0, 0, 0, 1, 0, 0.119062, 0)
-mesh = SubResource("PrismMesh_fleth")
+[node name="Holder" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.168641, 0)
+script = ExtResource("1_4sjgn")
+frequency = 0.2
+amplitude = 0.02
 
-[node name="MeshInstance3D2" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.143889, 0)
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Holder"]
+transform = Transform3D(-1, 8.74228e-08, 0, -8.74228e-08, -1, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("PrismMesh_fleth")
+skeleton = NodePath("../..")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="Holder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.00943032, 0)
 mesh = SubResource("CylinderMesh_m7056")
+skeleton = NodePath("../..")

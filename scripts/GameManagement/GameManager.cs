@@ -10,6 +10,8 @@ public partial class GameManager : Node
 
     private Planet planet = null;
 
+    public enum GameState { WaitTurn, Deploy, Attack, Reinforce };
+
     private List<Country> countries = new();
     private const float REFERENCE_POINTS_MINIMAL_DISTANCE = 0.002f; // Minimal distance that must exist between any two reference points of same state
 
@@ -17,7 +19,38 @@ public partial class GameManager : Node
     {
         planet = _planet;
         _initializeCountries();
-        countries.ForEach((c) => {c.troops = (int)(GD.Randf() * 50.0 + 1); troopManager.updateDisplay(ref c, c.troops); });
+        countries.ForEach((c) => {c.troops = 1; troopManager.updateDisplay(ref c); });
+    }
+
+    public enum PlanetInteraction { Primary, Secondary }
+    public void onPlanetInteraction(PlanetInteraction _type, int _vertexClicked)
+    {
+        State s = planet.mapManager.getStateOfVertex(_vertexClicked);
+        if(s == null)
+        {
+            // Clicked off any state
+            GD.Print("ClickedOUT");
+            return;
+        }
+        else
+        {
+            Country c = _getCountryByStateID(s.id);
+            switch(_type)
+            {
+                case PlanetInteraction.Primary: c.troops += 1; break;
+                case PlanetInteraction.Secondary: c.troops = Mathf.Max(1, c.troops - 1); break;
+            }
+            troopManager.updateDisplay(ref c);
+        }
+    }
+
+    private Country _getCountryByStateID(int _id)
+    {
+        foreach(Country c in countries)
+        {
+            if(c.stateID == _id) return c;
+        }
+        return null;
     }
 
     private void _initializeCountries()
