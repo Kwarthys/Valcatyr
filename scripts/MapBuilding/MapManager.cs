@@ -787,6 +787,19 @@ public partial class MapManager : Node
             ownerPlanet.setUVYAtIndex(node.fullMapIndex, _value);
         }
     }
+
+    public void setStateSelected(State _s)
+    {
+        _setStateYUV(_s, STATE_SELECTED_UV_VALUE);
+    }
+    public void setStatehighlightAlly(State _s)
+    {
+        _setStateYUV(_s, STATE_ALLY_UV_VALUE);
+    }
+    public void setStateHighlightEnemy(State _s)
+    {
+        _setStateYUV(_s, STATE_ENEMY_UV_VALUE);
+    }
 }
 
 public class MapNode // this is not a struct only because i could not bother create a constructor for all those members

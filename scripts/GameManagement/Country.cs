@@ -8,7 +8,7 @@ using System.Collections.Generic;
 public class Country
 {
     public int playerID = -1;
-    public int stateID = -1;
+    public State state = null;
     public List<ReferencePoint> referencePoints = new();
     public int troops = 0;
 }

@@ -13,53 +13,53 @@ public partial class TroopDisplayManager : Node3D
 
     public const int PAWN_FACTORISATION_COUNT = 10; // one level 2 PAWN will be worth this value of level 1 pawns
 
-    public void updateDisplay(ref Country _c)
+    public void updateDisplay(Country _c)
     {
-        if(troopsPerState.ContainsKey(_c.stateID) == false)
-            troopsPerState.Add(_c.stateID, new());
+        if(troopsPerState.ContainsKey(_c.state.id) == false)
+            troopsPerState.Add(_c.state.id, new());
 
         int troopScore = _c.troops;
         int level1Needed = troopScore % PAWN_FACTORISATION_COUNT;
         int level2Needed = troopScore / PAWN_FACTORISATION_COUNT; // hard coded 2 pawn type system, will do cleaner if more pawn type is needed
 
-        TroopsData troops = troopsPerState[_c.stateID];
+        TroopsData troops = troopsPerState[_c.state.id];
 
         // Manage level 1 Pawns
         if(level1Needed > troops.level1Pawns.Count)
         {
             // Spawn levelones
-            _spawnLevelOnes(level1Needed - troops.level1Pawns.Count, ref _c);
+            _spawnLevelOnes(level1Needed - troops.level1Pawns.Count, _c);
         }
         else if(level1Needed < troops.level1Pawns.Count)
         {
             // Destroy levelones
-            _destroyPawnsIn(troops.level1Pawns.Count - level1Needed, ref troops.level1Pawns);
+            _destroyPawnsIn(troops.level1Pawns.Count - level1Needed, troops.level1Pawns);
         }
 
         // Manage level 2 Pawns
         if(level2Needed > troops.level2Pawns.Count)
         {
             // Spawn leveltwos
-            _spawnLevelTwos(level2Needed - troops.level2Pawns.Count, ref _c);
+            _spawnLevelTwos(level2Needed - troops.level2Pawns.Count, _c);
         }
         else if(level2Needed < troops.level2Pawns.Count)
         {
             // Destroy leveltwos
-            _destroyPawnsIn(troops.level2Pawns.Count - level2Needed, ref troops.level2Pawns);
+            _destroyPawnsIn(troops.level2Pawns.Count - level2Needed, troops.level2Pawns);
         }
 
         troops.troops = troopScore;
     }
 
-    private void _spawnLevelOnes(int _n, ref Country _c)
+    private void _spawnLevelOnes(int _n, Country _c)
     {
-        List<PawnData> pawns = troopsPerState[_c.stateID].level1Pawns;
+        List<PawnData> pawns = troopsPerState[_c.state.id].level1Pawns;
         _spawnPawn(_n, level1PawnScene, pawns, _c.referencePoints);
     }
 
-    private void _spawnLevelTwos(int _n, ref Country _c)
+    private void _spawnLevelTwos(int _n, Country _c)
     {
-        List<PawnData> pawns = troopsPerState[_c.stateID].level2Pawns;
+        List<PawnData> pawns = troopsPerState[_c.state.id].level2Pawns;
         _spawnPawn(_n, level2PawnScene, pawns, _c.referencePoints);
     }
 
@@ -96,7 +96,7 @@ public partial class TroopDisplayManager : Node3D
         return _n;
     }
 
-    private void _destroyPawnsIn(int _n, ref List<PawnData> _list)
+    private void _destroyPawnsIn(int _n, List<PawnData> _list)
     {
         if(_n >= _list.Count)
             _n = _list.Count;

@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=25 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://cjux8np2ds5ot" path="res://prefabs/Level2Pawn.tscn" id="7_7c1ts"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/SkyBoxBuilder.cs" id="9_gnn7f"]
 [ext_resource type="Script" path="res://scripts/GameManagement/GameManager.cs" id="13_37t2g"]
+[ext_resource type="Script" path="res://scripts/GameUI.cs" id="14_bob1v"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_nvriv"]
 radius = 2.0
@@ -43,7 +44,16 @@ metadata/_snap_count = 12
 _data = [Vector2(0.1, 0), 0.0, 0.0, 0, 0, Vector2(0.4, 1), 0.775511, 0.0, 0, 1, Vector2(1, 1), 0.0, 0.0, 1, 0]
 point_count = 3
 
-[node name="Node3D" type="Node3D"]
+[sub_resource type="Theme" id="Theme_e8o0g"]
+default_font_size = 50
+
+[sub_resource type="Theme" id="Theme_bsgaf"]
+default_font_size = 25
+
+[sub_resource type="Theme" id="Theme_5n5qb"]
+default_font_size = 25
+
+[node name="SceneRoot" type="Node3D"]
 
 [node name="Planet" type="MeshInstance3D" parent="." node_paths=PackedStringArray("mainController", "bridgeBuilder")]
 material_override = ExtResource("2_4fh88")
@@ -111,3 +121,67 @@ gameManager = NodePath("../GameManager")
 [node name="GameManager" type="Node" parent="Managers" node_paths=PackedStringArray("troopManager")]
 script = ExtResource("13_37t2g")
 troopManager = NodePath("../../Planet/TroopDisplayManager")
+
+[node name="GameUI" type="Control" parent="." node_paths=PackedStringArray("primaryText", "secondaryText", "endTurnButton")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("14_bob1v")
+primaryText = NodePath("MainLabel")
+secondaryText = NodePath("SecondaryLabel")
+endTurnButton = NodePath("Button")
+
+[node name="MainLabel" type="RichTextLabel" parent="GameUI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -46.0
+offset_right = 46.0
+offset_bottom = 23.0
+grow_horizontal = 2
+localize_numeral_system = false
+theme = SubResource("Theme_e8o0g")
+bbcode_enabled = true
+text = "[b]BIEN LE BJR[/b]"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="SecondaryLabel" type="RichTextLabel" parent="GameUI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -40.0
+offset_top = 71.7
+offset_right = 40.0
+offset_bottom = 111.7
+grow_horizontal = 2
+theme = SubResource("Theme_bsgaf")
+bbcode_enabled = true
+text = "HELLO"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="Button" type="Button" parent="GameUI"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -112.0
+offset_top = -55.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 0
+grow_vertical = 0
+theme = SubResource("Theme_5n5qb")
+text = "End Phase"
+
+[connection signal="pressed" from="GameUI/Button" to="Managers/GameManager" method="onEndTurnButtonPressed"]

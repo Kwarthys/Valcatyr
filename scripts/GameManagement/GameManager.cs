@@ -10,16 +10,143 @@ public partial class GameManager : Node
 
     private Planet planet = null;
 
-    public enum GameState { WaitTurn, Deploy, Attack, Reinforce };
+    public enum GameState { Deploy, Attack, Reinforce };
+    public GameState gameState {get; private set;} = GameState.Deploy;
 
     private List<Country> countries = new();
     private const float REFERENCE_POINTS_MINIMAL_DISTANCE = 0.002f; // Minimal distance that must exist between any two reference points of same state
+
+    private int activePlayer = 0;
+    private List<Player> players = new();
+
+    public int reinforcementLeft {get; private set;} = 0;
+    public int movementLeft {get; private set;} = 0;
 
     public void initialize(Planet _planet)
     {
         planet = _planet;
         _initializeCountries();
-        countries.ForEach((c) => {c.troops = 1; troopManager.updateDisplay(ref c); });
+        countries.ForEach((c) => {c.troops = 1; troopManager.updateDisplay(c); });
+
+        for(int i = 0; i < 4; ++i)
+        {
+            players.Add(new(i));
+            if(i == 0)
+                players[0].isHuman = true; // only one human for now, need game setup menu for local turn based versus
+        }
+
+        _doCountriesRandomAttributions();
+
+        activePlayer = -1; // to start at 0
+        _startNextPlayerTurn();
+    }
+
+/*
+    public override void _Process(double delta)
+    {
+        if(players[activePlayer].isHuman == false)
+        {
+            // only treat IA here, as humans play with mouse
+        }
+    }
+*/
+
+    public void askReinforce(Country _c)
+    {
+        if(gameState != GameState.Deploy)
+        {
+            GD.PrintErr("GameManager.askReinforce called outisde ouf deployment phase");
+            return;
+        }
+        if(players[activePlayer].id == _c.playerID && reinforcementLeft > 0)
+        {
+            reinforcementLeft--;
+            _c.troops += 1;
+            troopManager.updateDisplay(_c);
+
+            if(reinforcementLeft == 0)
+            {
+                _startAttackPhase();
+            }
+            else
+            {
+                _setSecondaryDisplay();
+            }
+        }
+    }
+
+    private void _startAttackPhase()
+    {
+        // triggered by button for player, and call by AI
+        gameState = GameState.Attack;
+        _setPhaseDisplay();
+        _setSecondaryDisplay();
+    }
+
+    private void _startReinforcePhase()
+    {
+        gameState = GameState.Reinforce;
+        movementLeft = 3;
+        _setPhaseDisplay();
+        _setSecondaryDisplay();
+
+        foreach(Country c in players[activePlayer].countries)
+        {
+            planet.mapManager.setStatehighlightAlly(c.state);
+        }
+        planet.setMesh();
+    }
+
+    private void _startNextPlayerTurn()
+    {
+        // End of reinforcement phase by button for player, call by AI
+        movementLeft = 0; // Not forced to use all
+
+        gameState = GameState.Deploy;
+        activePlayer = (activePlayer + 1) % players.Count;
+        reinforcementLeft = 8; // should depend on controlled states and continent count
+        _setPhaseDisplay();
+        _setSecondaryDisplay();
+    }
+
+    public string getGameStateAsString()
+    {
+        switch(gameState)
+        {
+            case GameState.Deploy: return "Deployment Phase";
+            case GameState.Attack: return "Attack Phase";
+            case GameState.Reinforce: return "Reinforcement Phase";
+        }
+        return "<invalid>";
+    }
+
+    public string getActivePlayerAsString()
+    {
+        Player active = players[activePlayer];
+        string s = active.isHuman ? "Player " : "Bot ";
+        return s + (activePlayer+1);
+    }
+
+    private void _setPhaseDisplay()
+    {
+        GameUI.Instance?.setPrimary(GameUI.makeBold(getActivePlayerAsString()) + ": " + getGameStateAsString());
+    }
+
+    private void _setSecondaryDisplay()
+    {
+        string s = "";
+        switch(gameState)
+        {
+            case GameState.Deploy: s = reinforcementLeft + " reinforcement left to place."; break;
+            case GameState.Attack: break;
+            case GameState.Reinforce: s = movementLeft + " troop movement left."; break;
+        }
+        GameUI.Instance?.setSecondary(s);
+    }
+
+    public void onEndTurnButtonPressed()
+    {
+        GD.Print("CLIC");
     }
 
     public enum PlanetInteraction { Primary, Secondary }
@@ -30,25 +157,58 @@ public partial class GameManager : Node
         {
             // Clicked off any state
             GD.Print("ClickedOUT");
+
+            // TODO: hacky for now as i don't have a proper start signal
+            _setPhaseDisplay();
+            _setSecondaryDisplay();
             return;
         }
         else
         {
-            Country c = _getCountryByStateID(s.id);
-            switch(_type)
+            Country c = _getCountryByState(s);
+            if(players[activePlayer].isHuman)
             {
-                case PlanetInteraction.Primary: c.troops += 1; break;
-                case PlanetInteraction.Secondary: c.troops = Mathf.Max(1, c.troops - 1); break;
+                HumanPlayerManager.processAction(this, c, players[activePlayer]);
             }
-            troopManager.updateDisplay(ref c);
+            // TODO else display data about state (or right clic ?)
         }
     }
 
-    private Country _getCountryByStateID(int _id)
+    private void _doCountriesRandomAttributions()
+    {
+        List<int> countriesIndices = new();
+        for(int i = 0; i < countries.Count; ++i)
+        {
+            countriesIndices.Add(i);
+        }
+
+        int playerToGive = 0;
+        while(countriesIndices.Count > 0)
+        {
+            int countryIndex = countriesIndices[(int)(GD.Randf() * (countriesIndices.Count - 1))];
+            countries[countryIndex].playerID = playerToGive;
+            players[playerToGive].countries.Add(countries[countryIndex]);
+
+            playerToGive = (playerToGive + 1) % players.Count;
+            countriesIndices.Remove(countryIndex);
+        }
+
+        foreach(Player p in players)
+        {
+            string s = p.id + ":";
+            foreach(Country c in p.countries)
+            {
+                s += " S_" + c.state.id;
+            }
+            GD.Print(s);
+        }
+    }
+
+    private Country _getCountryByState(State _s)
     {
         foreach(Country c in countries)
         {
-            if(c.stateID == _id) return c;
+            if(c.state == _s) return c;
         }
         return null;
     }
@@ -59,7 +219,7 @@ public partial class GameManager : Node
         {
             countries.Add(new());
             Country c = countries.Last();
-            c.stateID = s.id;
+            c.state = s;
 
             // Find reference points, that will later be used to spawn Pawns
             List<int> pointIndices = new();
