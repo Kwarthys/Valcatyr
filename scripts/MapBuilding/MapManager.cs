@@ -59,7 +59,7 @@ public partial class MapManager : Node
         int stateID = map[_vertexID].stateID;
         if(stateID < 0) // Exclude Water(-1) and rogue islands(-2)
             return null;
-        return _getStateByStateID(stateID);
+        return getStateByStateID(stateID);
     }
 
     public void selectStateOfVertex(int _vertexID)
@@ -74,7 +74,7 @@ public partial class MapManager : Node
             foreach(int stateID in toSelect.neighbors)
             {
                 updatedStates.Add(stateID);
-                State nghb = _getStateByStateID(stateID);
+                State nghb = getStateByStateID(stateID);
                 _setStateYUV(nghb, toSelect.continentID == nghb.continentID ? STATE_ALLY_UV_VALUE : STATE_ENEMY_UV_VALUE);
             }
         }
@@ -152,14 +152,14 @@ public partial class MapManager : Node
             }
             stateIDs.Add(states[i].id);
         }
-        stateIDs.Sort( (int idA, int idB) => { return State.comapreStateSize(_getStateByStateID(idA), _getStateByStateID(idB)); } );
+        stateIDs.Sort( (int idA, int idB) => { return State.comapreStateSize(getStateByStateID(idA), getStateByStateID(idB)); } );
 
-        while(states.Count >= STATES_COUNT)
+        while(states.Count > STATES_COUNT)
         {
             // Pop the first element (smallest state) and find him a friend to merge with
             int stateID = stateIDs[0];
             stateIDs.RemoveAt(0);
-            State currentState = _getStateByStateID(stateID);
+            State currentState = getStateByStateID(stateID);
             State mergeState = null;
 
             if(currentState.neighbors.Count == 0) // Island state, merge accross sea if distance to closest is below threshold, or make rogue island (non played land)
@@ -200,7 +200,7 @@ public partial class MapManager : Node
                 int smallestNeighborSize = 0;
                 foreach(int nghbID in currentState.neighbors)
                 {
-                    State neighborState = _getStateByStateID(nghbID);
+                    State neighborState = getStateByStateID(nghbID);
                     if(mergeState == null || smallestNeighborSize > neighborState.land.Count)
                     {
                         smallestNeighborSize = neighborState.land.Count;
@@ -220,7 +220,7 @@ public partial class MapManager : Node
             int newStateSize = newState.land.Count;
             for(int i = 0; i < stateIDs.Count; ++i)
             {
-                if(_getStateByStateID(stateIDs[i]).land.Count > newStateSize)
+                if(getStateByStateID(stateIDs[i]).land.Count > newStateSize)
                 {
                     stateIDs.Insert(i, newState.id);
                     inserted = true;
@@ -237,7 +237,7 @@ public partial class MapManager : Node
         Continent receiver = _a.id > _b.id ? _b : _a;
         Continent giver = receiver == _a ? _b : _a;
 
-        receiver.absorbContinent(giver, _getStateByStateID);
+        receiver.absorbContinent(giver, getStateByStateID);
 
         foreach(Continent c in continents)
         {
@@ -263,7 +263,7 @@ public partial class MapManager : Node
         {
             if(neighborIndex != receiver.id)
             {
-                _getStateByStateID(neighborIndex).updateBordersAfterStateMerge(giver.id, receiver.id);
+                getStateByStateID(neighborIndex).updateBordersAfterStateMerge(giver.id, receiver.id);
             }
         }
 
@@ -302,11 +302,11 @@ public partial class MapManager : Node
         return null;
     }
 
-    private State _getStateByStateID(int id)
+    public State getStateByStateID(int id)
     {
         if(id < 0)
         {
-            GD.PrintErr("MapManager._getStateByStateID was aksed negative id : State_" + id);
+            GD.PrintErr("MapManager.getStateByStateID was aksed negative id : State_" + id);
             return null;
         }
 
@@ -315,7 +315,7 @@ public partial class MapManager : Node
             if(s.id == id) return s;
         }
 
-        GD.PrintErr("MapManager._getStateByStateID could not find State_" + id);
+        GD.PrintErr("MapManager.getStateByStateID could not find State_" + id);
         return null;
     }
 
@@ -327,7 +327,7 @@ public partial class MapManager : Node
         int ownBorderSize = _s.land.Count;
         foreach(int neighborID in borderLenghtPerStateID.Keys)
         {
-            State neighborState = _getStateByStateID(neighborID);
+            State neighborState = getStateByStateID(neighborID);
             int sharedBoundaryLength = borderLenghtPerStateID[neighborID];
             float relativeOwnBoundary = sharedBoundaryLength * 1.0f / ownBorderSize;
             if(_bothWays == true)
@@ -374,14 +374,14 @@ public partial class MapManager : Node
         Dictionary<int, int> borderLenghtPerContinentID = new();
         foreach(int stateID in _c.stateIDs)
         {
-            State s = _getStateByStateID(stateID);
+            State s = getStateByStateID(stateID);
             Dictionary<int, int> stateBorderLenghtPerStateID = _computeSharedBoundaries(s);
             foreach(int nghbID in stateBorderLenghtPerStateID.Keys)
             {
                 if(_c.stateIDs.Contains(nghbID) == false)
                 {
                     // Neighboring state is part of another continent
-                    State nghb = _getStateByStateID(nghbID);
+                    State nghb = getStateByStateID(nghbID);
 
                     if(borderLenghtPerContinentID.ContainsKey(nghb.continentID) == false)
                         borderLenghtPerContinentID.Add(nghb.continentID, 0);
@@ -487,7 +487,7 @@ public partial class MapManager : Node
 
     private int _compareStatesNeighbors(int _a, int _b)
     {
-        return State.compareStateNeighborsNumber(_getStateByStateID(_a), _getStateByStateID(_b));
+        return State.compareStateNeighborsNumber(getStateByStateID(_a), getStateByStateID(_b));
     }
 
     private void _buildContinents()
@@ -509,7 +509,7 @@ public partial class MapManager : Node
         while(orderedStates.Count > 0)
         {
             // pop state with less neigbhors
-            State seed = _getStateByStateID(orderedStates[0]);
+            State seed = getStateByStateID(orderedStates[0]);
             orderedStates.RemoveAt(0);
             if(seed.continentID != -1)
                 continue; // already bound to a continent
@@ -569,7 +569,7 @@ public partial class MapManager : Node
     {
         foreach(Continent c in continents)
         {
-            c.computeNeighbors(_getStateByStateID);
+            c.computeNeighbors(getStateByStateID);
         }
     }
 
@@ -670,7 +670,7 @@ public partial class MapManager : Node
             // Scan all states in the scan list, where we add land neigbhors
             while(statesToScan.Count > 0)
             {
-                State state = _getStateByStateID(statesToScan[0]);
+                State state = getStateByStateID(statesToScan[0]);
                 statesToScan.RemoveAt(0);
                 scannedIDs.Add(state.id);
                 state.landMassID = landMassIndex;
@@ -701,7 +701,7 @@ public partial class MapManager : Node
 
         foreach(int stateID in _continent.stateIDs)
         {
-            State s = _getStateByStateID(stateID);
+            State s = getStateByStateID(stateID);
             if(s.shores.Count == 0)
                 continue;
             
@@ -799,6 +799,10 @@ public partial class MapManager : Node
     public void setStateHighlightEnemy(State _s)
     {
         _setStateYUV(_s, STATE_ENEMY_UV_VALUE);
+    }
+    public void resetStateHighlight(State _s)
+    {
+         _setStateYUV(_s, 0.0f);
     }
 }
 

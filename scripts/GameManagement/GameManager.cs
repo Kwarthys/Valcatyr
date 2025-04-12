@@ -8,7 +8,7 @@ public partial class GameManager : Node
     [Export]
     private TroopDisplayManager troopManager;
 
-    private Planet planet = null;
+    public Planet planet{get; private set;} = null;
 
     public enum GameState { Deploy, Attack, Reinforce };
     public GameState gameState {get; private set;} = GameState.Deploy;
@@ -16,11 +16,28 @@ public partial class GameManager : Node
     private List<Country> countries = new();
     private const float REFERENCE_POINTS_MINIMAL_DISTANCE = 0.002f; // Minimal distance that must exist between any two reference points of same state
 
-    private int activePlayer = 0;
+    private int activePlayer = -1;
     private List<Player> players = new();
 
     public int reinforcementLeft {get; private set;} = 0;
     public int movementLeft {get; private set;} = 0;
+    
+    public struct SelectionData
+    {
+        public SelectionData(){enemies = new(); allies = new(); selected = null;}
+        public void removeDuplicateSelected()
+        {
+            if(allies.Contains(selected))
+                allies.Remove(selected);
+            if(enemies.Contains(selected))
+                enemies.Remove(selected);
+        }
+        public List<Country> enemies;
+        public List<Country> allies;
+        public Country selected;
+    }
+
+    public SelectionData currentSelection {get; private set;} = new();
 
     public void initialize(Planet _planet)
     {
@@ -36,9 +53,6 @@ public partial class GameManager : Node
         }
 
         _doCountriesRandomAttributions();
-
-        activePlayer = -1; // to start at 0
-        _startNextPlayerTurn();
     }
 
 /*
@@ -81,6 +95,11 @@ public partial class GameManager : Node
         gameState = GameState.Attack;
         _setPhaseDisplay();
         _setSecondaryDisplay();
+
+        foreach(Country c in players[activePlayer].countries)
+        {
+            planet.mapManager.resetStateHighlight(c.state);
+        }
     }
 
     private void _startReinforcePhase()
@@ -107,6 +126,12 @@ public partial class GameManager : Node
         reinforcementLeft = 8; // should depend on controlled states and continent count
         _setPhaseDisplay();
         _setSecondaryDisplay();
+
+        foreach(Country c in players[activePlayer].countries)
+        {
+            planet.mapManager.setStatehighlightAlly(c.state);
+        }
+        planet.setMesh();
     }
 
     public string getGameStateAsString()
@@ -147,6 +172,7 @@ public partial class GameManager : Node
     public void onEndTurnButtonPressed()
     {
         GD.Print("CLIC");
+        _startNextPlayerTurn();
     }
 
     public enum PlanetInteraction { Primary, Secondary }
@@ -156,22 +182,73 @@ public partial class GameManager : Node
         if(s == null)
         {
             // Clicked off any state
-            GD.Print("ClickedOUT");
-
-            // TODO: hacky for now as i don't have a proper start signal
-            _setPhaseDisplay();
-            _setSecondaryDisplay();
+            // Reset selection
+            if(currentSelection.selected != null)
+            {
+                SelectionData selection = HumanPlayerManager.processSelection(this, null, players[activePlayer]);
+                _applySelection(selection);
+            }
             return;
         }
         else
         {
-            Country c = _getCountryByState(s);
-            if(players[activePlayer].isHuman)
+            Country c = getCountryByState(s);
+            if(_type == PlanetInteraction.Secondary)
             {
-                HumanPlayerManager.processAction(this, c, players[activePlayer]);
+                if(players[activePlayer].isHuman)
+                {
+                    HumanPlayerManager.processAction(this, c, players[activePlayer]);
+                }
             }
-            // TODO else display data about state (or right clic ?)
+            else
+            {
+                SelectionData selection = HumanPlayerManager.processSelection(this, c, players[activePlayer]);
+                _applySelection(selection);
+            }
         }
+    }
+
+    private void _applySelection(SelectionData _selection)
+    {
+        // Remove what is already selection and no longer (or not at the same place) in the new selection
+        List<Country> updateNotNeeded = new(); // keep track of already right highlighted countries
+        foreach(Country c in currentSelection.allies)
+        {
+            if(_selection.allies.Contains(c))
+                updateNotNeeded.Add(c);
+            else
+                planet.mapManager.resetStateHighlight(c.state);
+        }
+        foreach(Country c in currentSelection.enemies)
+        {
+            if(_selection.enemies.Contains(c))
+                updateNotNeeded.Add(c);
+            else
+                planet.mapManager.resetStateHighlight(c.state);
+        }
+
+        if(currentSelection.selected != null)
+        {
+            planet.mapManager.resetStateHighlight(currentSelection.selected.state);
+        }
+
+        // Select new states
+        foreach(Country c in _selection.allies)
+        {
+            if(updateNotNeeded.Contains(c) == false)
+                planet.mapManager.setStatehighlightAlly(c.state);
+        }
+        foreach(Country c in _selection.enemies)
+        {
+            if(updateNotNeeded.Contains(c) == false)
+                planet.mapManager.setStateHighlightEnemy(c.state);
+        }
+
+        if(_selection.selected != null)
+            planet.mapManager.setStateSelected(_selection.selected.state);
+
+        currentSelection = _selection;
+        planet.setMesh();
     }
 
     private void _doCountriesRandomAttributions()
@@ -195,16 +272,11 @@ public partial class GameManager : Node
 
         foreach(Player p in players)
         {
-            string s = p.id + ":";
-            foreach(Country c in p.countries)
-            {
-                s += " S_" + c.state.id;
-            }
-            GD.Print(s);
+            GD.Print("Player_" + p.id + " has " + p.countries.Count + " contries.");
         }
     }
 
-    private Country _getCountryByState(State _s)
+    public Country getCountryByState(State _s)
     {
         foreach(Country c in countries)
         {
