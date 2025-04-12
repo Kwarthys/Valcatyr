@@ -178,6 +178,8 @@ public partial class GameManager : Node
     public enum PlanetInteraction { Primary, Secondary }
     public void onPlanetInteraction(PlanetInteraction _type, int _vertexClicked)
     {
+        planet.mapManager.selectStateOfVertex(_vertexClicked);
+        /*
         State s = planet.mapManager.getStateOfVertex(_vertexClicked);
         if(s == null)
         {
@@ -205,7 +207,7 @@ public partial class GameManager : Node
                 SelectionData selection = HumanPlayerManager.processSelection(this, c, players[activePlayer]);
                 _applySelection(selection);
             }
-        }
+        }*/
     }
 
     private void _applySelection(SelectionData _selection)

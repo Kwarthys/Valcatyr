@@ -2,14 +2,16 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
+using System.Linq;
 using System.Net;
 using System.Reflection.Emit;
 
 public partial class MapManager : Node
 {
-    private Planet ownerPlanet;
+    private Planet planet;
 
     MapNode[] map = new MapNode[Planet.MAP_SIZE];
 
@@ -33,7 +35,7 @@ public partial class MapManager : Node
 
     public static Color shallowSeaColor = new(0.1f, 0.3f, 0.7f);
 
-    public MapManager(Planet _owner){ ownerPlanet = _owner; }
+    public MapManager(Planet _owner){ planet = _owner; }
     public void RegisterMap(float[] planetMap)
     {
         for(int mapIndex = 0; mapIndex < planetMap.Length; ++mapIndex)
@@ -65,10 +67,13 @@ public partial class MapManager : Node
     public void selectStateOfVertex(int _vertexID)
     {
         State toSelect = getStateOfVertex(_vertexID);
+        if(toSelect == null) return;
 
         List<int> updatedStates = new();
         if(toSelect.id >= 0)
         {
+            GD.Print(toSelect);
+            /*
             updatedStates.Add(toSelect.id);
             _setStateYUV(toSelect, STATE_SELECTED_UV_VALUE);
             foreach(int stateID in toSelect.neighbors)
@@ -76,16 +81,16 @@ public partial class MapManager : Node
                 updatedStates.Add(stateID);
                 State nghb = getStateByStateID(stateID);
                 _setStateYUV(nghb, toSelect.continentID == nghb.continentID ? STATE_ALLY_UV_VALUE : STATE_ENEMY_UV_VALUE);
-            }
+            }*/
         }
-
+/*
         states.ForEach(state => 
         {
             if(!updatedStates.Contains(state.id))
             {
                 _setStateYUV(state, 0.0f); // reset
             }
-        });
+        });*/
     }
 
     private void _buildTexture()
@@ -177,7 +182,7 @@ public partial class MapManager : Node
                 {
                     mergeState = nearest;
                     // Spawn a bridge to link the island(s)
-                    ownerPlanet.askBridgeCreation(pointsFullMapIndices);
+                    planet.askBridgeCreation(pointsFullMapIndices);
                     //GD.Print("Island merge between island State_" + currentState.id + " to State_" + mergeState.id);
                 }
                 else
@@ -492,77 +497,319 @@ public partial class MapManager : Node
 
     private void _buildContinents()
     {
-        _buildContinentsFirstPass(); // This will create continents of mostly 2 states, but more is possible
-        _computeContinentsNeighbors();
-        _reduceContinentsNumber();
-    }
-
-    private void _buildContinentsFirstPass()
-    {
+        _smallIslandConnect();
         continents = new();
-        // Find state with less neighbors to seed a continent, sort states by number of neighbors
-        List<int> orderedStates = new();
+        _createContinents();
+    }
+
+    /// <summary>
+    /// Connect islands too small to be independant continent to other land, until enough states are connected.
+    /// Does not create any continents
+    /// </summary>
+    private void _smallIslandConnect()
+    {
+        List<State> treated = new();
         foreach(State s in states)
-            orderedStates.Add(s.id); // not yet ordered
-        orderedStates.Sort(_compareStatesNeighbors);
-
-        while(orderedStates.Count > 0)
         {
-            // pop state with less neigbhors
-            State seed = getStateByStateID(orderedStates[0]);
-            orderedStates.RemoveAt(0);
-            if(seed.continentID != -1)
-                continue; // already bound to a continent
+            if(treated.Contains(s)) continue;
 
-            _spreadNewContinentFrom(seed);
+            List<State> connecteds = _getAllConnectedStatesFrom(s);
+            if(connecteds.Count >= CONTINENT_MIN_SIZE)
+            {
+                treated.AddRange(connecteds); // Will treat those after all the tiny island have been connected
+                continue;
+            }
+
+            while(connecteds.Count < CONTINENT_MIN_SIZE)
+            {
+                List<int> connectedIDs = new();
+                connecteds.ForEach((state) => connectedIDs.Add(state.id));
+                State closest = _findClosestSeaNeighbor(connectedIDs, out float distance, out Vector2I points, out State closestConnected);
+                if(closest == null)
+                {
+                    GD.PrintErr("MapManager._findClosestSeaNeighbor in _smallIslandConnect failed");
+                    break;
+                }
+                // Connect them both
+                planet.askBridgeCreation(points);
+                closest.neighbors.Add(closestConnected.id);
+                closestConnected.neighbors.Add(closest.id);
+                connecteds = _getAllConnectedStatesFrom(s);
+            }
+            treated.AddRange(connecteds);
         }
     }
 
-    private void _spreadNewContinentFrom(State _seedState)
+
+    private void _createContinents()
     {
-        State nghb = null;
-        if(_seedState.neighbors.Count == 0)
+        foreach(State s in states)
         {
-            // State is an island, get closest state by sea, create continent with it or join created continent.
-            // Add bridge: No distance limitations
-            nghb = _findClosestSeaNeighbor(_seedState, out float distance, out Vector2I points);
-            if(nghb == null)
+            if(s.continentID != -1) continue;
+
+            List<State> connecteds = _getAllConnectedStatesFrom(s); // starting state is included in result list
+
+            if(connecteds.Count > CONTINENT_MAX_SIZE)
             {
-                GD.PrintErr("MapManager._spreadNewContinentFrom failed to find sea connection");
-                return;
+                _splitStatesIntoContinents(connecteds);
             }
-            nghb.neighbors.Add(_seedState.id);
-            _seedState.neighbors.Add(nghb.id);
-            ownerPlanet.askBridgeCreation(points);
-        }
-        else
-        {
-            // Else seed state has neighbors:
-            // Find the on with most shared boundaries and join or create continent
-            nghb = _findStateWithMostSharedBorders(_seedState, false);
-            if(nghb == null)
+            else
             {
-                GD.PrintErr("MapManager._spreadNewContinentFrom failed to find most shared border");
-                return;
+                // All connected states can join the same continent
+                continents.Add(new(continents.Count));
+                foreach(State state in connecteds)
+                {
+                    state.setContinentID(continents.Last().id);
+                    continents.Last().addState(state.id);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Use Graph Theory "VertexCut" to create somewhat nice looking continents
+    /// </summary>
+    private void _splitStatesIntoContinents(List<State> _toSplit)
+    {
+        List<VertexCutData> cuts = _tryFindVertexCuts(_toSplit);
+        int originalCount = cuts.Count();
+
+        bool last = false;
+        while(_toSplit.Count > 0)
+        {
+            // Remove unusable cuts, that leave too small parts
+            for(int i = cuts.Count - 1; i >= 0; --i)
+            {
+                VertexCutData cut = cuts[i];
+                string text = cut.ToString();
+                int smallestSide = Mathf.Min(cut.componentA.Count, cut.componentB.Count);
+                if(smallestSide + cut.statesCut.Count < CONTINENT_MIN_SIZE)
+                    cuts.RemoveAt(i);
+            }
+            List<State> statesForContinent = new();
+            if(_toSplit.Count <= CONTINENT_MAX_SIZE || cuts.Count == 0) // cut enough times or did not find possible cuts -> happens for sphere-like continent shapes with high connectivity
+            {
+                // make continent from what's left
+                statesForContinent.AddRange(_toSplit);
+                last = true;
+            }
+            else
+            {
+                // Now find best cut(s)
+                int numberOfContinentsToBuild = _toSplit.Count / CONTINENT_MAX_SIZE + 1;
+                int meanContinentSize = _toSplit.Count / numberOfContinentsToBuild; // This is very theoretical and will be more of a referene than a decision point
+
+                VertexCutData selectedCut = _findBestCut(cuts, meanContinentSize, out bool includeCuts, out bool useSideA);
+                // Do Cut
+                if(useSideA)
+                    statesForContinent.AddRange(selectedCut.componentA);
+                else
+                    statesForContinent.AddRange(selectedCut.componentB);
+                if(includeCuts)
+                    statesForContinent.AddRange(selectedCut.statesCut);
+            }
+
+            continents.Add(new(continents.Count));
+            foreach(State s in statesForContinent)
+            {
+                s.setContinentID(continents.Last().id);
+                continents.Last().addState(s.id);
+                _toSplit.Remove(s);
+            }
+
+            if(last)
+                return; // no need to clean, we're outta here
+
+            // Remove cuts about the part we just cut, to be reusable next round
+            for(int i = cuts.Count - 1; i >= 0; --i)
+            {
+                bool removed = false;
+                VertexCutData cut = cuts[i];
+                foreach(State cutState in cut.statesCut)
+                {
+                    if(statesForContinent.Contains(cutState))
+                    {
+                        cuts.RemoveAt(i);
+                        removed = true;
+                        break;
+                    }
+                }
+                if(!removed) // no need to do that if we removed it
+                {
+                    foreach(State s in statesForContinent)
+                    {
+                        if(cut.componentA.Contains(s))
+                            cut.componentA.Remove(s);
+                        if(cut.componentB.Contains(s))
+                            cut.componentB.Remove(s);
+                    }
+                }
+            }
+        }
+    }
+
+    private VertexCutData _findBestCut(List<VertexCutData> _cuts, int _targetContinentSize, out bool _includeCut, out bool _sideA)
+    {
+        // Find the cut that separate a chunk closest to _targetContinentSize
+        int cutId = -1;
+        int size = -1;
+        int priority = 0; // 1 -> single Cut - 2 -> Double cut : Simple cuts have priority
+        _includeCut = false;
+        _sideA = false;
+        for(int i = 0; i < _cuts.Count; ++i)
+        {
+            int cutSize = _cuts[i].statesCut.Count;
+            int sizeA = _cuts[i].componentA.Count;   // Use one of the 4, the one closest to _targetContinentSize and below CONTINENT MAX SIZE
+            int sizeAWithCut = sizeA + cutSize;
+            int sizeB = _cuts[i].componentB.Count;
+            int sizeBWithCut = sizeB + cutSize;
+            bool sideAHasCuts = false;
+            bool sideBHasCuts = false;
+
+            if(Mathf.Abs(sizeA - _targetContinentSize) > Mathf.Abs(sizeAWithCut - _targetContinentSize) && sizeAWithCut < CONTINENT_MAX_SIZE)
+            {
+                sizeA = sizeAWithCut;
+                sideAHasCuts = true;
+            }
+
+            if(Mathf.Abs(sizeB - _targetContinentSize) > Mathf.Abs(sizeBWithCut - _targetContinentSize) && sizeBWithCut < CONTINENT_MAX_SIZE)
+            {
+                sizeB = sizeBWithCut;
+                sideBHasCuts = true;
+            }
+
+            int candidateSize = 0;
+            bool candidateUseCuts = false;
+            bool candidateUsesA = false;
+            if(Mathf.Abs(sizeA - _targetContinentSize) < Mathf.Abs(sizeB - _targetContinentSize) && sizeA < CONTINENT_MAX_SIZE)
+            {
+                candidateSize = sizeA;
+                candidateUseCuts = sideAHasCuts;
+                candidateUsesA = true;
+            }
+            else
+            {
+                candidateSize = sizeB;
+                candidateUseCuts = sideBHasCuts;
+            }
+
+            bool priorityWins = priority > cutSize;
+            if(cutId == -1                                                                                // If first loop
+            || Mathf.Abs(candidateSize - _targetContinentSize) < Mathf.Abs(size - _targetContinentSize)   // Or if size is better
+            || (candidateSize == size && priorityWins)                                                    // Or if size is same but we have a smaller cut
+            || size > CONTINENT_MAX_SIZE                                                                  // Or current selected size is too large
+            )
+            {
+                size = candidateSize;
+                _includeCut = candidateUseCuts;
+                priority = cutSize;
+                cutId = i;
+                _sideA = candidateUsesA;
+            }
+        }
+        return _cuts[cutId];
+    }
+
+    struct VertexCutData
+    {
+        public List<State> statesCut; // Removing this/these state(s) from graph
+        public List<State> componentA; // results in the graph separated in two components
+        public List<State> componentB; // A and B, which are other states, without the cuts
+        public override string ToString()
+        {
+            string s = "Cut:";
+            foreach(State state in statesCut)
+                s += " " + state.id;
+            s += " spliting graph in " + componentA.Count + " and " + componentB.Count;
+            return s;
+        }
+    }
+
+    private List<VertexCutData> _tryFindVertexCuts(List<State> _graph)
+    {
+        List<VertexCutData> cuts = new();
+
+        List<State> getMissingIn(List<State> _source)
+        {
+            List<State> l = new();
+            foreach(State s in _graph)
+            {
+                if(_source.Contains(s) == false)
+                    l.Add(s);
+            }
+            return l;
+        }
+
+        List<int> singleCuttersToIgnoreInDoubles = new();
+
+        // Single Cuts
+        for(int i = 0; i < _graph.Count; ++i)
+        {
+            State cutCandidate = _graph[i];
+            // do the connectivity search, pretending cutCandidate doesn't exist
+            List<State> connecteds = _getAllConnectedStatesFrom(_graph[i != 0 ? 0 : 1], new(){cutCandidate});
+            if(connecteds.Count == _graph.Count - 1) // removing the cut candidate
+                continue; // state is not a VertexCut, go next
+
+            // State is vertex cut, it splits _graph in two: create a cut data
+            VertexCutData data = new();
+            data.statesCut = new(){cutCandidate};
+            data.componentA = new(connecteds);
+            data.componentB = getMissingIn(connecteds);
+            data.componentB.Remove(cutCandidate);
+            cuts.Add(data);
+            singleCuttersToIgnoreInDoubles.Add(i);
+        }
+
+        // Double cuts -> could do triple but not sure its useful given the size of our continents
+        for(int j = 0; j < _graph.Count; ++j)
+        {
+            for(int i = j+1; i < _graph.Count; ++i)
+            {
+                if(singleCuttersToIgnoreInDoubles.Contains(j) || singleCuttersToIgnoreInDoubles.Contains(i))
+                    continue;
+
+                int starterID = 0;
+                while(starterID == j || starterID == i) starterID++;
+                // Pretend states at j and i don't exist
+                List<State> connecteds = _getAllConnectedStatesFrom(_graph[starterID], new(){_graph[j], _graph[i]});
+                if(connecteds.Count == _graph.Count - 2) // removing the cut candidates
+                    continue; // states are not a VertexCut, go next
+
+                // State is vertex cut, it splits _graph in two: create a cut data
+                VertexCutData data = new();
+                data.statesCut = new(){_graph[j], _graph[i]};
+                data.componentA = new(connecteds);
+                data.componentB = getMissingIn(connecteds);
+                data.componentB.Remove(_graph[j]);
+                data.componentB.Remove(_graph[i]);
+                cuts.Add(data);
             }
         }
 
-        if(nghb.continentID == -1)
+        return cuts;
+    }
+
+    /// <summary>
+    /// Finds all the connected state. When ignoring states, take care not to start from an ignored state, otherwise result will be empty
+    /// </summary>
+    private List<State> _getAllConnectedStatesFrom(State _s, List<State> _ignoredStates = null)
+    {
+        List<State> connecteds = new();
+        Queue<State> toScan = new();
+        toScan.Enqueue(_s);
+        while(toScan.Count > 0)
         {
-            // Create Continent, add both
-            Continent c = _getNewContinent(continents.Count);
-            nghb.setContinentID(c.id);
-            c.addState(nghb.id);
-            _seedState.setContinentID(c.id);
-            c.addState(_seedState.id);
+            State currentState = toScan.Dequeue();
+            if(connecteds.Contains(currentState) || (_ignoredStates != null && _ignoredStates.Contains(currentState)))
+                continue;
+            connecteds.Add(currentState);
+            foreach(int id in currentState.neighbors)
+            {
+                toScan.Enqueue(getStateByStateID(id));
+            }
         }
-        else
-        {
-            // Join Continent
-            Continent c = _getContinentByID(nghb.continentID);
-            c.addState(_seedState.id);
-            _seedState.setContinentID(c.id);
-        }
+        return connecteds;
     }
 
     private void _computeContinentsNeighbors()
@@ -571,81 +818,6 @@ public partial class MapManager : Node
         {
             c.computeNeighbors(getStateByStateID);
         }
-    }
-
-    private void _reduceContinentsNumber()
-    {
-        // Sort continents IDs by number of neighbors
-        List<int> orderedContinentIds = new();
-        continents.ForEach(c => orderedContinentIds.Add(c.id)); // not yet ordered
-
-        // List is now ordered
-        while(orderedContinentIds.Count > 0)
-        {
-            // Reorder each time as merges can drastically change neibhor counts for many continents
-            orderedContinentIds.Sort((idA, idB) => 
-            {
-                Continent a = _getContinentByID(idA);
-                Continent b = _getContinentByID(idB);
-                return a.neighborsContinentIDs.Count - b.neighborsContinentIDs.Count;
-            });
-
-            // current continent has the lowest (or equal) neighbors
-            Continent current = _getContinentByID(orderedContinentIds[0]);
-            //GD.Print("Evaluating Continent_" + orderedContinentIds[0]);
-            orderedContinentIds.RemoveAt(0);
-
-            if(current.stateIDs.Count >= CONTINENT_MIN_SIZE)
-            {
-                // Continent has reached nice size, it won't merge on its own
-                continue;
-            }
-
-            Continent merger = null;
-            if(current.neighborsContinentIDs.Count == 0)
-            {
-                // Island Continent, merge with closest
-                State closest = _findClosestSeaNeighbor(current, out float _, out Vector2I points, out State ownState);
-                merger = _getContinentByID(closest.continentID);
-                ownerPlanet.askBridgeCreation(points);
-                closest.neighbors.Add(ownState.id);
-                ownState.neighbors.Add(closest.id);
-            }
-            else
-            {
-                // Find continent with most shared borders
-                Dictionary<int, int > bordersPerContinentsID = _computeSharedBoundaries(current);
-                int maxSharedBorder = 0;
-                int mergerIndex = -1;
-                foreach(int id in bordersPerContinentsID.Keys)
-                {
-                    if(mergerIndex == -1 || maxSharedBorder < bordersPerContinentsID[id])
-                    {
-                        mergerIndex = id;
-                        maxSharedBorder = bordersPerContinentsID[id];
-                    }
-                }
-                
-                if(mergerIndex == -1)
-                {
-                    GD.PrintErr("Could not merge by borders in MapManager.ReduceContinentsNumber");
-                    continue;
-                }
-                merger = _getContinentByID(mergerIndex);
-            }
-
-            Continent newContinent = _mergeContinents(current, merger);
-            orderedContinentIds.Remove(merger.id);
-
-            if(newContinent.stateIDs.Count < CONTINENT_MIN_SIZE)
-                orderedContinentIds.Add(newContinent.id);
-        }
-
-        //GD.Print("Finished continent merging at " + continents.Count + " continents:");
-        //foreach(Continent c in continents)
-        //{
-        //    GD.Print("Continent_" + c.id + "(" + c.stateIDs.Count + ")");
-        //}
     }
 
     private void _computeLandMassesStates()
@@ -694,18 +866,23 @@ public partial class MapManager : Node
 
     private State _findClosestSeaNeighbor(Continent _continent, out float _distance, out Vector2I _verticesFullMapIndices, out State _ownState)
     {
+        return _findClosestSeaNeighbor(_continent.stateIDs, out _distance, out _verticesFullMapIndices, out _ownState);
+    }
+
+    private State _findClosestSeaNeighbor(List<int> _stateIDs, out float _distance, out Vector2I _verticesFullMapIndices, out State _ownState)
+    {
         _distance = 0.0f;
         _verticesFullMapIndices = new(-1, -1);
         State closest = null;
         _ownState = null;
 
-        foreach(int stateID in _continent.stateIDs)
+        foreach(int stateID in _stateIDs)
         {
             State s = getStateByStateID(stateID);
             if(s.shores.Count == 0)
                 continue;
             
-            State candidate = _findClosestSeaNeighbor(s, out float dist, out Vector2I points, _continent.stateIDs);
+            State candidate = _findClosestSeaNeighbor(s, out float dist, out Vector2I points, _stateIDs);
             
             if(closest == null || _distance > dist)
             {
@@ -725,7 +902,7 @@ public partial class MapManager : Node
         _distance = -1.0f;
         _verticesFullMapIndices = new(-1, -1);
 
-        if(ownerPlanet == null)
+        if(planet == null)
             return null;
 
         if(_state.shores.Count == 0)
@@ -757,7 +934,7 @@ public partial class MapManager : Node
                 {
                     int ourIndex = _state.land[ourLandID].fullMapIndex;
                     int otherIndex = s.land[otherLandID].fullMapIndex;
-                    float distance = ownerPlanet.getSquareDistance(ourIndex, otherIndex);
+                    float distance = planet.getSquareDistance(ourIndex, otherIndex);
                     if(closest == null || _distance > distance)
                     {
                         closest = s;
@@ -784,7 +961,7 @@ public partial class MapManager : Node
     {
         foreach(MapNode node in _state.land)
         {
-            ownerPlanet.setUVYAtIndex(node.fullMapIndex, _value);
+            planet.setUVYAtIndex(node.fullMapIndex, _value);
         }
     }
 

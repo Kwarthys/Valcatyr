@@ -170,4 +170,13 @@ public class State
 
         return true; // Everything is fine
     }
+
+    public override string ToString()
+    {
+        string text = "State_" + id + "(" + land.Count + ") in Continent_" + continentID + ":";
+        foreach(int nghb in neighbors)
+            text += " S_" + nghb;
+        return text;
+    }
+
 }
