@@ -55,6 +55,7 @@ public partial class Planet : MeshInstance3D
     Dictionary<int, Vector3> trianglesNormalsPerVertex = new(); // ease normals computation by registering triangles as we go
 
     public MapManager mapManager;
+    public PlanetNodeFinder nodeFinder;
 
     public const int MAP_SIZE = FACE_WIDTH * FACE_HEIGHT * SIDE_COUNT + CORNERS_COUNT;
 
@@ -146,6 +147,7 @@ public partial class Planet : MeshInstance3D
 
         GD.Print("Creating Planet took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
 
+        nodeFinder = new(this);
         mapManager = new(this);
         mapManager.RegisterMap(map);
 
