@@ -8,8 +8,9 @@ using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Net;
 using System.Reflection.Emit;
+using System.Runtime.Intrinsics.X86;
 
-public partial class MapManager : Node
+public class MapManager
 {
     private Planet planet;
 
@@ -17,10 +18,10 @@ public partial class MapManager : Node
 
     public Texture2D tex {get; private set;}
 
-    private const int STATES_COUNT = 60;
+    private const int STATES_COUNT = 60; // 60 is so cool, can be divided by 2, 3, 4, 5 and 6, and it looks cool on the planet
     private const int MIN_STATE_SIZE = 100;
     private const float MAX_SQUARED_DISTANCE_FOR_STATE_MERGE = 1.5f;
-    private const int MAX_IMAGE_SIZE = 16380; // Max is 16384 but rounding down for reasons (no)
+    private const int MAX_IMAGE_SIZE = 16380; // GODOT Max is 16384 but rounding down for reasons (no)
     private const float STATE_SELECTED_UV_VALUE = 1.0f;
     private const float STATE_ALLY_UV_VALUE = 2.0f;
     private const float STATE_ENEMY_UV_VALUE = -1.0f;
@@ -141,7 +142,6 @@ public partial class MapManager : Node
         _buildTinyStates();
         _computeStatesBoundaries();
         _computeLandMassesStates();
-        Debug.Print("Finished creating tiny states and their boundaries");
         // Then merge most of them until a good amount is reached
         _mergeUntilEnoughStates();
     }
@@ -502,7 +502,7 @@ public partial class MapManager : Node
         _createContinents();
         _computeContinentsNeighbors();
         _connectContinents();
-        //_finalConnectivityCheck();
+        _finalConnectivityCheck();
     }
 
     /// <summary>
@@ -547,7 +547,7 @@ public partial class MapManager : Node
         {
             if(s.continentID != -1) continue;
             List<State> connecteds = _getAllConnectedStatesFrom(s); // starting state is included in result list
-            _createContinentsFromStateGroup(connecteds);
+            _createContinentsFromStateGroup(connecteds, 0);
         }
     }
 
@@ -565,11 +565,17 @@ public partial class MapManager : Node
     /// <summary>
     /// Will handle state creation of a Component, meaning all states given in _group must be connected
     /// </summary>
-    private void _createContinentsFromStateGroup(List<State> _group)
+    private void _createContinentsFromStateGroup(List<State> _group, int depth)
     {
+        if(depth > 10) // just in case
+        {
+            GD.PrintErr("MapManager._createContinentsFromStateGroup reached max recursion count. Last group: " + _group.Count);
+            _createNewContinentFromStateGroup(_group);
+            return;
+        }
         if(_group.Count > CONTINENT_MAX_SIZE)
         {
-            _splitStatesGroup(_group);
+            _splitStatesGroup(_group, depth);
         }
         else
         {
@@ -580,7 +586,7 @@ public partial class MapManager : Node
     /// <summary>
     /// Use Graph Theory "VertexCut" to create somewhat nice looking continents
     /// </summary>
-    private void _splitStatesGroup(List<State> _toSplit)
+    private void _splitStatesGroup(List<State> _toSplit, int depth)
     {
         List<VertexCutData> cuts = _tryFindVertexCuts(_toSplit);
         cuts.ForEach((cut) => _attributeBestComponentToIncludeCut(cut));
@@ -594,7 +600,7 @@ public partial class MapManager : Node
             for(int componentIndex = 0; componentIndex < cut.components.Count; ++componentIndex)
             {
                 int componentSize = cut.components[componentIndex].Count;
-                if(cut.optimalCutComponentIndex == i)
+                if(cut.optimalCutComponentIndex == componentIndex)
                     componentSize += cut.statesCut.Count;
                 if(smallestComponent == -1 || componentSize < smallestComponent)
                     smallestComponent = componentSize;
@@ -602,16 +608,16 @@ public partial class MapManager : Node
             if(smallestComponent < CONTINENT_MIN_SIZE)
                 cuts.RemoveAt(i);
         }
-
         List<State> statesForContinent = new();
-        if(_toSplit.Count <= CONTINENT_MAX_SIZE || cuts.Count == 0) // cut enough times or did not find possible cuts -> happens for sphere-like continent shapes with high connectivity
+        if(_toSplit.Count <= CONTINENT_MAX_SIZE || cuts.Count == 0) // cut enough times or did not find possible cuts -> happens for disc-like continent blobs with high connectivity
         {
             // make continent from what's left
+            GD.PrintErr("Ran out of cuts");
             _createNewContinentFromStateGroup(_toSplit);
             return;
         }
         
-        // Now find best cut(s)
+        // Find best cut(s)
         int numberOfContinentsToBuild = _toSplit.Count / CONTINENT_MAX_SIZE + 1;
         int meanContinentSize = _toSplit.Count / numberOfContinentsToBuild; // This is very theoretical and will be more of a reference than a decision point
 
@@ -622,10 +628,9 @@ public partial class MapManager : Node
             List<State> group = selectedCut.components[i];
             if(selectedCut.optimalCutComponentIndex == i)
             {
-                selectedCut.statesCut.ForEach((s) => setStatehighlightAlly(s));
                 group.AddRange(selectedCut.statesCut);
             }
-            _createContinentsFromStateGroup(group);
+            _createContinentsFromStateGroup(group, depth + 1);
         }
     }
 
@@ -637,6 +642,8 @@ public partial class MapManager : Node
         int priority = 0;   // Number of state(s) cutVertices, lower gets priority
         for(int i = 0; i < _cuts.Count; ++i)
         {
+            if(_cuts[i].optimalCutComponentIndex == -1)
+                GD.PrintErr("Cut in _findBestCut has no optimal cut component");
             int smallestComponentIndex = -1;
             int smallestComponentSize = -1;
             for(int ci = 0; ci < _cuts[i].components.Count; ++ci)
@@ -691,18 +698,29 @@ public partial class MapManager : Node
         _cut.optimalCutComponentIndex = index;
     }
 
-    struct VertexCutData
+    class VertexCutData
     {
-        public VertexCutData(){ statesCut = new(); components = new(); optimalCutComponentIndex = -1;}
-        public List<State> statesCut; // Removing this/these state(s) from graph
-        public List<List<State>> components; // results in the graph separated in two or more components
-        public int optimalCutComponentIndex; // In order to minimize borders between continents, statesCut should be included in the component of that index
+        public List<State> statesCut = new(); // Removing this/these state(s) from graph
+        public List<List<State>> components = new(); // results in the graph separated in two or more components
+        public int optimalCutComponentIndex = -1; // In order to minimize borders between continents, statesCut should be included in the component of that index
         public override string ToString()
         {
             string s = "Cut:";
-            statesCut.ForEach((state) => s += " " + state.id);
-            s += " spliting graph in";
-            components.ForEach((list) => s += " " + list.Count);
+            statesCut.ForEach((state) => s += " S_" + state.id);
+            s += " spliting graph in ";
+            bool first = true;
+            for(int i = 0; i < components.Count; ++i)
+            {
+                if(first == false)
+                    s += ", ";
+                else
+                    first = false;
+                s += components[i].Count;
+                if(optimalCutComponentIndex == i)
+                    s += "(o)";
+            }
+            if(optimalCutComponentIndex == -1)
+                s += "(-o)";
             return s;
         }
 
@@ -744,7 +762,7 @@ public partial class MapManager : Node
             while(_cutters.Contains(starterID)) starterID++; // Don't start with a cutter, result would be empty -> false posititve
             List<State> testVertexCut = new();
             _cutters.ForEach((i) => testVertexCut.Add(_graph[i]));
-            List<State> connecteds = _getAllConnectedStatesFrom(_graph[starterID], testVertexCut);
+            List<State> connecteds = _getAllConnectedStatesFrom(_graph[starterID], testVertexCut, _graph);
             if(connecteds.Count == _graph.Count - testVertexCut.Count) // removing the cut candidates
                 return false; // states are not a VertexCut, go next
 
@@ -759,7 +777,7 @@ public partial class MapManager : Node
             {
                 if(added.Contains(s))
                     continue;
-                data.components.Add(_getAllConnectedStatesFrom(s, testVertexCut));
+                data.components.Add(_getAllConnectedStatesFrom(s, testVertexCut, _graph));
                 added.AddRange(data.components.Last());
             }
             
@@ -866,13 +884,79 @@ public partial class MapManager : Node
     /// </summary>
     private void _finalConnectivityCheck()
     {
-        // TODO rarely needed tho
+        Queue<Continent> continentsToScan = new();
+        List<Continent> scanned = new();
+        List<List<Continent>> components = new();
+
+        //Find first
+        foreach(Continent c in continents)
+        {
+            if(scanned.Contains(c))
+                continue;
+
+            continentsToScan.Enqueue(c);
+            int componentIndex = components.Count;
+            components.Add(new());
+            while(continentsToScan.Count > 0)
+            {
+                Continent current = continentsToScan.Dequeue();
+                if(scanned.Contains(current))
+                    continue;
+                scanned.Add(current);
+                components.Last().Add(current);
+                current.neighborsContinentIDs.ForEach((id) => continentsToScan.Enqueue(_getContinentByID(id)));
+            }
+        }
+
+        if(components.Count == 1)
+        {
+            GD.Print("All continents are already connected"); // Perfect, will happen most of the time with current brides rules
+            return;
+        }
+
+        while(components.Count > 1) // Connect the second component to anything, until only one component is left (i.e. all continents are connected)
+        {
+            List<int> connectedStates = new();
+            components[1].ForEach((c) => connectedStates.AddRange(c.stateIDs));
+            ClosestSeaNeigbhorData data = new();
+            foreach(Continent c in components[1])
+            {
+                data = _findClosestSeaNeighbor(c.stateIDs, connectedStates);
+                if(!data)
+                    continue; // a bummer really, should not happen, but if it does, try with another connected continent (hopefully there's one)
+                break;
+            }
+
+            if(!data)
+            {
+                // Couldn't bridge to another continent, that's bad, actual real bummer
+                GD.PrintErr("Could no bridge continent group to another");
+                return; // get out this infinite loop
+            }
+
+            _doBridge(data);
+            Continent linkedContinent = _getContinentByID(data.closestState.continentID);
+            int componentIndex = 0;
+            for(int i = 0; i < components.Count; ++i)
+            {
+                if(components[i].Contains(linkedContinent))
+                {
+                    componentIndex = i;
+                    break;
+                }
+            }
+
+            // Merge Components to linked
+            components[componentIndex].AddRange(components[1]);
+            components.RemoveAt(1);
+            GD.Print("Connected two continent components");
+        }
     }
 
     /// <summary>
     /// Finds all the connected state. When ignoring states, take care not to start from an ignored state, otherwise result will be empty
     /// </summary>
-    private List<State> _getAllConnectedStatesFrom(State _s, List<State> _ignoredStates = null)
+    private List<State> _getAllConnectedStatesFrom(State _s, List<State> _ignoredStates = null, List<State> _whitelist = null)
     {
         List<State> connecteds = new();
         Queue<State> toScan = new();
@@ -880,7 +964,7 @@ public partial class MapManager : Node
         while(toScan.Count > 0)
         {
             State currentState = toScan.Dequeue();
-            if(connecteds.Contains(currentState) || (_ignoredStates != null && _ignoredStates.Contains(currentState)))
+            if(connecteds.Contains(currentState) || (_ignoredStates != null && _ignoredStates.Contains(currentState)) || (_whitelist != null && _whitelist.Contains(currentState) == false))
                 continue;
             connecteds.Add(currentState);
             foreach(int id in currentState.neighbors)
@@ -1008,7 +1092,7 @@ public partial class MapManager : Node
         // First try to find a bridge without caring for land crossing. Only check final one.
         ClosestSeaNeigbhorData data = _findClosestSeaNeighbor(false, _state, _preBlackListedStateIDs);
         //GD.Print("Bridge finding NO LAND CHECK took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
-        if(_doesPathOnlyCrossWater(data.points[0], data.points[1])) // If final bridge is ok, perfect we saved a hell lot of time
+        if(planet.fastBridges || _doesPathOnlyCrossWater(data.points[0], data.points[1])) // If final bridge is ok, perfect we saved a hell lot of time
             return data;
         // If not too bad we'll have to REDO it all AND do pathfinding for EACH try, this little maneuver is gonna cost us 51 years (roughly 1second instead of the 0.005)
         //usecStart = Time.GetTicksUsec();

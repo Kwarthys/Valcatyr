@@ -173,7 +173,7 @@ public class State
 
     public override string ToString()
     {
-        string text = "State_" + id + "(" + land.Count + ") in Continent_" + continentID + ":";
+        string text = "State_" + id + " in Continent_" + continentID + ":";
         foreach(int nghb in neighbors)
             text += " S_" + nghb;
         return text;

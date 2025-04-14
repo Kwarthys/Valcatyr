@@ -15,6 +15,9 @@ public partial class Planet : MeshInstance3D
     [Export]
     public  BridgeBuilder bridgeBuilder {get; private set;}
 
+    [Export]
+    public bool fastBridges = false;
+
     public const int SIDE_TOP = 0;
     public const int SIDE_BACK = 1;
     public const int SIDE_LEFT = 2;

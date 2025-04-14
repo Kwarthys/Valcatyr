@@ -60,22 +60,23 @@ public class PlanetNodeFinder
         int index = startingIndex;
         float refDist = planet.getSquareDistance(index, localToSphere);
         int iteration = 0;
+        //string debug = "";
         while(iteration++ < 50) // wouldn't want an infinite loop
         {
             List<int> nghbs = Planet.getNeighbours(index);
             int closest = _findClosest(nghbs, localToSphere, out float dist);
-            if(dist > refDist)
+            if(dist >= refDist)
             {
                 // All neihbors are further than the point, we found the one
                 //GD.Print("Found clicked vertex in " + iteration + " iterations.");
                 return index;
             }
-            //GD.Print("NghbFind: ids " + index + "(" + refDist + ") -> " + closest + "(" + dist + ")");
+            //debug += "NghbFind: ids " + index + "(" + refDist + ") -> " + closest + "(" + dist + ")\n";
             index = closest;
             refDist = dist;
         }
-
         GD.PrintErr("Reach max iteration of PlanetInputManger._findClosestIndexViaNeighbors");
+        //GD.Print(debug);
         return index;
     }
 
