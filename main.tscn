@@ -60,6 +60,7 @@ material_override = ExtResource("2_4fh88")
 script = ExtResource("2_hkox7")
 mainController = NodePath("../Managers/MainController")
 bridgeBuilder = NodePath("BridgeBuilder")
+fastBridges = true
 
 [node name="BridgeBuilder" type="Node3D" parent="Planet"]
 script = ExtResource("4_yu05o")

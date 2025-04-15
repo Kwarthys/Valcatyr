@@ -16,7 +16,7 @@ public partial class Planet : MeshInstance3D
     public  BridgeBuilder bridgeBuilder {get; private set;}
 
     [Export]
-    public bool fastBridges = false;
+    public bool fastBridges = false; // Shortcut bridge over land checks, which take TONS of time and is useless while debugging
 
     public const int SIDE_TOP = 0;
     public const int SIDE_BACK = 1;
@@ -197,7 +197,7 @@ public partial class Planet : MeshInstance3D
         if(_vertexID < 0 || _vertexID >= MAP_SIZE)
         {
             GD.PrintErr("Planet.getVertex was asked invalid vertex: " + _vertexID);
-            return Vector3.Zero;
+            throw new AccessViolationException(); // Should never happen, crash it all to get the call stack
         }
         return vertices[_vertexID];
     }

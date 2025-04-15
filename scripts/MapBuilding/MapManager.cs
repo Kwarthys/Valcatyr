@@ -8,6 +8,7 @@ using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Net;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
 
 public class MapManager
@@ -119,7 +120,9 @@ public class MapManager
                     else
                     {
                         color = statesColor[map[i].continentID%statesColor.Count];
-                        if(map[i].isBorder() || map[i].waterBorder)
+                        if(map[i].isContinentBorder)
+                            color = color.Lerp(Colors.Black, 0.95f); // make continent borders even darker for even nicer display
+                        else if(map[i].isBorder() || map[i].waterBorder)
                             color = color.Lerp(Colors.Black, 0.6f); // make border darker for nice display
                     }
                     break;
@@ -293,10 +296,7 @@ public class MapManager
     private Continent _getContinentByID(int id)
     {
         if(id < 0)
-        {
-            //GD.PrintErr("MapManager._getContinentByID was aksed negative id : Continent_" + id);
             return null;
-        }
 
         foreach(Continent c in continents)
         {
@@ -503,6 +503,7 @@ public class MapManager
         _computeContinentsNeighbors();
         _connectContinents();
         _finalConnectivityCheck();
+        _computeMapNodesContinentBorders();
     }
 
     /// <summary>
@@ -609,10 +610,9 @@ public class MapManager
                 cuts.RemoveAt(i);
         }
         List<State> statesForContinent = new();
-        if(_toSplit.Count <= CONTINENT_MAX_SIZE || cuts.Count == 0) // cut enough times or did not find possible cuts -> happens for disc-like continent blobs with high connectivity
+        if(_toSplit.Count <= CONTINENT_MAX_SIZE || cuts.Count == 0) // did not find possible cuts -> happens for disc-like continent blobs with high connectivity
         {
             // make continent from what's left
-            GD.PrintErr("Ran out of cuts");
             _createNewContinentFromStateGroup(_toSplit);
             return;
         }
@@ -817,7 +817,7 @@ public class MapManager
     /// </summary>
     private void _connectContinents()
     {
-        float forceBridgeDistance = 0.10f;
+        float forceBridgeDistance = 0.12f;
         float bridgeMaxDistance = 2.0f;
 
         foreach(Continent c in continents)
@@ -835,23 +835,51 @@ public class MapManager
                 foreach(int nghbId in s.neighbors)
                 {
                     if(ignored.Contains(nghbId) == false)
-                        ignored.Add(nghbId);            // Ignoring other continent's state that might be already connected to this state
+                        ignored.Add(nghbId);            // Ignoring other continent's state that are already connected to this state
                 }
 
-                ClosestSeaNeigbhorData data = _findClosestSeaNeighbor(s, ignored);
-                if(!data)
-                    continue;
+                int loops = 0;
+                while(loops++ < 5) // wouldn't want an infinite loop
+                {
+                    ClosestSeaNeigbhorData data = _findClosestSeaNeighbor(s, ignored);
+                    if(!data)
+                        break;
 
-                if(data.distance < forceBridgeDistance) // If bridge is smaller than our threshold value
-                {
-                    _doBridge(data); // Instantly add it without further logic
+                    if(data.distance < forceBridgeDistance) // If bridge is smaller than our threshold value
+                    {
+                        _doBridge(data); // Instantly add it without further logic
+
+                        // Keep looking for bridges until closest one is above force distance
+                        ignored.Add(data.closestState.id); // but ignore newly connected state
+                        continue;
+                    }
+
+                    if(data.distance > bridgeMaxDistance)
+                        break; // If closest neigbhor is this far, there's no need to go on
+
+                    bool connectsNewContinent = c.neighborsContinentIDs.Contains(data.closestState.continentID) == false;
+                    if(connectsNewContinent)
+                    {
+                        bridgeCandidates.Add(data);
+                        break; // bridge is above force distance, we'll evaluate it against all the others, get outta here
+                    }
+                    else
+                    {
+                        // Bridge is still not too long, but continent is already connected -> Ignore all states of this continent
+                        ignored.AddRange(_getContinentByID(data.closestState.continentID).stateIDs);
+                    }
                 }
-                bool connectsNewContinent = c.neighborsContinentIDs.Contains(data.closestState.continentID) == false;
-                // Or if bridge opens a new connection to a continent BUT is smaller than upper threshold
-                if(connectsNewContinent && data.distance < bridgeMaxDistance)
+                if(loops == 5)
                 {
-                    bridgeCandidates.Add(data);
+                    GD.PrintErr("Reached max iterations count of MapManager._connectContinents");
+                    setStateSelected(s);
                 }
+            }
+            // We may have created bridges to other continents before adding a short bridge
+            for(int i = bridgeCandidates.Count - 1; i >= 0; --i)
+            {
+                if(c.neighborsContinentIDs.Contains(bridgeCandidates[i].closestState.continentID))
+                    bridgeCandidates.RemoveAt(i);
             }
             // Sort bridges from smaller to larger
             bridgeCandidates.Sort((dataA, dataB) => 
@@ -950,6 +978,34 @@ public class MapManager
             components[componentIndex].AddRange(components[1]);
             components.RemoveAt(1);
             GD.Print("Connected two continent components");
+        }
+    }
+
+    /// <summary>
+    /// Go throught each MapNode of borders to set their ContinentBorder bool if suited
+    /// </summary>
+    private void _computeMapNodesContinentBorders()
+    {
+        foreach(Continent c in continents)
+        {
+            foreach(int stateID in c.stateIDs)
+            {
+                State s = getStateByStateID(stateID);
+                foreach(int landID in s.boundaries)
+                {
+                    bool isBorder = false;
+                    foreach(int otherStateID in s.land[landID].borderingStateIds)
+                    {
+                        if(getStateByStateID(otherStateID).continentID != c.id)
+                        {
+                            isBorder = true;
+                            break;
+                        }
+                    }
+                    if(isBorder)
+                        s.land[landID].isContinentBorder = true;
+                }
+            }
         }
     }
 
@@ -1091,10 +1147,15 @@ public class MapManager
         //float usecStart = Time.GetTicksUsec();
         // First try to find a bridge without caring for land crossing. Only check final one.
         ClosestSeaNeigbhorData data = _findClosestSeaNeighbor(false, _state, _preBlackListedStateIDs);
+        if(!data)
+        {
+            // Did not find any neigbhors, maybe state has no shores or too many states are excluded
+            return data;
+        }
         //GD.Print("Bridge finding NO LAND CHECK took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
         if(planet.fastBridges || _doesPathOnlyCrossWater(data.points[0], data.points[1])) // If final bridge is ok, perfect we saved a hell lot of time
             return data;
-        // If not too bad we'll have to REDO it all AND do pathfinding for EACH try, this little maneuver is gonna cost us 51 years (roughly 1second instead of the 0.005)
+        // If not, too bad we'll have to REDO it all AND do pathfinding for EACH try, this little maneuver is gonna cost us 51 years (roughly 1 second instead of 0.005)
         //usecStart = Time.GetTicksUsec();
         data = _findClosestSeaNeighbor(true, _state, _preBlackListedStateIDs);
         //GD.Print("Bridge finding FULL LAND CHECK took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
@@ -1105,17 +1166,12 @@ public class MapManager
     {
         ClosestSeaNeigbhorData data = new();
         data.connectorState = _state;
-        if(planet == null)
-            return data;
 
         if(_state.shores.Count == 0)
         {
             GD.PrintErr("Called _findClosestSeaNeighbor on State_" + _state.id + " which has no shores");
             return data;
         }
-
-        if(_state.landMassID >= landMassesStatesIndices.Count)
-            return data;
 
         List<int> blackListIDs = landMassesStatesIndices[_state.landMassID];
         if(_preBlackListedStateIDs != null)
@@ -1226,6 +1282,7 @@ public class MapNode // this is not a struct only because i could not bother cre
     public const int INVALID_ID = -1;
     public enum NodeType{Water, Land, RogueIsland};
     public bool isBorder(){return borderingStateIds.Count > 0;}
+    public bool isContinentBorder = false;
     public bool waterBorder = false;
     public List<int> borderingStateIds = new();
     public NodeType nodeType = NodeType.Land;
