@@ -24,7 +24,16 @@ public static class HumanPlayerManager
 
     private static void _processAttack(GameManager _gameManager, Country _interactedCountry, Player _player)
     {
-        
+        if(_interactedCountry == null) return;  // Nothing to attack
+        Country attacker = _gameManager.currentSelection.selected;
+        if(attacker == null || attacker.playerID != _player.id || attacker == _interactedCountry)
+            return; // No attacker selected or attacker does not belong to active player or attacker is trying to attack itself
+        if(_interactedCountry.playerID == _player.id) return; // Attacked state is an ally
+        bool statesAreNeighbors = attacker.state.neighbors.Contains(_interactedCountry.state.id);
+        if(statesAreNeighbors == false) return; // Cannot attack disconnected countries
+
+        // At last i think that's enough, combat can happen
+
     }
 
     private static void _processReinforce(GameManager _gameManager, Country _interactedCountry, Player _player)
@@ -41,20 +50,13 @@ public static class HumanPlayerManager
         {
             case GameManager.GameState.Deploy:
             {
-                // Highlight all neighboring enemies
-                if(_interactedCountry != null)
-                {
-                    foreach(int stateID in _interactedCountry.state.neighbors)
-                    {
-                        State n = _gameManager.planet.mapManager.getStateByStateID(stateID);
-                        Country c = _gameManager.getCountryByState(n);
-                        if(c.playerID != _player.id)
-                            selection.enemies.Add(c);
-                    }
-                }
-                // Highlight ALL allied territories
-                foreach(Country c in _player.countries)
-                    selection.allies.Add(c);
+                // always Highlight ALL allied territories
+                selection.allies.AddRange(_player.countries);
+                
+                if(_interactedCountry == null)
+                    break;
+                // Highlight all neighboring enemies of selected country
+                selection.enemies.AddRange(_gameManager.getNeighboringEnemiesAround(_interactedCountry, _player));
                 break;
             }
             case GameManager.GameState.Attack:
@@ -76,12 +78,17 @@ public static class HumanPlayerManager
             {
                 if(_interactedCountry == null)
                     break;
-                // gather all connected friendly
-                // TODO
+                if(_interactedCountry.playerID == _player.id) // Only show possible movements to allies when selected state is allied
+                    selection.allies.AddRange(_gameManager.getAlliedCountriesAccessibleFrom(_interactedCountry));
+                selection.enemies.AddRange(_gameManager.getNeighboringEnemiesAround(_interactedCountry, _player));
                 break;
             }
+
+            case GameManager.GameState.Init:
+            case GameManager.GameState.FirstDeploy:
+                GD.PrintErr("INIT AND FIRST DEPLOY NYI"); break;
         }
-        selection.removeDuplicateSelected();
+        selection.removeDuplicateSelected(); // we most probably have the selected state also in allies list, remove it if necessary
         return selection;
     }
 }

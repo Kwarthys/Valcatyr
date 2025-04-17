@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://cjux8np2ds5ot"]
+[gd_scene load_steps=5 format=3 uid="uid://cjux8np2ds5ot"]
 
 [ext_resource type="Script" path="res://scripts/utils/AltitudeWobbler.gd" id="1_4sjgn"]
+[ext_resource type="Script" path="res://scripts/GameManagement/PawnColorManager.cs" id="1_26d2x"]
 
 [sub_resource type="PrismMesh" id="PrismMesh_fleth"]
 size = Vector3(0.05, 0.05, 0.05)
@@ -10,7 +11,9 @@ top_radius = 0.05
 bottom_radius = 0.05
 height = 0.005
 
-[node name="Level2Pawn" type="Node3D"]
+[node name="Level2Pawn" type="Node3D" node_paths=PackedStringArray("meshInstances")]
+script = ExtResource("1_26d2x")
+meshInstances = [NodePath("Holder/MeshInstance3D"), NodePath("Holder/MeshInstance3D2")]
 
 [node name="Holder" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.168641, 0)

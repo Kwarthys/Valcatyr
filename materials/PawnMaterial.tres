@@ -1,0 +1,7 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dc10ogdt25t01"]
+
+[resource]
+resource_local_to_scene = true
+metallic = 0.5
+roughness = 0.5
+clearcoat_enabled = true

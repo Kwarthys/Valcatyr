@@ -95,7 +95,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
 
 [node name="DirectionalLight3D2" type="DirectionalLight3D" parent="CameraHorizontalHelper/CameraVerticalHelper"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3.7259)
-light_energy = 0.05
+light_energy = 0.4
 
 [node name="AtmosphereQuad" type="MeshInstance3D" parent="CameraHorizontalHelper/CameraVerticalHelper"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.1)

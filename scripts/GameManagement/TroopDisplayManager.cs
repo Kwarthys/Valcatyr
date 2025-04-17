@@ -54,25 +54,26 @@ public partial class TroopDisplayManager : Node3D
     private void _spawnLevelOnes(int _n, Country _c)
     {
         List<PawnData> pawns = troopsPerState[_c.state.id].level1Pawns;
-        _spawnPawn(_n, level1PawnScene, pawns, _c.referencePoints);
+        _spawnPawn(_n, level1PawnScene, pawns, _c);
     }
 
     private void _spawnLevelTwos(int _n, Country _c)
     {
         List<PawnData> pawns = troopsPerState[_c.state.id].level2Pawns;
-        _spawnPawn(_n, level2PawnScene, pawns, _c.referencePoints);
+        _spawnPawn(_n, level2PawnScene, pawns, _c);
     }
 
-    private int _spawnPawn(int _n, PackedScene _pawnScene, List<PawnData> _spawnedPawns, List<ReferencePoint> _points)
+    private int _spawnPawn(int _n, PackedScene _pawnScene, List<PawnData> _spawnedPawns, Country _c)
     {
+        List<ReferencePoint> points = _c.referencePoints;
         List<int> ids = new();
-        for(int i = 0; i < _points.Count; ++i) ids.Add(i);
+        for(int i = 0; i < points.Count; ++i) ids.Add(i);
         _spawnedPawns.ForEach((data) => ids.Remove(data.referencePointIndex)); // remove already taken reference points
 
         for(int i = 0; i < _n; ++i)
         {
             int index = ids[(int)(GD.Randf() * ids.Count)];
-            ReferencePoint p = _points[index];
+            ReferencePoint p = points[index];
 
             Node3D pawn = _pawnScene.Instantiate<Node3D>();
             AddChild(pawn);
@@ -80,6 +81,9 @@ public partial class TroopDisplayManager : Node3D
             Vector3 localForward = new(p.normal.Y, -p.normal.X, 0.0f); // A specific permutation of normal vector that create a perpendical vector from it
             localForward = localForward.Rotated(p.normal, GD.Randf() * Mathf.Tau); // Rotate forward randomly around normal
             pawn.LookAt(ToGlobal(p.vertex + localForward), ToGlobal(p.normal));
+
+            PawnColorManager helper = (PawnColorManager)pawn;   // Getting the script attached to the root of the pawn scene
+            helper.setColor(Player.playerColors[_c.playerID]);  // Apply player color
 
             PawnData pawnData = new();
             pawnData.instance = pawn;
