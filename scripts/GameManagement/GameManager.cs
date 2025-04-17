@@ -8,6 +8,13 @@ public partial class GameManager : Node
     [Export]
     private TroopDisplayManager troopManager;
 
+    // Singleton
+    public static GameManager Instance;
+    public override void _Ready()
+    {
+        Instance = this;
+    }
+
     public Planet planet{get; private set;} = null;
 
     public enum GameState { Init, FirstDeploy, Deploy, Attack, Reinforce };
@@ -76,7 +83,7 @@ public partial class GameManager : Node
         if(players[activePlayer].id == _c.playerID && reinforcementLeft > 0)
         {
             reinforcementLeft--;
-            _c.troops += 1;
+            _c.troops += 4;
             troopManager.updateDisplay(_c);
 
             if(reinforcementLeft == 0)
@@ -88,6 +95,40 @@ public partial class GameManager : Node
                 _setSecondaryDisplay();
             }
         }
+    }
+
+    public void askMovement(Country _from, Country _to, int _amount)
+    {
+        _amount = Mathf.Min(_from.troops - 1, _amount); // some sanitizing, should already be taken into account
+        _from.troops -= _amount;
+        _to.troops += _amount;
+        troopManager.updateDisplay(_from);
+        troopManager.updateDisplay(_to);
+
+        movementLeft -= 1;
+        if(movementLeft == 0)
+            _startNextPlayerTurn();
+    }
+
+    public void updateCountryTroopsDisplay(Country _a, Country _b)
+    {
+        troopManager.updateDisplay(_a);
+        troopManager.updateDisplay(_b);
+    }
+
+    public void countryConquest(Country _attacker, Country _defender, int _attackingTroops)
+    {
+        _attackingTroops = Mathf.Min(_attacker.troops - 1, _attackingTroops); // some sanitizing, should already be taken into account
+        _attacker.troops -= _attackingTroops;
+        _defender.troops = _attackingTroops;
+        players[_defender.playerID].countries.Remove(_defender);
+        _defender.playerID = _attacker.playerID;
+        players[_attacker.playerID].countries.Add(_defender);
+
+        troopManager.updateDisplay(_attacker);
+        troopManager.updateDisplay(_defender, true); // change colors of pre-existing troops
+        SelectionData selection = HumanPlayerManager.processSelection(this, _defender, players[_attacker.playerID]); // select newly acquired country
+        _applySelection(selection);
     }
 
     private void _startAttackPhase()
@@ -102,7 +143,7 @@ public partial class GameManager : Node
     private void _startReinforcePhase()
     {
         gameState = GameState.Reinforce;
-        movementLeft = 3;
+        movementLeft = 1;
         _setPhaseDisplay();
         _setSecondaryDisplay();
         _updatePhaseDisplay();

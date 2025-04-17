@@ -13,7 +13,7 @@ public partial class TroopDisplayManager : Node3D
 
     public const int PAWN_FACTORISATION_COUNT = 10; // one level 2 PAWN will be worth this value of level 1 pawns
 
-    public void updateDisplay(Country _c)
+    public void updateDisplay(Country _c, bool _colorUpdate = false)
     {
         if(troopsPerState.ContainsKey(_c.state.id) == false)
             troopsPerState.Add(_c.state.id, new());
@@ -46,6 +46,20 @@ public partial class TroopDisplayManager : Node3D
         {
             // Destroy leveltwos
             _destroyPawnsIn(troops.level2Pawns.Count - level2Needed, troops.level2Pawns);
+        }
+
+        if(_colorUpdate)
+        {
+            foreach(PawnData data in troops.level1Pawns)
+            {
+                PawnColorManager colorManager = (PawnColorManager)data.instance;
+                colorManager.setColor(Player.playerColors[_c.playerID]);
+            }
+            foreach(PawnData data in troops.level2Pawns)
+            {
+                PawnColorManager colorManager = (PawnColorManager)data.instance;
+                colorManager.setColor(Player.playerColors[_c.playerID]);
+            }
         }
 
         troops.troops = troopScore;

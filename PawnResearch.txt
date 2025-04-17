@@ -1,0 +1,28 @@
+  GroundBased:
+Tank
+Mecha
+Insectoid Chrisalislike
+Footman
+Horseman
+Alien spacesuit
+Tree
+
+  Aerial:
+Helicopter
+Zeppelin
+FighterAirplane
+Spaceship
+UFO saucer
+Bird
+Dragon
+Insectoid mosquito/mutalisk like
+Hot air balloon
+
+
+Potential combos: Ground - Air                -- Visual style
+- Tank - Helicopter -> Contemporary                       -- Classic
+- Mecha - Spaceship/starDestroyer -> Futuristic           -- Angles
+- Footman - Zeppelin -> Past                              -- Round old shcool
+- Alien - UFO       -> SF                                 -- Round
+- Insectoids: Zerling-Chyralis - Mutalisk -> SF           -- Spikey
+- Tree - Bird -> MARCH ON ISENGARD AND FLY TO MORDOR      -- Nature i guess

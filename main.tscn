@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=28 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
@@ -14,6 +14,9 @@
 [ext_resource type="Script" path="res://scripts/MapBuilding/SkyBoxBuilder.cs" id="9_gnn7f"]
 [ext_resource type="Script" path="res://scripts/GameManagement/GameManager.cs" id="13_37t2g"]
 [ext_resource type="Script" path="res://scripts/GameUI.cs" id="14_bob1v"]
+[ext_resource type="Script" path="res://scripts/GameManagement/CombatManager.cs" id="14_i4lgw"]
+[ext_resource type="Script" path="res://scripts/GameManagement/FreeMovementManager.cs" id="15_pk5q3"]
+[ext_resource type="Theme" uid="uid://c5uh4sjxrrsa0" path="res://UI/uiTextTheme.tres" id="17_ponek"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_nvriv"]
 radius = 2.0
@@ -123,6 +126,16 @@ gameManager = NodePath("../GameManager")
 script = ExtResource("13_37t2g")
 troopManager = NodePath("../../Planet/TroopDisplayManager")
 
+[node name="CombatManager" type="Node" parent="Managers"]
+script = ExtResource("14_i4lgw")
+
+[node name="FreeMovementManager" type="Node" parent="Managers" node_paths=PackedStringArray("uiContainer", "slider", "originLabel", "destinationLabel")]
+script = ExtResource("15_pk5q3")
+uiContainer = NodePath("../../GameUI/MovementUIHolder")
+slider = NodePath("../../GameUI/MovementUIHolder/HSlider")
+originLabel = NodePath("../../GameUI/MovementUIHolder/TextHolder/OriginLabel")
+destinationLabel = NodePath("../../GameUI/MovementUIHolder/TextHolder/DestinationLabel")
+
 [node name="GameUI" type="Control" parent="." node_paths=PackedStringArray("primaryText", "secondaryText", "endTurnButton")]
 layout_mode = 3
 anchors_preset = 15
@@ -183,4 +196,90 @@ grow_vertical = 0
 theme = SubResource("Theme_5n5qb")
 text = "End Phase"
 
+[node name="MovementUIHolder" type="Control" parent="GameUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -38.0
+offset_right = 150.0
+offset_bottom = 38.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HSlider" type="HSlider" parent="GameUI/MovementUIHolder"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -139.0
+offset_top = -8.0
+offset_right = 139.0
+offset_bottom = 15.72
+grow_horizontal = 2
+grow_vertical = 2
+tick_count = 3
+ticks_on_borders = true
+
+[node name="Button" type="Button" parent="GameUI/MovementUIHolder"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -53.0
+offset_top = -12.0
+offset_right = 55.0
+offset_bottom = 19.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Move Troops"
+
+[node name="TextHolder" type="Control" parent="GameUI/MovementUIHolder"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+
+[node name="OriginLabel" type="RichTextLabel" parent="GameUI/MovementUIHolder/TextHolder"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -20.0
+offset_right = 40.0
+offset_bottom = 20.0
+grow_vertical = 2
+theme = ExtResource("17_ponek")
+text = "10"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="DestinationLabel" type="RichTextLabel" parent="GameUI/MovementUIHolder/TextHolder"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -40.0
+offset_top = -20.0
+offset_bottom = 20.0
+grow_horizontal = 0
+grow_vertical = 2
+theme = ExtResource("17_ponek")
+text = "10"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
 [connection signal="pressed" from="GameUI/Button" to="Managers/GameManager" method="onEndTurnButtonPressed"]
+[connection signal="value_changed" from="GameUI/MovementUIHolder/HSlider" to="Managers/FreeMovementManager" method="onSliderUpdate"]
+[connection signal="pressed" from="GameUI/MovementUIHolder/Button" to="Managers/FreeMovementManager" method="onMovementValidation"]

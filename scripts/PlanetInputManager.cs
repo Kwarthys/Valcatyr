@@ -15,6 +15,9 @@ public partial class PlanetInputManager : Area3D
 
     public override void _PhysicsProcess(double _dt)
     {
+        if(FreeMovementManager.Instance.isInteractionOn())
+            return; // don't do raycast stuff if we're clicking on some menu
+
         bool primary = Input.IsActionJustPressed("Primary");
         bool secondary = Input.IsActionJustPressed("Secondary");
         if(primary || secondary)
