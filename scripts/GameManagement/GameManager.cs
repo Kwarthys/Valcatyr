@@ -24,8 +24,9 @@ public partial class GameManager : Node
     Dictionary<State, int> countryIndexPerState = new();
     private const float REFERENCE_POINTS_MINIMAL_DISTANCE = 0.002f; // Minimal distance that must exist between any two reference points of same state
 
-    private int activePlayer = -1;
+    private int activePlayerIndex = -1;
     private List<Player> players = new();
+    private Dictionary<Player, ComputerAI> aiPerPlayer = new();
 
     public int reinforcementLeft {get; private set;} = 0;
     public int movementLeft {get; private set;} = 0;
@@ -52,26 +53,33 @@ public partial class GameManager : Node
         planet = _planet;
         _initializeCountries();
 
-        for(int i = 0; i < 4; ++i)
+        List<int> hoomanIndices = new(){0}; // only one human for now, TODO: need game setup menu for local turn based versus
+
+        for(int i = 0; i < 4; ++i) // TODO Adjust number of player 3-6
         {
             players.Add(new(i));
-            if(i == 0)
-                players[0].isHuman = true; // only one human for now, need game setup menu for local turn based versus
+            if(hoomanIndices.Contains(i))
+                players[i].isHuman = true; // set player as human
+            else
+                aiPerPlayer.Add(players[i], new(players[i])); // instantiate AI
         }
 
         _doCountriesRandomAttributions();
         countries.ForEach((c) => {c.troops = 1; troopManager.updateDisplay(c); });
     }
 
-/*
-    public override void _Process(double delta)
+
+    public override void _Process(double _dt)
     {
-        if(players[activePlayer].isHuman == false)
+        if(gameState == GameState.Init)
+            return; // Game has not started yet
+        // only treat IA here, as humans play with mouse
+        if(players[activePlayerIndex].isHuman == false)
         {
-            // only treat IA here, as humans play with mouse
+            ComputerAI ai = aiPerPlayer[players[activePlayerIndex]];
+            ai.processTurn(_dt);
         }
     }
-*/
 
     public void askReinforce(Country _c)
     {
@@ -80,10 +88,10 @@ public partial class GameManager : Node
             GD.PrintErr("GameManager.askReinforce called outisde ouf deployment phase");
             return;
         }
-        if(players[activePlayer].id == _c.playerID && reinforcementLeft > 0)
+        if(players[activePlayerIndex].id == _c.playerID && reinforcementLeft > 0)
         {
             reinforcementLeft--;
-            _c.troops += 4;
+            _c.troops += 4;//1; TODO REMOVE CHEAT
             troopManager.updateDisplay(_c);
 
             if(reinforcementLeft == 0)
@@ -121,14 +129,22 @@ public partial class GameManager : Node
         _attackingTroops = Mathf.Min(_attacker.troops - 1, _attackingTroops); // some sanitizing, should already be taken into account
         _attacker.troops -= _attackingTroops;
         _defender.troops = _attackingTroops;
-        players[_defender.playerID].countries.Remove(_defender);
+        players[_defender.playerID].removeCountry(_defender);
         _defender.playerID = _attacker.playerID;
-        players[_attacker.playerID].countries.Add(_defender);
+        players[_attacker.playerID].addCountry(_defender);
 
         troopManager.updateDisplay(_attacker);
         troopManager.updateDisplay(_defender, true); // change colors of pre-existing troops
         SelectionData selection = HumanPlayerManager.processSelection(this, _defender, players[_attacker.playerID]); // select newly acquired country
         _applySelection(selection);
+    }
+
+    private void _startDeploymentPhase()
+    {
+        gameState = GameState.Deploy;
+        activePlayerIndex = (activePlayerIndex + 1) % players.Count;
+        reinforcementLeft = _computePlayerNewArmies(players[activePlayerIndex]);
+        _updatePhaseDisplay();
     }
 
     private void _startAttackPhase()
@@ -153,14 +169,10 @@ public partial class GameManager : Node
     {
         // End of reinforcement phase by button for player, call by AI
         movementLeft = 0; // Not forced to use all
-        // Start deploy phase
-        gameState = GameState.Deploy;
-        activePlayer = (activePlayer + 1) % players.Count;
-        reinforcementLeft = (int)(players[activePlayer].countries.Count * 0.3f); // should also depend on controlled continents scores
-        _updatePhaseDisplay();
+        _startDeploymentPhase();
     }
 
-    private void _triggerNextPhase()
+    public void triggerNextPhase()
     {
         switch(gameState)
         {
@@ -192,16 +204,16 @@ public partial class GameManager : Node
 
     public string getActivePlayerAsString()
     {
-        Player active = players[activePlayer];
+        Player active = players[activePlayerIndex];
         string s = active.isHuman ? "Player " : "Bot ";
-        return s + (activePlayer+1);
+        return s + (activePlayerIndex+1);
     }
 
     private void _updatePhaseDisplay()
     {
         _setPhaseDisplay();
         _setSecondaryDisplay();
-        SelectionData selection = HumanPlayerManager.processSelection(this, null, players[activePlayer]);
+        SelectionData selection = HumanPlayerManager.processSelection(this, null, players[activePlayerIndex]);
         _applySelection(selection);
     }
 
@@ -224,7 +236,7 @@ public partial class GameManager : Node
 
     public void onEndTurnButtonPressed()
     {
-        _triggerNextPhase();
+        triggerNextPhase();
     }
 
     public enum PlanetInteraction { Primary, Secondary }
@@ -237,7 +249,7 @@ public partial class GameManager : Node
             // Reset selection
             if(currentSelection.selected != null)
             {
-                SelectionData selection = HumanPlayerManager.processSelection(this, null, players[activePlayer]);
+                SelectionData selection = HumanPlayerManager.processSelection(this, null, players[activePlayerIndex]);
                 _applySelection(selection);
             }
             return;
@@ -247,14 +259,14 @@ public partial class GameManager : Node
             Country c = getCountryByState(s);
             if(_type == PlanetInteraction.Secondary)
             {
-                if(players[activePlayer].isHuman)
+                if(players[activePlayerIndex].isHuman)
                 {
-                    HumanPlayerManager.processAction(this, c, players[activePlayer]);
+                    HumanPlayerManager.processAction(this, c, players[activePlayerIndex]);
                 }
             }
             else
             {
-                SelectionData selection = HumanPlayerManager.processSelection(this, c, players[activePlayer]);
+                SelectionData selection = HumanPlayerManager.processSelection(this, c, players[activePlayerIndex]);
                 _applySelection(selection);
             }
         }
@@ -316,7 +328,7 @@ public partial class GameManager : Node
         {
             int countryIndex = countriesIndices[(int)(GD.Randf() * (countriesIndices.Count - 1))];
             countries[countryIndex].playerID = playerToGive;
-            players[playerToGive].countries.Add(countries[countryIndex]);
+            players[playerToGive].addCountry(countries[countryIndex]);
 
             playerToGive = (playerToGive + 1) % players.Count;
             countriesIndices.Remove(countryIndex);
@@ -368,6 +380,19 @@ public partial class GameManager : Node
         return accessibleCountries;
     }
 
+    private int _computePlayerNewArmies(Player _player)
+    {
+        // Compute continent bonus
+        int continentScore = 0;
+        foreach(Continent c in _player.stateCountPerContinents.Keys)
+        {
+            if(c.stateIDs.Count == _player.stateCountPerContinents[c]) // Does player have all the countries of this continent ?
+                continentScore += c.score; // HUUUUGE bonus
+        }
+        // Combine state count and continent
+        return (int)Mathf.Ceil(_player.countries.Count / 3.0f) + continentScore;
+    }
+
     private void _initializeCountries()
     {
         foreach(State s in planet.mapManager.states)
@@ -375,6 +400,7 @@ public partial class GameManager : Node
             countries.Add(new());
             Country c = countries.Last();
             c.state = s;
+            c.continent = planet.mapManager.getContinentByID(s.continentID);
 
             countryIndexPerState.Add(s, countries.Count - 1);
 

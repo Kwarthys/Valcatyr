@@ -9,6 +9,7 @@ public class Country
 {
     public int playerID = -1;
     public State state = null;
+    public Continent continent = null;
     public List<ReferencePoint> referencePoints = new();
     public int troops = 0;
 }

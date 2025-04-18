@@ -293,7 +293,7 @@ public class MapManager
         continents.Add(new(_id));
         return continents[continents.Count - 1];
     }
-    private Continent _getContinentByID(int id)
+    public Continent getContinentByID(int id)
     {
         if(id < 0)
             return null;
@@ -504,6 +504,7 @@ public class MapManager
         _connectContinents();
         _finalConnectivityCheck();
         _computeMapNodesContinentBorders();
+        _computeContinentsGameScore();
     }
 
     /// <summary>
@@ -866,7 +867,7 @@ public class MapManager
                     else
                     {
                         // Bridge is still not too long, but continent is already connected -> Ignore all states of this continent
-                        ignored.AddRange(_getContinentByID(data.closestState.continentID).stateIDs);
+                        ignored.AddRange(getContinentByID(data.closestState.continentID).stateIDs);
                     }
                 }
                 if(loops == 5)
@@ -932,7 +933,7 @@ public class MapManager
                     continue;
                 scanned.Add(current);
                 components.Last().Add(current);
-                current.neighborsContinentIDs.ForEach((id) => continentsToScan.Enqueue(_getContinentByID(id)));
+                current.neighborsContinentIDs.ForEach((id) => continentsToScan.Enqueue(getContinentByID(id)));
             }
         }
 
@@ -963,7 +964,7 @@ public class MapManager
             }
 
             _doBridge(data);
-            Continent linkedContinent = _getContinentByID(data.closestState.continentID);
+            Continent linkedContinent = getContinentByID(data.closestState.continentID);
             int componentIndex = 0;
             for(int i = 0; i < components.Count; ++i)
             {
@@ -1007,6 +1008,11 @@ public class MapManager
                 }
             }
         }
+    }
+
+    private void _computeContinentsGameScore()
+    {
+        continents.ForEach((c) => c.computeScore(getStateByStateID));
     }
 
     /// <summary>
@@ -1090,8 +1096,8 @@ public class MapManager
             return; // States might not be a thing at the call's time
         _data.closestState.neighbors.Add(_data.connectorState.id);
         _data.connectorState.neighbors.Add(_data.closestState.id);
-        Continent from = _getContinentByID(_data.connectorState.continentID);
-        Continent to = _getContinentByID(_data.closestState.continentID);
+        Continent from = getContinentByID(_data.connectorState.continentID);
+        Continent to = getContinentByID(_data.closestState.continentID);
         if(from != null && to != null && from.id != to.id) // Continents might not be a thing at the call's time
         {
             from.addContinentNeighbor(to.id);

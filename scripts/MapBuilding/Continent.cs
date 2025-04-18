@@ -9,6 +9,8 @@ public class Continent
     public List<int> neighborsContinentIDs {get; private set;} = new();
     public int id {get; private set;}
 
+    public int score {get; private set;} = 0;
+
     public Continent(int _id) { id = _id; }
 
     public bool addState(int stateID)
@@ -65,5 +67,27 @@ public class Continent
             neighborsContinentIDs.Remove(_from);
             addContinentNeighbor(_to); // won't allow duplicates
         }
+    }
+
+    public void computeScore(Func<int, State> _getStateByID)
+    {
+        // Value of each state: BorderState = 1 else State = 0.34
+        float decimalScore = 0.0f;
+        foreach(int stateID in stateIDs)
+        {
+            float stateScore = 0.34f;
+            State s = _getStateByID(stateID);
+            foreach(int nghbID in s.neighbors)
+            {
+                State nghb = _getStateByID(nghbID);
+                if(nghb.continentID != id)
+                {
+                    stateScore = 1.0f;
+                    break;
+                }
+            }
+            decimalScore += stateScore;
+        }
+        score = (int)decimalScore;
     }
 }
