@@ -13,6 +13,8 @@ using System.Runtime.Intrinsics.X86;
 
 public class MapManager
 {
+    public static MapManager Instance; // registered in constructor
+
     private Planet planet;
 
     MapNode[] map = new MapNode[Planet.MAP_SIZE];
@@ -37,7 +39,7 @@ public class MapManager
 
     public static Color shallowSeaColor = new(0.1f, 0.3f, 0.7f);
 
-    public MapManager(Planet _owner){ planet = _owner; }
+    public MapManager(Planet _owner){ planet = _owner; Instance = this; }
     public void RegisterMap(float[] planetMap)
     {
         for(int mapIndex = 0; mapIndex < planetMap.Length; ++mapIndex)

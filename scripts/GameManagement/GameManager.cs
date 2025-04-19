@@ -340,6 +340,13 @@ public partial class GameManager : Node
         return countries[countryIndexPerState[_s]];
     }
 
+    public Country getCountryByState(int _stateID)
+    {
+        State s = MapManager.Instance.getStateByStateID(_stateID);
+        if(s == null) return null;
+        return countries[countryIndexPerState[s]];
+    }
+
     public List<Country> getNeighboringEnemiesAround(Country _c, Player _player = null)
     {
         int playerID = _player == null ? _c.playerID : _player.id;

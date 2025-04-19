@@ -4,6 +4,18 @@ using System.Collections.Generic;
 
 public class ComputerAI
 {
+    // Computer AI has to defend its territories and conquer more
+    // Defense: 
+    // - Add REINFORCEMENT to border countries, until a safe amount compared to threatening country is reached
+    // - CONQUER countries to minimise number of border states
+    // - REGROUP armies from safe countries to risky ones
+    // Offense:
+    // - Only ATTACK while worth
+    // - Mass armies and Attack weak countries
+    // - Focus on the conquest of continents to boost troops
+    // Most likely have to add exceptions in the first turn as countries are scattered, and we don't want the AI to split its efforts
+    //   -> Sacrifice countries to conquer continents
+
     public Player player {get; private set;}
 
     public ComputerAI(Player _player)
@@ -13,6 +25,9 @@ public class ComputerAI
 
     private double dtAccumulator = 0.0f;
     private double actionCooldown = 1.5f; // Seconds per action
+
+    private Continent focusedContinent = null;
+    private List<CountryThreatPair> threats;
 
     public void processTurn(double _dt)
     {
@@ -31,25 +46,145 @@ public class ComputerAI
         }
     }
 
-    private void _processFirstDeploy(){}
+    private void _processFirstDeploy(){} // NYI
 
     private void _processDeploy()
     {
-        // High level thinking right here
-        int countryIndex = (int)(GD.Randf() * (player.countries.Count - 1));
-        GameManager.Instance.askReinforce(player.countries[countryIndex]);
+        if(threats == null)
+            threats = _computeAndSortOwnCountriesThreatLevel(); // Only compute it the first time we go in here per turn (made null at the end of movement)
+        Country toReinforce = threats[0].country;
+        GameManager.Instance.askReinforce(toReinforce);
+        _updateAndInsertThreat(threats, threats[0]);
     }
 
-    private void _processAttack(){ GameManager.Instance.triggerNextPhase(); }
-    private void _processReinforce(){ GameManager.Instance.triggerNextPhase(); }
-
-    private Dictionary<Continent, float> computeContinentOccupationRatio()
+    private void _processAttack()
     {
-        Dictionary<Continent, float> ratioPerContinent = new();
+        //focusedContinent = _getFocusedContinent();
+        GameManager.Instance.triggerNextPhase();
+    }
+    private void _processReinforce()
+    {
+        threats = null; // reset all threats, as they will likely change a lot with all other players turns
+        GameManager.Instance.triggerNextPhase();
+    }
+
+    private Continent _getFocusedContinent()
+    {
+        float highestNonFullRatio = 0.0f;
+        Continent priority = null;
         foreach(Continent c in player.stateCountPerContinents.Keys)
         {
-            ratioPerContinent.Add(c, player.stateCountPerContinents[c] * 1.0f / c.stateIDs.Count);
+            if(player.stateCountPerContinents[c] == c.stateIDs.Count)
+                continue; // Player has all states of this continent, can ignore
+            float ratio = player.stateCountPerContinents[c] * 1.0f / c.stateIDs.Count;
+            if(priority == null || ratio > highestNonFullRatio)
+            {
+                highestNonFullRatio = ratio;
+                priority = c;
+            }
         }
-        return ratioPerContinent;
+
+        // Find new neigboring continent, preferably find less heavily defended
+        priority ??= _findNeighborLessDefendedContinent();
+        // This does the same thing at the commented if below, not sure if i like it
+        //if(priority == null)
+        //{
+        //    priority = _findNeighborLessDefendedContinent();
+        //}
+        return priority;
+    }
+
+    private Continent _findNeighborLessDefendedContinent()
+    {
+        Dictionary<Continent, int> defensesPerContinents = new();
+        foreach(Continent c in player.stateCountPerContinents.Keys)
+        {
+            foreach(int continentID in c.neighborsContinentIDs)
+            {
+                Continent otherContinent = MapManager.Instance.getContinentByID(continentID);
+                if(defensesPerContinents.ContainsKey(otherContinent))
+                    continue; // already treated
+                // Sum up defenses
+                defensesPerContinents.Add(otherContinent, 0);
+                foreach(int stateID in otherContinent.stateIDs)
+                {
+                    Country country = GameManager.Instance.getCountryByState(stateID);
+                    defensesPerContinents[otherContinent] += country.troops;
+                }
+            }
+        }
+        // Find less defended
+        Continent priority = null;
+        int lowestDefense = -1;
+        foreach(Continent c in defensesPerContinents.Keys)
+        {
+            if(priority == null || lowestDefense > defensesPerContinents[c])
+            {
+                priority = c;
+                lowestDefense = defensesPerContinents[c];
+            }
+        }
+        return priority;
+    }
+
+    struct CountryThreatPair
+    {
+        public Country country;
+        public float threatLevel;
+        public static int sort(CountryThreatPair _a, CountryThreatPair _b)
+        {
+            if(_a.threatLevel > _b.threatLevel) return -1; // descending order
+            if(_b.threatLevel > _a.threatLevel) return 1;
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// When we know only one threat needs updating in an already sorted list, just remove old reinsert the new one in order
+    /// </summary>
+    private void _updateAndInsertThreat(List<CountryThreatPair> _threats, CountryThreatPair _toUpdate)
+    {
+        // Remove related entry
+        _threats.Remove(_toUpdate);
+        // compute new value
+        CountryThreatPair newThreat = _computeCountryThreat(_toUpdate.country);
+        // Reinsert it while respecting the order (greatest to smallest threatLevels)
+        for(int i = 0; i < _threats.Count; ++i)
+        {
+            if(_threats[i].threatLevel < newThreat.threatLevel)
+            {
+                _threats.Insert(i, newThreat);
+                return;
+            }
+        }
+        // If we didn't insert just add it to the end
+        _threats.Add(newThreat);
+    }
+
+    private List<CountryThreatPair> _computeAndSortOwnCountriesThreatLevel()
+    {
+        List<CountryThreatPair> threats = new();
+        player.countries.ForEach((country) => threats.Add(_computeCountryThreat(country)));
+        threats.Sort(CountryThreatPair.sort);
+        return threats;
+    }
+
+    private CountryThreatPair _computeCountryThreat(Country _c)
+    {
+        CountryThreatPair threat = new(){ country = _c, threatLevel = 0.0f };
+        State s = _c.state;
+        foreach(int stateID in s.neighbors)
+        {
+            Country country = GameManager.Instance.getCountryByState(stateID);
+            if(country.playerID == _c.playerID)
+                continue; // Country is friendly, zero threat added
+            threat.threatLevel += country.troops;
+        }
+        
+        if(_c.troops == 0)
+            throw new Exception("Country has zero troops");
+        threat.threatLevel /= _c.troops;
+
+        return threat;
     }
 }
