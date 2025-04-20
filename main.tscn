@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=29 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
@@ -7,16 +7,17 @@
 [ext_resource type="Script" path="res://scripts/MapBuilding/BridgeBuilder.cs" id="4_yu05o"]
 [ext_resource type="Material" uid="uid://y5bil6ynkqr7" path="res://materials/AtmosphereMaterial.tres" id="5_3hgdn"]
 [ext_resource type="Script" path="res://scripts/GameManagement/TroopDisplayManager.cs" id="5_aytuo"]
-[ext_resource type="Script" path="res://scripts/PlanetInputManager.cs" id="5_qons3"]
+[ext_resource type="Script" path="res://scripts/GameManagement/PlanetInputManager.cs" id="5_qons3"]
 [ext_resource type="PackedScene" uid="uid://dnry3u2p0r6da" path="res://prefabs/level1Pawn.tscn" id="6_6k61a"]
 [ext_resource type="Material" uid="uid://cypmok4bg16vl" path="res://materials/SkyBoxMaterial.tres" id="6_73edm"]
 [ext_resource type="PackedScene" uid="uid://cjux8np2ds5ot" path="res://prefabs/Level2Pawn.tscn" id="7_7c1ts"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/SkyBoxBuilder.cs" id="9_gnn7f"]
 [ext_resource type="Script" path="res://scripts/GameManagement/GameManager.cs" id="13_37t2g"]
-[ext_resource type="Script" path="res://scripts/GameUI.cs" id="14_bob1v"]
+[ext_resource type="Script" path="res://scripts/UIManagement/GameUI.cs" id="14_bob1v"]
 [ext_resource type="Script" path="res://scripts/GameManagement/CombatManager.cs" id="14_i4lgw"]
 [ext_resource type="Script" path="res://scripts/GameManagement/FreeMovementManager.cs" id="15_pk5q3"]
 [ext_resource type="Theme" uid="uid://c5uh4sjxrrsa0" path="res://UI/uiTextTheme.tres" id="17_ponek"]
+[ext_resource type="PackedScene" uid="uid://ce27jvse606x8" path="res://prefabs/StateDataMenu.tscn" id="18_12su4"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_nvriv"]
 radius = 2.0
@@ -122,9 +123,10 @@ script = ExtResource("1_sm8de")
 planet = NodePath("../../Planet")
 gameManager = NodePath("../GameManager")
 
-[node name="GameManager" type="Node" parent="Managers" node_paths=PackedStringArray("troopManager")]
+[node name="GameManager" type="Node" parent="Managers" node_paths=PackedStringArray("troopManager", "stateDisplayer")]
 script = ExtResource("13_37t2g")
 troopManager = NodePath("../../Planet/TroopDisplayManager")
+stateDisplayer = NodePath("../../GameUI/StateDisplayAnchor/StateDisplayer")
 
 [node name="CombatManager" type="Node" parent="Managers"]
 script = ExtResource("14_i4lgw")
@@ -143,6 +145,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 1
 script = ExtResource("14_bob1v")
 primaryText = NodePath("MainLabel")
 secondaryText = NodePath("SecondaryLabel")
@@ -279,6 +282,22 @@ text = "10"
 fit_content = true
 scroll_active = false
 autowrap_mode = 0
+
+[node name="StateDisplayAnchor" type="Control" parent="GameUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_right = 40.0
+grow_vertical = 0
+
+[node name="StateDisplayer" parent="GameUI/StateDisplayAnchor" instance=ExtResource("18_12su4")]
+layout_mode = 1
+offset_left = 49.0
+offset_top = -353.0
+offset_right = 223.0
+offset_bottom = -46.0
 
 [connection signal="pressed" from="GameUI/Button" to="Managers/GameManager" method="onEndTurnButtonPressed"]
 [connection signal="value_changed" from="GameUI/MovementUIHolder/HSlider" to="Managers/FreeMovementManager" method="onSliderUpdate"]

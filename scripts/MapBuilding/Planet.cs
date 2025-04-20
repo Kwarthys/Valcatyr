@@ -192,6 +192,15 @@ public partial class Planet : MeshInstance3D
         return true;
     }
 
+    public Vector3 getNormal(int _vertexID)
+    {
+        if(_vertexID < 0 || _vertexID >= MAP_SIZE)
+        {
+            throw new AccessViolationException("Planet.getVertexAndNormal was asked invalid vertex: " + _vertexID);
+        }
+        return normals[_vertexID];
+    }
+
     public Vector3 getVertex(int _vertexID)
     {
         if(_vertexID < 0 || _vertexID >= MAP_SIZE)

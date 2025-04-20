@@ -1,0 +1,88 @@
+[gd_scene load_steps=4 format=3 uid="uid://ce27jvse606x8"]
+
+[ext_resource type="Theme" uid="uid://djt7yn1lbupv2" path="res://UI/StateDisplayTextsTheme.tres" id="1_6cnj8"]
+[ext_resource type="Script" path="res://scripts/UIManagement/StateDisplayerManager.cs" id="1_ww37e"]
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_onvv7"]
+size = Vector2(100, 100)
+
+[node name="Control" type="Control" node_paths=PackedStringArray("stateNameLabel", "playerLabel", "troopsLabel", "stateShapeDisplay")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ww37e")
+stateNameLabel = NodePath("VBoxContainer/TextContainers/Display1")
+playerLabel = NodePath("VBoxContainer/TextContainers/Display2")
+troopsLabel = NodePath("VBoxContainer/TextContainers/Display3")
+stateShapeDisplay = NodePath("VBoxContainer/TextureRect")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 0.862745, 0.745098)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextContainers" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="Display1" type="RichTextLabel" parent="VBoxContainer/TextContainers"]
+layout_mode = 2
+theme = ExtResource("1_6cnj8")
+text = "STATE
+"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="Display2" type="RichTextLabel" parent="VBoxContainer/TextContainers"]
+layout_mode = 2
+theme = ExtResource("1_6cnj8")
+text = "PLAYER"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="Display3" type="RichTextLabel" parent="VBoxContainer/TextContainers"]
+layout_mode = 2
+theme = ExtResource("1_6cnj8")
+text = "TROOPS"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="TextureRect" type="TextureRect" parent="VBoxContainer"]
+clip_contents = true
+layout_mode = 2
+size_flags_vertical = 3
+texture = SubResource("PlaceholderTexture2D_onvv7")
+stretch_mode = 5
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -138.0
+offset_top = -37.0
+offset_right = -3.0
+offset_bottom = -6.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Select Continent"

@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 
 public class State
@@ -12,6 +13,8 @@ public class State
     public int id = -1;
     public int continentID {get; private set;} = -1;
     public int landMassID = -1; // Continents may contain multiple islands, land mass only cares about direct land neighbors
+
+    public Texture2D stateShapeTexture {get; private set;}
 
     public static int comapreStateSize(State _a, State _b)
     {
@@ -177,6 +180,63 @@ public class State
         foreach(int nghb in neighbors)
             text += " S_" + nghb;
         return text;
+    }
+
+    public void buildShapeTexture(Func<int, Vector3> _getNormalOfNode, Func<int, Vector3> _getVertexOfNode)
+    {
+        // Find barycenter normal
+        Vector3 normalCenter = Vector3.Zero;
+        land.ForEach((node) => normalCenter += _getNormalOfNode(node.fullMapIndex));
+        normalCenter = normalCenter.Normalized();
+        // Build two axis to receive or projections
+        Vector3 topAxis = Vector3.Up;
+        if(normalCenter.AngleTo(topAxis) < 0.01 || normalCenter.AngleTo(topAxis) > 179.9)
+            topAxis = new Vector3(normalCenter.Y, -normalCenter.X, 0.0f).Normalized(); // any perpendicular
+        Vector3 sideAxis = topAxis.Cross(normalCenter);
+        topAxis = sideAxis.Cross(normalCenter);
+
+        // Now projects coordinates into those axis
+        List<Vector2> projectedPositions = new();
+        Vector2 xBox = new(); // min , max
+        Vector2 yBox = new(); // min , max
+        foreach(MapNode n in land)
+        {
+            Vector3 planetPos = _getVertexOfNode(n.fullMapIndex).Normalized();
+            float x = planetPos.Dot(sideAxis);
+            float y = planetPos.Dot(topAxis);
+            projectedPositions.Add(new(x,y));
+
+            if(x > xBox.Y) xBox.Y = x;
+            else if(x < xBox.X) xBox.X = x;
+            if(y > yBox.Y) yBox.Y = y;
+            else if(y < yBox.X) yBox.X = y;
+        }
+
+        // Convert positions in [min; max] in [0; 1]
+        float xRange = xBox.Y - xBox.X;
+        float yRange = yBox.Y - yBox.X;
+
+        for(int i = 0; i < projectedPositions.Count; ++i)
+        {
+            Vector2 point = projectedPositions[i];
+            point.X = (point.X - xBox.X) / xRange; // Remove min and divide by range to make values in [0;1]
+            point.Y = (point.Y - yBox.X) / yRange;
+            projectedPositions[i] = point;
+        }
+
+        // Build image that will hold building data
+        Vector2I imgSize = StateDisplayerManager.stateShapeTextureSize;
+        int offset = StateDisplayerManager.stateShapeBorderOffset;
+        Image img = Image.CreateEmpty(imgSize.X, imgSize.Y, false, Image.Format.Rgba8);
+        img.Fill(Colors.Transparent);
+        foreach(Vector2 pos in projectedPositions)
+        {
+            int x = (int)(pos.X * (imgSize.X - 1 - 2*offset)) + offset;
+            int y = (int)(pos.Y * (imgSize.Y - 1 - 2*offset)) + offset;
+            img.SetPixel(x,y, Colors.Black);
+        }
+        // Finally create texture from this image
+        stateShapeTexture = ImageTexture.CreateFromImage(img);
     }
 
 }

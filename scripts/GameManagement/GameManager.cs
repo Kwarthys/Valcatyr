@@ -8,6 +8,9 @@ public partial class GameManager : Node
     [Export]
     private TroopDisplayManager troopManager;
 
+    [Export]
+    private StateDisplayerManager stateDisplayer;
+
     // Singleton
     public static GameManager Instance;
     public override void _Ready()
@@ -242,6 +245,9 @@ public partial class GameManager : Node
     public enum PlanetInteraction { Primary, Secondary }
     public void onPlanetInteraction(PlanetInteraction _type, int _vertexClicked)
     {
+        if(gameState == GameState.Init)
+            return; // Don't do anything here while game has not started
+
         State s = planet.mapManager.getStateOfVertex(_vertexClicked);
         if(s == null)
         {
@@ -313,6 +319,11 @@ public partial class GameManager : Node
 
         currentSelection = _selection;
         planet.setMesh();
+
+        if(currentSelection.selected == null)
+            stateDisplayer.setVisible(false);
+        else
+            stateDisplayer.setCountryToDisplay(currentSelection.selected);
     }
 
     private void _doCountriesRandomAttributions()

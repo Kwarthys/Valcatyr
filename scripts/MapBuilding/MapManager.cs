@@ -56,6 +56,7 @@ public class MapManager
         _buildContinents();
         GD.Print("Creating States and Continents took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
         _buildTexture();
+        _buildStatesTextures();
     }
 
     public State getStateOfVertex(int _vertexID)
@@ -66,35 +67,6 @@ public class MapManager
         if(stateID < 0) // Exclude Water(-1) and rogue islands(-2)
             return null;
         return getStateByStateID(stateID);
-    }
-
-    public void selectStateOfVertex(int _vertexID)
-    {
-        State toSelect = getStateOfVertex(_vertexID);
-        if(toSelect == null) return;
-
-        List<int> updatedStates = new();
-        if(toSelect.id >= 0)
-        {
-            GD.Print(toSelect);
-            /*
-            updatedStates.Add(toSelect.id);
-            _setStateYUV(toSelect, STATE_SELECTED_UV_VALUE);
-            foreach(int stateID in toSelect.neighbors)
-            {
-                updatedStates.Add(stateID);
-                State nghb = getStateByStateID(stateID);
-                _setStateYUV(nghb, toSelect.continentID == nghb.continentID ? STATE_ALLY_UV_VALUE : STATE_ENEMY_UV_VALUE);
-            }*/
-        }
-/*
-        states.ForEach(state => 
-        {
-            if(!updatedStates.Contains(state.id))
-            {
-                _setStateYUV(state, 0.0f); // reset
-            }
-        });*/
     }
 
     private void _buildTexture()
@@ -137,6 +109,11 @@ public class MapManager
         }
         tex = ImageTexture.CreateFromImage(img);
         //img.SavePng("img.png"); // funny to look at it "flat"
+    }
+
+    private void _buildStatesTextures()
+    {
+        states.ForEach((s) => s.buildShapeTexture(planet.getNormal, planet.getVertex));
     }
 
     private void _buildStates()

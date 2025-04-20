@@ -13,11 +13,13 @@ public partial class PlanetInputManager : Area3D
     [Export]
     public Camera3D camera {get; set;}
 
-    public override void _PhysicsProcess(double _dt)
+    public override void _UnhandledInput(InputEvent @event)
     {
-        if(FreeMovementManager.Instance.isInteractionOn())
-            return; // don't do raycast stuff if we're clicking on some menu
+        _processInput(@event);
+    }
 
+    private void _processInput(InputEvent @event)
+    {
         bool primary = Input.IsActionJustPressed("Primary");
         bool secondary = Input.IsActionJustPressed("Secondary");
         if(primary || secondary)
