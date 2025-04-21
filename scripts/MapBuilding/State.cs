@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 
 
@@ -182,7 +183,7 @@ public class State
         return text;
     }
 
-    public void buildShapeTexture(Func<int, Vector3> _getNormalOfNode, Func<int, Vector3> _getVertexOfNode)
+    public void buildShapeTexture(Func<int, Vector3> _getNormalOfNode, Func<int, Vector3> _getVertexOfNode, Func<int, MapNode> _getMapNode)
     {
         // Find barycenter normal
         Vector3 normalCenter = Vector3.Zero;
@@ -196,47 +197,168 @@ public class State
         topAxis = sideAxis.Cross(normalCenter);
 
         // Now projects coordinates into those axis
-        List<Vector2> projectedPositions = new();
+        Dictionary<int, Vector2> projectedPositionsPerIndex = new();
         Vector2 xBox = new(); // min , max
         Vector2 yBox = new(); // min , max
-        foreach(MapNode n in land)
+        Dictionary<int, List<int>> borderIndexConnections = new(); // Build ordered borders, to draw the exterior shape of the sate
+        void registerProjectionsAndConnections(List<int> _nodes)
         {
-            Vector3 planetPos = _getVertexOfNode(n.fullMapIndex).Normalized();
-            float x = planetPos.Dot(sideAxis);
-            float y = planetPos.Dot(topAxis);
-            projectedPositions.Add(new(x,y));
+            foreach(int index in _nodes)
+            {
+                int fullMapIndex = land[index].fullMapIndex;
+                if(projectedPositionsPerIndex.ContainsKey(fullMapIndex))
+                    continue; // Can happen when a border is also in shores
 
-            if(x > xBox.Y) xBox.Y = x;
-            else if(x < xBox.X) xBox.X = x;
-            if(y > yBox.Y) yBox.Y = y;
-            else if(y < yBox.X) yBox.X = y;
+                Vector3 planetPos = _getVertexOfNode(fullMapIndex).Normalized();
+                float x = planetPos.Dot(sideAxis);
+                float y = planetPos.Dot(topAxis);
+                projectedPositionsPerIndex.Add(fullMapIndex, new(x,y));
+
+                if(x > xBox.Y) xBox.Y = x;
+                else if(x < xBox.X) xBox.X = x;
+                if(y > yBox.Y) yBox.Y = y;
+                else if(y < yBox.X) yBox.X = y;
+
+                List<int> nghbs = new();
+                Dictionary<int, int> extendedNeighborsConnections = new(); // Find corner neighbors by counting those which are referenced twice in our direct neighbors
+                foreach(int nghb in Planet.getNeighbours(fullMapIndex))
+                {
+                    MapNode node = _getMapNode(nghb);
+                    if(node.stateID == id && (node.isBorder() || node.waterBorder))
+                    {
+                        nghbs.Add(nghb);
+                    }
+                    foreach(int extendedNeighborIndex in Planet.getNeighbours(nghb))
+                    {
+                        if(extendedNeighborIndex == fullMapIndex)
+                            continue; // Don't reference ourself
+                        MapNode extendedNode = _getMapNode(extendedNeighborIndex);
+                        if(extendedNode.stateID == id && (extendedNode.isBorder() || extendedNode.waterBorder))
+                        {
+                            if(extendedNeighborsConnections.ContainsKey(extendedNeighborIndex) == false)
+                                extendedNeighborsConnections.Add(extendedNeighborIndex, 1);
+                            else
+                                extendedNeighborsConnections[extendedNeighborIndex] += 1;
+                        }
+                    }
+                }
+                // First register direct neighbors borders
+                borderIndexConnections.Add(fullMapIndex, nghbs);
+                // Then register extended neibhbors borders
+                // Each time our extended neighbors dictionnary has a node referenced twice, it's a border neighbor diagonal to us, add it to list
+                foreach(int extendedIndex in extendedNeighborsConnections.Keys)
+                {
+                    if(extendedNeighborsConnections[extendedIndex] == 2)
+                        borderIndexConnections[fullMapIndex].Add(extendedIndex);
+                }
+                if(borderIndexConnections.Count == 0)
+                    GD.Print("oops");
+            }
         }
+        registerProjectionsAndConnections(boundaries);
+        registerProjectionsAndConnections(shores);
 
-        // Convert positions in [min; max] in [0; 1]
+        // remap positions from [min; max] to [0+offset; SIZE-offset] now that we know the full range of our points
+        Vector2I imgSize = StateDisplayerManager.stateShapeTextureSize;
+        int offset = StateDisplayerManager.stateShapeBorderOffset;
         float xRange = xBox.Y - xBox.X;
         float yRange = yBox.Y - yBox.X;
-
-        for(int i = 0; i < projectedPositions.Count; ++i)
+        foreach(int i in projectedPositionsPerIndex.Keys)
         {
-            Vector2 point = projectedPositions[i];
-            point.X = (point.X - xBox.X) / xRange; // Remove min and divide by range to make values in [0;1]
-            point.Y = (point.Y - yBox.X) / yRange;
-            projectedPositions[i] = point;
+            Vector2 point = projectedPositionsPerIndex[i];
+            float x = (point.X - xBox.X) / xRange; // Remove min and divide by range to make values in [0;1]
+            float y = (point.Y - yBox.X) / yRange;
+            x = x * (imgSize.X - 1 - 2*offset) + offset; // From [0;1] to [0+offset; size-offset]
+            y = y * (imgSize.Y - 1 - 2*offset) + offset;
+            projectedPositionsPerIndex[i] = new(x,y);
         }
 
         // Build image that will hold building data
-        Vector2I imgSize = StateDisplayerManager.stateShapeTextureSize;
-        int offset = StateDisplayerManager.stateShapeBorderOffset;
         Image img = Image.CreateEmpty(imgSize.X, imgSize.Y, false, Image.Format.Rgba8);
         img.Fill(Colors.Transparent);
-        foreach(Vector2 pos in projectedPositions)
+
+        // Draw lines between connected borders
+        List<int> drawnIndices = new();
+        foreach(int index in projectedPositionsPerIndex.Keys)
         {
-            int x = (int)(pos.X * (imgSize.X - 1 - 2*offset)) + offset;
-            int y = (int)(pos.Y * (imgSize.Y - 1 - 2*offset)) + offset;
-            img.SetPixel(x,y, Colors.Black);
+            Vector2 point = projectedPositionsPerIndex[index];
+            foreach(int otherIndex in borderIndexConnections[index])
+            {
+                if(drawnIndices.Contains(otherIndex))
+                    continue;
+                Vector2 otherPoint = projectedPositionsPerIndex[otherIndex];
+                Vector2I from = new((int)point.X, (int)point.Y);
+                Vector2I to = new((int)otherPoint.X, (int)otherPoint.Y);
+                _drawLine(img, from, to, Colors.Black);
+                if(id == 0)
+                    GD.Print(from + " -> " + to);
+            }
+            drawnIndices.Add(index);
         }
+
+        // Flood fill from exterior to register all exterior pixels
+        List<int> exteriorPixels = new();
+        Queue<int> indicesToCheck = new();
+        indicesToCheck.Enqueue(0);
+        int imgFullSize = imgSize.X * imgSize.Y;
+        while(indicesToCheck.Count > 0)
+        {
+            int index = indicesToCheck.Dequeue();
+            if(exteriorPixels.Contains(index))
+                continue;
+            int x = index % imgSize.X;
+            int y = index / imgSize.X;
+            if(img.GetPixel(x,y).A < 0.5f)
+            {
+                exteriorPixels.Add(index);
+                checkAndAdd(index + 1);
+                checkAndAdd(index - 1);
+                checkAndAdd(index + imgSize.X);
+                checkAndAdd(index - imgSize.X);
+            }
+        }
+        // Flood fill helper
+        void checkAndAdd(int _index)
+        {
+            if(_index < 0 || _index >= imgFullSize)
+                return;
+            indicesToCheck.Enqueue(_index);
+        }
+
+        // Color all transparent pixels not reached by flood fill
+        for(int j = 0; j < imgSize.Y; ++j)
+        {
+            for(int i = 0; i < imgSize.X; ++i)
+            {
+                if(img.GetPixel(i,j).A > 0.5f)
+                    continue; // pixel is not transparent
+                int index = j * imgSize.X + i;
+                if(exteriorPixels.Contains(index))
+                    continue;
+                img.SetPixel(i,j, Colors.White);
+            }
+        }
+
         // Finally create texture from this image
         stateShapeTexture = ImageTexture.CreateFromImage(img);
     }
 
+    private void _drawLine(Image _img, Vector2I _from, Vector2I _to, Color _color)
+    {
+        float length = (_from - _to).Length();
+        int loops = (int)Mathf.Ceil(length);
+        float dx = (_to.X - _from.X) / length;
+        float dy = (_to.Y - _from.Y) / length;
+
+        float x = _from.X;
+        float y = _from.Y;
+        int loop = 0;
+        while(loop++ < loops)
+        {
+            _img.SetPixel((int)(x+0.5f), (int)(y+0.5f), _color);
+            x += dx;
+            y += dy;
+        }
+        _img.SetPixel(_to.X, _to.Y, _color);
+    }
 }

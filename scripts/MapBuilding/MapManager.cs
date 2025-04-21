@@ -113,7 +113,7 @@ public class MapManager
 
     private void _buildStatesTextures()
     {
-        states.ForEach((s) => s.buildShapeTexture(planet.getNormal, planet.getVertex));
+        states.ForEach((s) => s.buildShapeTexture(planet.getNormal, planet.getVertex, (index) => map[index]));
     }
 
     private void _buildStates()

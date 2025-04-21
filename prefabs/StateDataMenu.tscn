@@ -66,6 +66,7 @@ scroll_active = false
 autowrap_mode = 0
 
 [node name="TextureRect" type="TextureRect" parent="VBoxContainer"]
+texture_filter = 1
 clip_contents = true
 layout_mode = 2
 size_flags_vertical = 3
