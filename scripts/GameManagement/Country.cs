@@ -7,6 +7,15 @@ using System.Collections.Generic;
 /// </summary>
 public class Country
 {
+    public Country(){}
+    public Country(Country _toCopy)
+    {
+        playerID = _toCopy.playerID;
+        state = _toCopy.state;
+        continent = _toCopy.continent;
+        troops = _toCopy.troops;
+    }
+
     public int playerID = -1;
     public State state = null;
     public Continent continent = null;

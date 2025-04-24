@@ -45,5 +45,4 @@ public class Player
         countries.Remove(_c);
         stateCountPerContinents[_c.continent] -= 1;
     }
-
 }
