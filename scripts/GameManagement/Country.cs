@@ -21,6 +21,12 @@ public class Country
     public Continent continent = null;
     public List<ReferencePoint> referencePoints = new();
     public int troops = 0;
+
+    public override string ToString()
+    {
+        return "Country_" + state.id + " P_" + playerID + "(" + troops + ")";
+    }
+
 }
 
 public struct ReferencePoint

@@ -58,7 +58,7 @@ public partial class GameManager : Node
 
         List<int> hoomanIndices = new(){0}; // only one human for now, TODO: need game setup menu for local turn based versus
 
-        for(int i = 0; i < 4; ++i) // TODO Adjust number of player 3-6
+        for(int i = 0; i < 2; ++i) // TODO Adjust number of player 3-6
         {
             players.Add(new(i));
             if(hoomanIndices.Contains(i))

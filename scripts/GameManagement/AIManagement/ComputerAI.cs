@@ -60,6 +60,10 @@ public class ComputerAI
     private void _processAttack()
     {
         //focusedContinent = _getFocusedContinent();
+        GameStateGraph graph = new();
+        graph.initialize(player);
+        graph.generate(2);
+
         GameManager.Instance.triggerNextPhase();
     }
     private void _processReinforce()

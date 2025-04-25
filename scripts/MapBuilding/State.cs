@@ -290,8 +290,6 @@ public class State
                 Vector2I from = new((int)point.X, (int)point.Y);
                 Vector2I to = new((int)otherPoint.X, (int)otherPoint.Y);
                 _drawLine(img, from, to, Colors.Black);
-                if(id == 0)
-                    GD.Print(from + " -> " + to);
             }
             drawnIndices.Add(index);
         }
