@@ -13,9 +13,9 @@ public class GameState
         parent = _parent;
     }
     
-    public int score {get; private set;} = -1;
+    public float score {get; private set;} = -1;
     public int depth = 0;
-    public int minmaxScore = -1; // score getting up from children, not sure how to manage this for now
+    public float minmaxScore = -1; // score getting up from children, not sure how to manage this for now
     public int playerID = -1;
     public Dictionary<Continent, int> countriesPerContinent = new();
     public List<Country> countries = new();
@@ -27,7 +27,16 @@ public class GameState
     public void evaluate()
     {
         // Heart of the stuff, evaluate the strength of the GameState given multiple game aspects and factors
-        score = 42;
+        int continentScore = _evaluateContinentScore(); // How much bonus points granted by Continent occupation
+        int countryScore = _evaluateOwnedCountriesScore(); // How much points granted by number of owned states
+        float threatScore = _evaluateThreatScore(); // How much our borders are unsafe
+        if(threatScore < Mathf.Epsilon) // As it cannot be negative, we avoid dividing by zero (can happen for last gamestates where we own all countries, ggs!)
+            score = float.MaxValue;
+        else
+            score = (continentScore + countryScore) / threatScore; // first try
+
+        //if(depth == 2)
+        //    GD.Print("Continent: " + continentScore + " + Countries:" + countryScore + " / Threat:" + threatScore + " --> " + this);
     }
 
     public bool contains(Country _c)
@@ -42,15 +51,19 @@ public class GameState
         return false;
     }
 
-    public Country getEquivalentCountry(Country _c)
+    public Country getEquivalentCountry(State _s)
     {
-        State stateToFind = _c.state;
         foreach(Country c in countries)
         {
-            if(c.state == stateToFind)
+            if(c.state == _s)
                 return c;
         }
         throw new Exception("Could not find EquivalentCountry"); //return null
+    }
+
+    public Country getEquivalentCountry(Country _c)
+    {
+        return getEquivalentCountry(_c.state);
     }
 
     public void add(Country _c)
@@ -73,6 +86,43 @@ public class GameState
         countries.Clear();
         _toCopy.countries.ForEach((c) => countries.Add(new(c))); // Deep copy
         countriesPerContinent = new(_toCopy.countriesPerContinent); // shallow copy is enough for this one
+    }
+
+    public override string ToString()
+    {
+        return actionToThisState + " -> Score: " + score;
+    }
+
+
+    private int _evaluateContinentScore()
+    {
+        int continentScore = 0;
+        foreach(Continent c in countriesPerContinent.Keys)
+        {
+            if(countriesPerContinent[c] == c.stateIDs.Count)
+                continentScore += c.score;
+        }
+        return continentScore;
+    }
+
+    private int _evaluateOwnedCountriesScore() { return (int)(countries.Count / 3.0f); }
+
+    private float _evaluateThreatScore()
+    {
+        float threat = 0.0f;
+        foreach(Country c in countries)
+        {
+            float localThreat = 0.0f;
+            foreach(int stateID in c.state.neighbors)
+            {
+                Country realCountry = GameManager.Instance.getCountryByState(stateID);
+                if(contains(realCountry))
+                    continue; // Real country might not be ours, but in this projected state it is !
+                localThreat += realCountry.troops;
+            }
+            threat += localThreat / c.state.neighbors.Count;
+        }
+        return threat;
     }
 }
 
@@ -103,16 +153,16 @@ public class GameStateGraph
         int newDepth = _state.depth + 1;
         if(newDepth > maxDepth)
         {
-            GD.Print("Leaving at depth " + newDepth);
+            //GD.Print("Leaving at depth " + newDepth);
             return; // Please no infinite loops
         }
 
         if(_state.countries.Contains(_country) == false)
             throw new Exception("GameState generation called on a Country not own in the GameState");
 
-        if(_country.troops <= 1)
+        if(_country.troops <= 3)
         {
-            GD.Print("Can't attack from " + _country + ": not enough troops " + _country.troops);
+            //GD.Print("Can't attack from " + _country + ": not enough troops " + _country.troops);
             return; // Can't attack with only one army (less should not happen but let's make sure)
         }
 
@@ -131,7 +181,7 @@ public class GameStateGraph
 
         if(allAllied)
         {
-            GD.Print("Can't attack from " + _country + ": no enemies in range");
+            //GD.Print("Can't attack from " + _country + ": no enemies in range");
             return; // Country is surrounded by allies, it cannot attack
         }
         
@@ -160,9 +210,13 @@ public class GameStateGraph
                     _generateCountryActionFromState(moveHalfState, moveHalfState.getEquivalentCountry(movementOriginCountry), maxDepth);
                     _generateCountryActionFromState(moveHalfState, moveHalfState.getEquivalentCountry(movementDestinationCountry), maxDepth);
                 }
+                //else
+                    //GD.Print("Not enough troops to generate MoveHalfState");
                 // Move All state can only result in a new attack from the destination of the movement
                 _generateCountryActionFromState(moveAllState, moveAllState.getEquivalentCountry(movementDestinationCountry), maxDepth);
             }
+            //else
+                //GD.Print("Not enough troops to generate MoveAllState");
             // Move None state (attackState) can only lead to an attack from origin, which is already the right one
             _generateCountryActionFromState(attackGameState, movementOriginCountry, maxDepth);
         }
@@ -187,10 +241,10 @@ public class GameStateGraph
         originCopy.troops = (int)Mathf.Floor(originCopy.troops - (_to.troops * 0.5f)); // Approximate to lose 50% of defender troops
         originCopy.troops -= 3; // Remove the 3 that moved to the conquered country
 
-        string indent = "";
-        for(int i = 0; i < _parent.depth+1; ++i)
-            indent += "-";
-        GD.Print(indent + " Attack ! " + originCopy + " -> " + destCopy);
+        //string indent = "";
+        //for(int i = 0; i < _parent.depth+1; ++i)
+        //    indent += "-";
+        //GD.Print(indent + " Attack ! " + originCopy + " -> " + destCopy);
 
         attackGameState.evaluate();
         return attackGameState;
@@ -214,10 +268,10 @@ public class GameStateGraph
         Country destCopy = reinforceState.getEquivalentCountry(_to);
         destCopy.troops += troopsMoved;
 
-        string indent = "";
-        for(int i = 0; i < _parent.depth; ++i)
-            indent += "-";
-        GD.Print(indent + " Reinforce ! " + fromCopy + " -> " + troopsMoved + " -> " + destCopy);
+        //string indent = "";
+        //for(int i = 0; i < _parent.depth; ++i)
+        //    indent += "-";
+        //GD.Print(indent + " Reinforce ! " + fromCopy + " -> " + troopsMoved + " -> " + destCopy);
 
         reinforceState.evaluate();
         return reinforceState;
@@ -231,4 +285,9 @@ public struct GameAction
     public Country from;
     public Country to;
     public int parameter; // Used by Reinforce to tell how much to move
+
+    public override string ToString()
+    {
+        return from + " " + (type == GameActionType.Attack ? "Attacks " : "Reinforces ") + to;
+    }
 }

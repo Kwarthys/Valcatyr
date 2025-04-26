@@ -94,7 +94,7 @@ public partial class GameManager : Node
         if(players[activePlayerIndex].id == _c.playerID && reinforcementLeft > 0)
         {
             reinforcementLeft--;
-            _c.troops += 4;//1; TODO REMOVE CHEAT
+            _c.troops += 8;//1; TODO REMOVE CHEAT
             troopManager.updateDisplay(_c);
 
             if(reinforcementLeft == 0)

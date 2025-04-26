@@ -24,7 +24,7 @@ public class ComputerAI
     }
 
     private double dtAccumulator = 0.0f;
-    private double actionCooldown = 1.5f; // Seconds per action
+    private double actionCooldown = 0.25f; // Seconds per action
 
     private Continent focusedContinent = null;
     private List<CountryThreatPair> threats;
@@ -131,7 +131,7 @@ public class ComputerAI
         return priority;
     }
 
-    struct CountryThreatPair
+    public struct CountryThreatPair
     {
         public Country country;
         public float threatLevel;
@@ -151,7 +151,7 @@ public class ComputerAI
         // Remove related entry
         _threats.Remove(_toUpdate);
         // compute new value
-        CountryThreatPair newThreat = _computeCountryThreat(_toUpdate.country);
+        CountryThreatPair newThreat = computeCountryThreat(_toUpdate.country);
         // Reinsert it while respecting the order (greatest to smallest threatLevels)
         for(int i = 0; i < _threats.Count; ++i)
         {
@@ -168,12 +168,12 @@ public class ComputerAI
     private List<CountryThreatPair> _computeAndSortOwnCountriesThreatLevel()
     {
         List<CountryThreatPair> threats = new();
-        player.countries.ForEach((country) => threats.Add(_computeCountryThreat(country)));
+        player.countries.ForEach((country) => threats.Add(computeCountryThreat(country)));
         threats.Sort(CountryThreatPair.sort);
         return threats;
     }
 
-    private CountryThreatPair _computeCountryThreat(Country _c)
+    public static CountryThreatPair computeCountryThreat(Country _c)
     {
         CountryThreatPair threat = new(){ country = _c, threatLevel = 0.0f };
         State s = _c.state;
