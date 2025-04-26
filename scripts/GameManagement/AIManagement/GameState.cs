@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Principal;
 
 public class GameState
 {
@@ -66,6 +67,16 @@ public class GameState
         return getEquivalentCountry(_c.state);
     }
 
+    public static Country getRealCountryFromAlternativeState(List<Country> _realCountries, Country _alternate)
+    {
+        foreach(Country c in _realCountries)
+        {
+            if(c.state == _alternate.state)
+                return c;
+        }
+        throw new Exception("Could not find real country from alternative"); //return null
+    }
+
     public void add(Country _c)
     {
         countries.Add(_c);
@@ -124,6 +135,41 @@ public class GameState
         }
         return threat;
     }
+
+    /// <summary>
+    /// Recursively evaluate all child states, removing all states with a lower minax score.
+    /// Called on the root state, this will reduce all tree to only one branch
+    /// </summary>
+    public void pruneChildren()
+    {
+        minmaxScore = score;
+        if(children.Count == 0)
+            return;
+
+        int bestChildIndex = -1;
+        for(int i = 0; i < children.Count; ++i)
+        {
+            children[i].pruneChildren();
+            if(children[i].minmaxScore > minmaxScore)
+            {
+                bestChildIndex = i;
+                minmaxScore = children[i].minmaxScore;
+            }
+        }
+
+        if(bestChildIndex == -1)
+        {
+            children.Clear(); // Remove all, current state is better than subsequent states
+        }
+        else
+        {
+            for(int i = children.Count - 1; i >= 0; --i)
+            {
+                if(i != bestChildIndex)
+                    children.RemoveAt(i); // Remove all except best state sequence
+            }
+        }
+    }
 }
 
 /// <summary>
@@ -138,6 +184,8 @@ public class GameStateGraph
         rootGameState = new(_player.id, 0, null, new GameAction(){ type = GameAction.GameActionType.None });
         _player.countries.ForEach((c) => rootGameState.countries.Add(new(c))); // Deep copy
         rootGameState.countriesPerContinent = new(_player.stateCountPerContinents); // shallow copy
+
+        rootGameState.evaluate(); // base comparison for next moves. We won't do anything that lowers this score
     }
 
     public void generate(int maxDepth)
@@ -146,6 +194,28 @@ public class GameStateGraph
         {
             _generateCountryActionFromState(rootGameState, c, maxDepth); // start the recursion
         }
+    }
+
+
+    public Queue<GameAction> getBestMoveActions()
+    {
+        // Perform a kindda minmax, where each game state only keeps the best of its offsprings, until only one branch remains
+        rootGameState.pruneChildren();
+        if(rootGameState.children.Count == 0)
+            return null;
+        Queue<GameAction> actions = new();
+        GameState nextState = rootGameState.children[0];
+        while(true) // scary
+        {
+            actions.Enqueue(nextState.actionToThisState);
+            if(nextState.children.Count == 0)
+                break;
+            if(nextState.children.Count > 1)
+                throw new Exception("GameState has multiple children after pruning");
+            nextState = nextState.children[0];
+        }
+
+        return actions;
     }
 
     private void _generateCountryActionFromState(GameState _state, Country _country, int maxDepth)
@@ -204,7 +274,10 @@ public class GameStateGraph
                 attackGameState.children.Add(moveAllState);
                 if(movementOriginCountry.troops > 3) // Below 3, half would make us move nothing
                 {
-                    GameState moveHalfState = _generateReinforceGameState(attackGameState, movementOriginCountry, movementDestinationCountry, (movementOriginCountry.troops - 1) / 2);
+                    // We want to move troops to have approximately the same number of troops in both states.
+                    // So the number to move is actually half the difference
+                    int troopsToMove = (movementOriginCountry.troops - movementDestinationCountry.troops) / 2;
+                    GameState moveHalfState = _generateReinforceGameState(attackGameState, movementOriginCountry, movementDestinationCountry, troopsToMove);
                     attackGameState.children.Add(moveHalfState);
                     // As we move half, both countries have similar amounts of troops, we can attack from both of them
                     _generateCountryActionFromState(moveHalfState, moveHalfState.getEquivalentCountry(movementOriginCountry), maxDepth);
@@ -288,6 +361,13 @@ public struct GameAction
 
     public override string ToString()
     {
-        return from + " " + (type == GameActionType.Attack ? "Attacks " : "Reinforces ") + to;
+        string actionString = "";
+        switch(type)
+        {
+            case GameActionType.Attack: actionString = "Attacks"; break;
+            case GameActionType.Reinforce: actionString = "Reinforces+" + parameter; break;
+            case GameActionType.None: actionString = "RootState"; break;
+        }
+        return from + " " + actionString + " " + to;
     }
 }

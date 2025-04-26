@@ -86,6 +86,12 @@ public partial class TroopDisplayManager : Node3D
 
         for(int i = 0; i < _n; ++i)
         {
+            if(ids.Count == 0)
+            {
+                GD.PrintErr("TroopDisplayManager._spawnPawn Ran out of ReferncePoints");
+                return i; // returning how many we could create. If not zero, issue occured
+            }
+
             int index = ids[(int)(GD.Randf() * ids.Count)];
             ReferencePoint p = points[index];
 
@@ -104,12 +110,6 @@ public partial class TroopDisplayManager : Node3D
             pawnData.referencePointIndex = index;
             _spawnedPawns.Add(pawnData);
             ids.Remove(index);
-
-            if(ids.Count == 0)
-            {
-                GD.PrintErr("TroopDisplayManager._spawnPawn Ran out of ReferncePoints");
-                return i+1; // returning how many we could create. If not zero, issue occured
-            }
         }
         return _n;
     }

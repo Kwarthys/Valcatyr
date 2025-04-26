@@ -29,6 +29,8 @@ public class ComputerAI
     private Continent focusedContinent = null;
     private List<CountryThreatPair> threats;
 
+    private Queue<GameAction> attackGamePlan = new();
+
     public void processTurn(double _dt)
     {
         dtAccumulator += _dt;
@@ -59,12 +61,44 @@ public class ComputerAI
 
     private void _processAttack()
     {
-        //focusedContinent = _getFocusedContinent();
-        GameStateGraph graph = new();
-        graph.initialize(player);
-        graph.generate(2);
+        if(attackGamePlan == null)
+        {
+            GameStateGraph graph = new();
+            graph.initialize(player);
+            graph.generate(10);
+            attackGamePlan = graph.getBestMoveActions();
+        }
+        
+        if(attackGamePlan == null) // If still null after tree evaluation, nothing we can do will further improve our situtation, end attack phase
+        {
+            GameManager.Instance.triggerNextPhase();
+            return;
+        }
 
-        GameManager.Instance.triggerNextPhase();
+        // If we do have a valid attack plan, execute it step by step
+        GameAction action = attackGamePlan.Peek(); // attacks take time, we won't dequeue each time
+
+        switch(action.type)
+        {
+            case GameAction.GameActionType.None: throw new Exception("Game action of type none ended up in the attack plan");
+            case GameAction.GameActionType.Attack:
+            {
+                // Attack until conquered or too many losses
+                break;
+            }
+            case GameAction.GameActionType.Reinforce:
+            {
+                Country actualOrigin = GameState.getRealCountryFromAlternativeState(player.countries, action.from);
+                Country actualDestination = GameState.getRealCountryFromAlternativeState(player.countries, action.to);
+                GameManager.Instance.askMovement(actualOrigin, actualDestination, action.parameter);
+                attackGamePlan.Dequeue();
+                break;
+            }
+        }
+
+        if(attackGamePlan.Count == 0)
+            attackGamePlan = null; // nullify it to trigger a new decision tree generation
+
     }
     private void _processReinforce()
     {
