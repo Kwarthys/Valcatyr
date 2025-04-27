@@ -199,14 +199,16 @@ public class GameStateGraph
 
     public Queue<GameAction> getBestMoveActions()
     {
-        // Perform a kindda minmax, where each game state only keeps the best of its offsprings, until only one branch remains
+        // Perform a kindda minmax, where each game state only keeps the best of its offsprings (or none), until only one branch remains
         rootGameState.pruneChildren();
         if(rootGameState.children.Count == 0)
             return null;
         Queue<GameAction> actions = new();
         GameState nextState = rootGameState.children[0];
+        GD.Print("Gameplan:");
         while(true) // scary
         {
+            GD.Print(nextState);
             actions.Enqueue(nextState.actionToThisState);
             if(nextState.children.Count == 0)
                 break;

@@ -129,6 +129,9 @@ public partial class GameManager : Node
 
     public void countryConquest(Country _attacker, Country _defender, int _attackingTroops)
     {
+        if(_attacker.playerID == _defender.playerID)
+            GD.PrintErr(_attacker + " attacks " + _defender + " AND THEY ARE ALLIED"); // don't return as we'd stuck the AI in the infinite loop
+
         _attackingTroops = Mathf.Min(_attacker.troops - 1, _attackingTroops); // some sanitizing, should already be taken into account
         _attacker.troops -= _attackingTroops;
         _defender.troops = _attackingTroops;

@@ -24,7 +24,7 @@ public class ComputerAI
     }
 
     private double dtAccumulator = 0.0f;
-    private double actionCooldown = 0.25f; // Seconds per action
+    private double actionCooldown = 1.5f; // Seconds per action
 
     private Continent focusedContinent = null;
     private List<CountryThreatPair> threats;
@@ -61,7 +61,7 @@ public class ComputerAI
 
     private void _processAttack()
     {
-        if(attackGamePlan == null)
+        if(attackGamePlan == null || attackGamePlan.Count == 0)
         {
             GameStateGraph graph = new();
             graph.initialize(player);
@@ -69,7 +69,7 @@ public class ComputerAI
             attackGamePlan = graph.getBestMoveActions();
         }
         
-        if(attackGamePlan == null) // If still null after tree evaluation, nothing we can do will further improve our situtation, end attack phase
+        if(attackGamePlan == null || attackGamePlan.Count == 0) // If still null after tree evaluation, nothing we can do will further improve our situtation, end attack phase
         {
             GameManager.Instance.triggerNextPhase();
             return;
@@ -77,13 +77,34 @@ public class ComputerAI
 
         // If we do have a valid attack plan, execute it step by step
         GameAction action = attackGamePlan.Peek(); // attacks take time, we won't dequeue each time
-
+        // Interpret action
+        GD.Print("IA Interpreting action: " + action);
         switch(action.type)
         {
-            case GameAction.GameActionType.None: throw new Exception("Game action of type none ended up in the attack plan");
+            case GameAction.GameActionType.None: throw new Exception("Game action of type None ended up in the attack plan");
             case GameAction.GameActionType.Attack:
             {
                 // Attack until conquered or too many losses
+                Country actualOrigin = GameState.getRealCountryFromAlternativeState(player.countries, action.from);
+                Country actualDestination = action.to; // Attacked country is already the right one, as it does not belong to the AI yet
+                // Check if we're in a good state to attack
+                if(actualOrigin.troops < actualDestination.troops * 1.1f) // Cannot attack with less than 10% more troops
+                {
+                    // We took too many losses, abort attack
+                    attackGamePlan = null;
+                    return;
+                }
+                // Process the attack
+                int troopsMovement = CombatManager.Instance.startCombat(actualOrigin, actualDestination);
+                if(troopsMovement != 0)
+                {
+                     // Fight is won -> Manage initial troops movement and ownership transfer
+                    GameManager.Instance.countryConquest(actualOrigin, actualDestination, troopsMovement);
+                    // End GameAction, as country has been conquered
+                    attackGamePlan.Dequeue();
+                }
+                else
+                    GameManager.Instance.updateCountryTroopsDisplay(actualOrigin, actualDestination);
                 break;
             }
             case GameAction.GameActionType.Reinforce:
@@ -95,15 +116,80 @@ public class ComputerAI
                 break;
             }
         }
-
-        if(attackGamePlan.Count == 0)
-            attackGamePlan = null; // nullify it to trigger a new decision tree generation
-
     }
+
     private void _processReinforce()
     {
+        bool didReinforce = false;
+        threats = _computeAndSortOwnCountriesThreatLevel(); // Recompute all threats after our turn, as a lot might have changed
+        for(int i = 0; i < threats.Count; ++i)
+        {
+            Country toReinforce = threats[i].country;
+            List<Country> connectedAllies = GameManager.Instance.getAlliedCountriesAccessibleFrom(toReinforce);
+            if(connectedAllies.Count <= 1) // connectedAllies will contain toReinforce
+                continue; // Nobody can help them, skip
+            //Find country with lowest threat and highest troops that can reinforce
+            float threat = -1.0f;
+            Country reinforcer = null;
+            for(int helperID = threats.Count - 1; helperID > i; --helperID)
+            {
+                Country candidate = threats[helperID].country;
+                if(connectedAllies.Contains(candidate) == false)
+                    continue; // Not connected
+                if(candidate.troops <= 1)
+                    continue; // Does not have available troops
+                bool select = true;
+                if(reinforcer != null)
+                {
+                    // In this case we already have an available reinforcer.
+                    // if threat is bigger, use the already selected state (it can be equal, but not lower as list is ordered)
+                    if(Mathf.Abs(threat - threats[helperID].threatLevel) > Mathf.Epsilon)
+                        break;
+                    // When threats are similar, use the country with highest troops
+                    select = candidate.troops > reinforcer.troops;
+                }
+
+                if(select)
+                {
+                    reinforcer = candidate;
+                    threat = threats[helperID].threatLevel;
+                }
+            }
+
+            if(reinforcer == null)
+                continue; // Could not find any country to help this poor one, keep looking one we can help
+
+            int troopMovement = _computeTroopMovementToEqualizeThreats(toReinforce, threats[i].threatLevel, reinforcer, threat);
+            GD.Print(reinforcer + " sending " + troopMovement + " to " + toReinforce);
+            if(troopMovement <= 0)
+                continue; // threat seems already at equilibrium, try to find another one to help
+
+            GameManager.Instance.askMovement(reinforcer, toReinforce, troopMovement);
+            didReinforce = true;
+            break; // We only have one reinforcement, get outta here after it's done
+        }
+
         threats = null; // reset all threats, as they will likely change a lot with all other players turns
-        GameManager.Instance.triggerNextPhase();
+        if(!didReinforce)
+            GameManager.Instance.triggerNextPhase(); // Skip turn if we could not reinforce anyone, gameManager skips atomaticaly when last move is asked
+    }
+
+    private int _computeTroopMovementToEqualizeThreats(Country _toHelp, float _toHelpThreatLevel, Country _helper, float _helperThreatLevel)
+    {
+        // Threat is SumOfEnemies / Troops. Need to find a troop delta that makes threats equal:
+        // SumOfEnemiesOfA / (troopsA - delta) = SumOfEnemiesOfB / (troopsB + delta)
+        //
+        //          troopsA - troopsB * SumOfEnemiesA/SumOfEnemiesB
+        // delta = _________________________________________________
+        //                  1 + SumOfEnemiesA/SumOfEnemiesB
+        //
+        // With A the helper and B the rescued
+
+        double helperSumOfEnemies = _helperThreatLevel / _helper.troops;
+        double rescuedSumOfEnemies = _toHelpThreatLevel / _toHelp.troops;
+        double enemiesRatio = helperSumOfEnemies / rescuedSumOfEnemies;
+        double delta = (_helper.troops - _toHelp.troops * enemiesRatio) / (1+enemiesRatio);
+        return Mathf.Min(Mathf.RoundToInt(delta), _helper.troops - 1);
     }
 
     private Continent _getFocusedContinent()
