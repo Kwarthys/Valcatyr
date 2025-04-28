@@ -248,8 +248,8 @@ public partial class GameManager : Node
     public enum PlanetInteraction { Primary, Secondary }
     public void onPlanetInteraction(PlanetInteraction _type, int _vertexClicked)
     {
-        if(gameState == GameState.Init)
-            return; // Don't do anything here while game has not started
+        if(gameState == GameState.Init || players[activePlayerIndex].isHuman == false)
+            return; // Don't do anything here while game has not started, or in AI's turn
 
         State s = planet.mapManager.getStateOfVertex(_vertexClicked);
         if(s == null)
@@ -279,6 +279,11 @@ public partial class GameManager : Node
                 _applySelection(selection);
             }
         }
+    }
+
+    public void askSelection(SelectionData _selection)
+    {
+        _applySelection(_selection);
     }
 
     private void _applySelection(SelectionData _selection)

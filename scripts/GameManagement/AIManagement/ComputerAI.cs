@@ -56,6 +56,7 @@ public class ComputerAI
             threats = _computeAndSortOwnCountriesThreatLevel(); // Only compute it the first time we go in here per turn (made null at the end of movement)
         Country toReinforce = threats[0].country;
         GameManager.Instance.askReinforce(toReinforce);
+        GameManager.Instance.askSelection(new(){ selected = toReinforce }); // display selection for human understanding
         _updateAndInsertThreat(threats, threats[0]);
     }
 
@@ -79,20 +80,23 @@ public class ComputerAI
         GameAction action = attackGamePlan.Peek(); // attacks take time, we won't dequeue each time
         // Interpret action
         GD.Print("IA Interpreting action: " + action);
+        Country actualOrigin = null;
+        Country actualDestination = null;
+        GameManager.SelectionData selection = new();
         switch(action.type)
         {
             case GameAction.GameActionType.None: throw new Exception("Game action of type None ended up in the attack plan");
             case GameAction.GameActionType.Attack:
             {
                 // Attack until conquered or too many losses
-                Country actualOrigin = GameState.getRealCountryFromAlternativeState(player.countries, action.from);
-                Country actualDestination = action.to; // Attacked country is already the right one, as it does not belong to the AI yet
+                actualOrigin = GameState.getRealCountryFromAlternativeState(player.countries, action.from);
+                actualDestination = action.to; // Attacked country is already the right one, as it does not belong to the AI yet
                 // Check if we're in a good state to attack
                 if(actualOrigin.troops < actualDestination.troops * 1.1f) // Cannot attack with less than 10% more troops
                 {
                     // We took too many losses, abort attack
                     attackGamePlan = null;
-                    return;
+                    break;
                 }
                 // Process the attack
                 int troopsMovement = CombatManager.Instance.startCombat(actualOrigin, actualDestination);
@@ -105,17 +109,22 @@ public class ComputerAI
                 }
                 else
                     GameManager.Instance.updateCountryTroopsDisplay(actualOrigin, actualDestination);
+                selection.enemies = new(){ actualDestination };
                 break;
             }
             case GameAction.GameActionType.Reinforce:
             {
-                Country actualOrigin = GameState.getRealCountryFromAlternativeState(player.countries, action.from);
-                Country actualDestination = GameState.getRealCountryFromAlternativeState(player.countries, action.to);
+                actualOrigin = GameState.getRealCountryFromAlternativeState(player.countries, action.from);
+                actualDestination = GameState.getRealCountryFromAlternativeState(player.countries, action.to);
                 GameManager.Instance.askMovement(actualOrigin, actualDestination, action.parameter);
                 attackGamePlan.Dequeue();
+                selection.allies = new(){ actualDestination };
                 break;
             }
         }
+
+        selection.selected = actualOrigin; // If null, it will clear selection
+        GameManager.Instance.askSelection(selection);
     }
 
     private void _processReinforce()
