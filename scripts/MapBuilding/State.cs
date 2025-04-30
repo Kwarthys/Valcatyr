@@ -14,6 +14,8 @@ public class State
     public int id = -1;
     public int continentID {get; private set;} = -1;
     public int landMassID = -1; // Continents may contain multiple islands, land mass only cares about direct land neighbors
+    
+    public Vector3 barycenter = new();
 
     public Texture2D stateShapeTexture {get; private set;}
 
@@ -189,6 +191,7 @@ public class State
         Vector3 normalCenter = Vector3.Zero;
         land.ForEach((node) => normalCenter += _getNormalOfNode(node.fullMapIndex));
         normalCenter = normalCenter.Normalized();
+        barycenter = normalCenter; // Store for later use for camera and marker movements
         // Build two axis to receive or projections
         Vector3 topAxis = Vector3.Up;
         if(normalCenter.AngleTo(topAxis) < 0.01 || normalCenter.AngleTo(topAxis) > 179.9)

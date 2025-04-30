@@ -155,7 +155,7 @@ public partial class GameManager : Node
 
     private void _startAttackPhase()
     {
-        // triggered by button for player, and call by AI
+        // triggered when all troops deployed in deploy phase
         gameState = GameState.Attack;
         _setPhaseDisplay();
         _setSecondaryDisplay();
@@ -176,6 +176,8 @@ public partial class GameManager : Node
         // End of reinforcement phase by button for player, call by AI
         movementLeft = 0; // Not forced to use all
         _startDeploymentPhase();
+        // Only show marker when AIs are playing
+        AIVisualMarkerManager.Instance.setMarkerVisibility(players[activePlayerIndex].isHuman == false);
     }
 
     public void triggerNextPhase()

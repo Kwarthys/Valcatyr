@@ -332,7 +332,7 @@ public class GameStateGraph
             new GameAction()
             {
                 from = _from, to = _to,
-                type = GameAction.GameActionType.Reinforce,
+                type = GameAction.GameActionType.Move,
                 parameter = troopsMoved
             }
         ));
@@ -355,7 +355,7 @@ public class GameStateGraph
 
 public struct GameAction
 {
-    public enum GameActionType{ Attack, Reinforce, None };
+    public enum GameActionType{ Attack, Move, Deploy, None };
     public GameActionType type;
     public Country from;
     public Country to;
@@ -367,9 +367,13 @@ public struct GameAction
         switch(type)
         {
             case GameActionType.Attack: actionString = "Attacks"; break;
-            case GameActionType.Reinforce: actionString = "Reinforces+" + parameter; break;
+            case GameActionType.Move: actionString = "Moves+" + parameter + " to"; break;
+            case GameActionType.Deploy: actionString = "Deployement in"; break;
             case GameActionType.None: actionString = "RootState"; break;
         }
-        return from + " " + actionString + " " + to;
+        actionString += " " + to;
+        if(type != GameActionType.Deploy)
+            actionString = from + " " + actionString;
+        return actionString;
     }
 }

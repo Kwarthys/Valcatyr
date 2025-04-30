@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://ltuob0u7ymlp"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_rlbek"]
+size = Vector3(0.1, 0.1, 0.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_3bc88"]
+size = Vector3(0.6, 0.1, 0.01)
+
+[node name="AIPresenceMarker" type="Node3D"]
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Core" type="MeshInstance3D" parent="Model"]
+mesh = SubResource("BoxMesh_rlbek")
+
+[node name="Array" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 0.595748, 0.803171, 0, -0.803171, 0.595748, -0.00975838, 0, 0)
+mesh = SubResource("BoxMesh_3bc88")

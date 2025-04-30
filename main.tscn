@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=31 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
@@ -11,11 +11,13 @@
 [ext_resource type="PackedScene" uid="uid://dnry3u2p0r6da" path="res://prefabs/level1Pawn.tscn" id="6_6k61a"]
 [ext_resource type="Material" uid="uid://cypmok4bg16vl" path="res://materials/SkyBoxMaterial.tres" id="6_73edm"]
 [ext_resource type="PackedScene" uid="uid://cjux8np2ds5ot" path="res://prefabs/Level2Pawn.tscn" id="7_7c1ts"]
+[ext_resource type="PackedScene" uid="uid://ltuob0u7ymlp" path="res://prefabs/AIPresenceMarker.tscn" id="8_lhd5y"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/SkyBoxBuilder.cs" id="9_gnn7f"]
 [ext_resource type="Script" path="res://scripts/GameManagement/GameManager.cs" id="13_37t2g"]
 [ext_resource type="Script" path="res://scripts/UIManagement/GameUI.cs" id="14_bob1v"]
 [ext_resource type="Script" path="res://scripts/GameManagement/CombatManager.cs" id="14_i4lgw"]
 [ext_resource type="Script" path="res://scripts/GameManagement/FreeMovementManager.cs" id="15_pk5q3"]
+[ext_resource type="Script" path="res://scripts/GameManagement/AIManagement/AIVisualMarkerManager.cs" id="17_o4gch"]
 [ext_resource type="Theme" uid="uid://c5uh4sjxrrsa0" path="res://UI/uiTextTheme.tres" id="17_ponek"]
 [ext_resource type="PackedScene" uid="uid://ce27jvse606x8" path="res://prefabs/StateDataMenu.tscn" id="18_12su4"]
 
@@ -83,6 +85,8 @@ camera = NodePath("../../CameraHorizontalHelper/CameraVerticalHelper/Camera3D")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Planet/ClickCollider"]
 shape = SubResource("SphereShape3D_nvriv")
 
+[node name="AIPresenceMarker" parent="Planet" instance=ExtResource("8_lhd5y")]
+
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 9.11442)
 shadow_enabled = true
@@ -137,6 +141,10 @@ uiContainer = NodePath("../../GameUI/MovementUIHolder")
 slider = NodePath("../../GameUI/MovementUIHolder/HSlider")
 originLabel = NodePath("../../GameUI/MovementUIHolder/TextHolder/OriginLabel")
 destinationLabel = NodePath("../../GameUI/MovementUIHolder/TextHolder/DestinationLabel")
+
+[node name="AIVisualMarkerManager" type="Node" parent="Managers" node_paths=PackedStringArray("marker")]
+script = ExtResource("17_o4gch")
+marker = NodePath("../../Planet/AIPresenceMarker")
 
 [node name="GameUI" type="Control" parent="." node_paths=PackedStringArray("primaryText", "secondaryText", "endTurnButton")]
 layout_mode = 3

@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 public class ComputerAI
 {
@@ -24,20 +25,26 @@ public class ComputerAI
     }
 
     private double dtAccumulator = 0.0f;
-    private double actionCooldown = 1.5f; // Seconds per action
+    private const double ACTION_COOLDOWN = 1.0f; // Seconds per action
+    private bool changedAction = true; // Used to track when to apply a longer delay, like when changing attack front
+    private const double CHANGE_ACTION_COOLDOWN = 3.0f;
 
     private Continent focusedContinent = null;
     private List<CountryThreatPair> threats;
 
     private Queue<GameAction> attackGamePlan = new();
 
+    private GameAction pooledAction;
+
+
     public void processTurn(double _dt)
     {
         dtAccumulator += _dt;
-        if(dtAccumulator < actionCooldown)
+        double cooldown = changedAction ? CHANGE_ACTION_COOLDOWN : ACTION_COOLDOWN;
+        if(dtAccumulator < cooldown)
             return; // skip to let player understand what's happening, MAYBE Option to make instant, or at least quicker/slower
         // Do play
-        dtAccumulator -= actionCooldown;
+        dtAccumulator -= cooldown;
         switch(GameManager.Instance.gameState)
         {
             case GameManager.GameState.Init: break; // should not be here
@@ -52,40 +59,110 @@ public class ComputerAI
 
     private void _processDeploy()
     {
+        if(pooledAction.type == GameAction.GameActionType.Deploy) // Else it means it's the first time we deploy, generate a GameAction without executing it
+        {
+            // execute pooled GameAction
+            _executePooledDeployGameAction();
+        }
+
+        GameAction newAction = _generateDeployGameAction();
+        if(pooledAction.type != GameAction.GameActionType.Deploy || pooledAction.to != newAction.to)
+        {
+            // Only reset bigger timer and update selection if deployment target changes
+            changedAction = true;
+            GameManager.Instance.askSelection(new(){ selected = newAction.to }); // display selection for human understanding
+            AIVisualMarkerManager.Instance.moveTo(newAction.to.state.barycenter); // move marker to guide human to the right place (if he wants to follow)
+        }
+        else
+            changedAction = false; // go fast to next deployement
+
+        pooledAction = newAction;
+    }
+
+    private GameAction _generateDeployGameAction()
+    {
         if(threats == null)
             threats = _computeAndSortOwnCountriesThreatLevel(); // Only compute it the first time we go in here per turn (made null at the end of movement)
-        Country toReinforce = threats[0].country;
-        GameManager.Instance.askReinforce(toReinforce);
-        GameManager.Instance.askSelection(new(){ selected = toReinforce }); // display selection for human understanding
-        _updateAndInsertThreat(threats, threats[0]);
+        return new(){ to = threats[0].country, parameter = 1, type = GameAction.GameActionType.Deploy };
+    }
+
+    private void _executePooledDeployGameAction()
+    {
+        if(pooledAction.type != GameAction.GameActionType.Deploy)
+            throw new Exception("Wrong GameAction type given to _executePooledDeployGameAction");
+        GameManager.Instance.askReinforce(pooledAction.to);
+        for(int i = 0; i < threats.Count; ++i)
+        {
+            if(threats[i].country == pooledAction.to)
+            {
+                _updateAndInsertThreat(threats, threats[i]);
+                return;
+            }
+        }
     }
 
     private void _processAttack()
     {
+        bool planChanged = false;
         if(attackGamePlan == null || attackGamePlan.Count == 0)
         {
             GameStateGraph graph = new();
             graph.initialize(player);
             graph.generate(10);
             attackGamePlan = graph.getBestMoveActions();
+            planChanged = true;
         }
         
         if(attackGamePlan == null || attackGamePlan.Count == 0) // If still null after tree evaluation, nothing we can do will further improve our situtation, end attack phase
         {
+            pooledAction.type = GameAction.GameActionType.Attack; // TEMP Corrupt pooled action to force recompute of deployments
             GameManager.Instance.triggerNextPhase();
             return;
         }
 
+        if(changedAction == false)
+            planChanged |= _executeAttackPlan();
+        else
+            changedAction = false;
+
+        // Manage visual feedback for human understanding of WTF is happening
+        GameManager.SelectionData selection = new();
+        if(attackGamePlan.Count > 0 && planChanged)
+        {
+            GameAction nextMove = attackGamePlan.Peek();
+            if(nextMove.type == GameAction.GameActionType.Move)
+            {
+                changedAction = false; // Don't wait for post-combat free move
+                selection.allies = new(){ GameState.getRealCountryFromAlternativeState(player.countries, nextMove.to) };
+            }
+            else if(nextMove.type == GameAction.GameActionType.Attack)
+            {
+                AIVisualMarkerManager.Instance.moveTo(nextMove.to.state.barycenter);
+                selection.enemies = new(){ nextMove.to };
+            }
+            selection.selected = GameState.getRealCountryFromAlternativeState(player.countries, nextMove.from);
+        }
+        else
+            changedAction = false; // don't wait here for last move, wait in last move state
+
+        GameManager.Instance.askSelection(selection); // If empty, it will clear selection
+    }
+
+    private bool _executeAttackPlan()
+    {
+        bool planChanged = false;
+        if(attackGamePlan.Count == 0)
+            throw new Exception("Trying to execute an empty attack game plan");
         // If we do have a valid attack plan, execute it step by step
         GameAction action = attackGamePlan.Peek(); // attacks take time, we won't dequeue each time
         // Interpret action
         GD.Print("IA Interpreting action: " + action);
         Country actualOrigin = null;
         Country actualDestination = null;
-        GameManager.SelectionData selection = new();
         switch(action.type)
         {
             case GameAction.GameActionType.None: throw new Exception("Game action of type None ended up in the attack plan");
+            case GameAction.GameActionType.Deploy: throw new Exception("Game action of type Reinforce ended up in the attack plan");
             case GameAction.GameActionType.Attack:
             {
                 // Attack until conquered or too many losses
@@ -106,25 +183,23 @@ public class ComputerAI
                     GameManager.Instance.countryConquest(actualOrigin, actualDestination, troopsMovement);
                     // End GameAction, as country has been conquered
                     attackGamePlan.Dequeue();
+                    planChanged = true;
                 }
                 else
                     GameManager.Instance.updateCountryTroopsDisplay(actualOrigin, actualDestination);
-                selection.enemies = new(){ actualDestination };
                 break;
             }
-            case GameAction.GameActionType.Reinforce:
+            case GameAction.GameActionType.Move:
             {
                 actualOrigin = GameState.getRealCountryFromAlternativeState(player.countries, action.from);
                 actualDestination = GameState.getRealCountryFromAlternativeState(player.countries, action.to);
                 GameManager.Instance.askMovement(actualOrigin, actualDestination, action.parameter);
                 attackGamePlan.Dequeue();
-                selection.allies = new(){ actualDestination };
+                planChanged = true;
                 break;
             }
         }
-
-        selection.selected = actualOrigin; // If null, it will clear selection
-        GameManager.Instance.askSelection(selection);
+        return planChanged;
     }
 
     private void _processReinforce()
