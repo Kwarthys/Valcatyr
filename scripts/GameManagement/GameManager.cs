@@ -283,10 +283,8 @@ public partial class GameManager : Node
         }
     }
 
-    public void askSelection(SelectionData _selection)
-    {
-        _applySelection(_selection);
-    }
+    public void askSelection(SelectionData _selection) { _applySelection(_selection); }
+    public void resetSelection() { _applySelection(new()); }
 
     private void _applySelection(SelectionData _selection)
     {

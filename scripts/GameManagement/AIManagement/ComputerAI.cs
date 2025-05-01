@@ -26,8 +26,8 @@ public class ComputerAI
 
     private double dtAccumulator = 0.0f;
     private const double ACTION_COOLDOWN = 1.0f; // Seconds per action
-    private bool changedAction = true; // Used to track when to apply a longer delay, like when changing attack front
-    private const double CHANGE_ACTION_COOLDOWN = 3.0f;
+    private bool slowDown = true; // Used to track when to apply a longer delay, like when changing attack front
+    private const double SLOW_ACTION_COOLDOWN = 3.0f;
 
     private Continent focusedContinent = null;
     private List<CountryThreatPair> threats;
@@ -40,7 +40,7 @@ public class ComputerAI
     public void processTurn(double _dt)
     {
         dtAccumulator += _dt;
-        double cooldown = changedAction ? CHANGE_ACTION_COOLDOWN : ACTION_COOLDOWN;
+        double cooldown = slowDown ? SLOW_ACTION_COOLDOWN : ACTION_COOLDOWN;
         if(dtAccumulator < cooldown)
             return; // skip to let player understand what's happening, MAYBE Option to make instant, or at least quicker/slower
         // Do play
@@ -65,16 +65,25 @@ public class ComputerAI
             _executePooledDeployGameAction();
         }
 
+        if(GameManager.Instance.gameState != GameManager.GameState.Deploy)
+        {
+            // We dropped our last reinforcement, gamemanager switched phase
+            pooledAction.type = GameAction.GameActionType.None;
+            GameManager.Instance.resetSelection();
+            slowDown = false; // slow down will happen of first loop of attack phase
+            return; // Don't generate another deployment order as we're done here
+        }
+
         GameAction newAction = _generateDeployGameAction();
         if(pooledAction.type != GameAction.GameActionType.Deploy || pooledAction.to != newAction.to)
         {
             // Only reset bigger timer and update selection if deployment target changes
-            changedAction = true;
+            slowDown = true;
             GameManager.Instance.askSelection(new(){ selected = newAction.to }); // display selection for human understanding
             AIVisualMarkerManager.Instance.moveTo(newAction.to.state.barycenter); // move marker to guide human to the right place (if he wants to follow)
         }
         else
-            changedAction = false; // go fast to next deployement
+            slowDown = false; // go fast to next deployement
 
         pooledAction = newAction;
     }
@@ -103,54 +112,59 @@ public class ComputerAI
 
     private void _processAttack()
     {
-        bool planChanged = false;
+        bool newPlan = false;
         if(attackGamePlan == null || attackGamePlan.Count == 0)
         {
             GameStateGraph graph = new();
             graph.initialize(player);
             graph.generate(10);
             attackGamePlan = graph.getBestMoveActions();
-            planChanged = true;
+            newPlan = true;
         }
         
         if(attackGamePlan == null || attackGamePlan.Count == 0) // If still null after tree evaluation, nothing we can do will further improve our situtation, end attack phase
         {
-            pooledAction.type = GameAction.GameActionType.Attack; // TEMP Corrupt pooled action to force recompute of deployments
             GameManager.Instance.triggerNextPhase();
             return;
         }
 
-        if(changedAction == false)
-            planChanged |= _executeAttackPlan();
-        else
-            changedAction = false;
+        bool planUpdated = false;
+        if(newPlan == false)
+            planUpdated = _executeAttackPlan(); // Don't execute new plan instantly to let player reach sector as will
 
         // Manage visual feedback for human understanding of WTF is happening
-        GameManager.SelectionData selection = new();
-        if(attackGamePlan.Count > 0 && planChanged)
+        if(attackGamePlan.Count > 0)
         {
-            GameAction nextMove = attackGamePlan.Peek();
-            if(nextMove.type == GameAction.GameActionType.Move)
+            if(planUpdated || newPlan)
             {
-                changedAction = false; // Don't wait for post-combat free move
-                selection.allies = new(){ GameState.getRealCountryFromAlternativeState(player.countries, nextMove.to) };
+                GameManager.SelectionData selection = new();
+                GameAction nextMove = attackGamePlan.Peek();
+                if(nextMove.type == GameAction.GameActionType.Move)
+                {
+                    planUpdated = false; // Don't wait for post-combat free move
+                    selection.allies = new(){ GameState.getRealCountryFromAlternativeState(player.countries, nextMove.to) };
+                }
+                else if(nextMove.type == GameAction.GameActionType.Attack)
+                {
+                    AIVisualMarkerManager.Instance.moveTo(nextMove.to.state.barycenter);
+                    selection.enemies = new(){ nextMove.to };
+                }
+                selection.selected = GameState.getRealCountryFromAlternativeState(player.countries, nextMove.from);
+                GameManager.Instance.askSelection(selection); // If empty, it will clear selection
             }
-            else if(nextMove.type == GameAction.GameActionType.Attack)
-            {
-                AIVisualMarkerManager.Instance.moveTo(nextMove.to.state.barycenter);
-                selection.enemies = new(){ nextMove.to };
-            }
-            selection.selected = GameState.getRealCountryFromAlternativeState(player.countries, nextMove.from);
         }
         else
-            changedAction = false; // don't wait here for last move, wait in last move state
+        {
+            planUpdated = false; // don't wait here for last move, wait in first action of next plan or first pass of next phase
+            GameManager.Instance.resetSelection();
+        }
 
-        GameManager.Instance.askSelection(selection); // If empty, it will clear selection
+        slowDown = planUpdated || newPlan; // Wait if plan is new or if new attack action is selected
     }
 
     private bool _executeAttackPlan()
     {
-        bool planChanged = false;
+        bool planUpdate = false;
         if(attackGamePlan.Count == 0)
             throw new Exception("Trying to execute an empty attack game plan");
         // If we do have a valid attack plan, execute it step by step
@@ -172,7 +186,7 @@ public class ComputerAI
                 if(actualOrigin.troops < actualDestination.troops * 1.1f) // Cannot attack with less than 10% more troops
                 {
                     // We took too many losses, abort attack
-                    attackGamePlan = null;
+                    attackGamePlan.Clear();
                     break;
                 }
                 // Process the attack
@@ -183,7 +197,7 @@ public class ComputerAI
                     GameManager.Instance.countryConquest(actualOrigin, actualDestination, troopsMovement);
                     // End GameAction, as country has been conquered
                     attackGamePlan.Dequeue();
-                    planChanged = true;
+                    planUpdate = true;
                 }
                 else
                     GameManager.Instance.updateCountryTroopsDisplay(actualOrigin, actualDestination);
@@ -195,16 +209,44 @@ public class ComputerAI
                 actualDestination = GameState.getRealCountryFromAlternativeState(player.countries, action.to);
                 GameManager.Instance.askMovement(actualOrigin, actualDestination, action.parameter);
                 attackGamePlan.Dequeue();
-                planChanged = true;
+                planUpdate = true;
                 break;
             }
         }
-        return planChanged;
+        return planUpdate;
     }
 
     private void _processReinforce()
     {
-        bool didReinforce = false;
+        if(pooledAction.type != GameAction.GameActionType.Move)
+        {
+            // First time here, generate action, update selection and move AI Marker
+            GameAction freeMoveAction = _generateFreeMoveAction();
+            if(freeMoveAction.type == GameAction.GameActionType.None)
+            {
+                // Could not reinforce, skip
+                pooledAction.type = GameAction.GameActionType.None;
+                GameManager.Instance.triggerNextPhase(); // Skip turn if we could not reinforce anyone, gameManager skips atomaticaly when last move is asked
+            }
+            slowDown = true;
+            pooledAction = freeMoveAction;
+            AIVisualMarkerManager.Instance.moveTo(freeMoveAction.from.state.barycenter);
+            GameManager.Instance.askSelection(new(){selected = freeMoveAction.from, allies = new(){freeMoveAction.to}});
+        }
+        else
+        {
+            // It's the second time we go here, we can execute the movement
+            GameManager.Instance.askMovement(pooledAction.from, pooledAction.to, pooledAction.parameter);
+            threats = null; // reset all threats, as they will likely change a lot with all other players turns
+            AIVisualMarkerManager.Instance.moveTo(pooledAction.to.state.barycenter);
+            pooledAction.type = GameAction.GameActionType.None;
+            GameManager.Instance.resetSelection();
+            slowDown = false;
+        }
+    }
+
+    private GameAction _generateFreeMoveAction()
+    {
         threats = _computeAndSortOwnCountriesThreatLevel(); // Recompute all threats after our turn, as a lot might have changed
         for(int i = 0; i < threats.Count; ++i)
         {
@@ -248,14 +290,11 @@ public class ComputerAI
             if(troopMovement <= 0)
                 continue; // threat seems already at equilibrium, try to find another one to help
 
-            GameManager.Instance.askMovement(reinforcer, toReinforce, troopMovement);
-            didReinforce = true;
-            break; // We only have one reinforcement, get outta here after it's done
+            // Get outta here after we found one
+            return new(){ type = GameAction.GameActionType.Move, from = reinforcer, to = toReinforce, parameter = troopMovement };
         }
 
-        threats = null; // reset all threats, as they will likely change a lot with all other players turns
-        if(!didReinforce)
-            GameManager.Instance.triggerNextPhase(); // Skip turn if we could not reinforce anyone, gameManager skips atomaticaly when last move is asked
+        return new(){ type = GameAction.GameActionType.None };
     }
 
     private int _computeTroopMovementToEqualizeThreats(Country _toHelp, float _toHelpThreatLevel, Country _helper, float _helperThreatLevel)
