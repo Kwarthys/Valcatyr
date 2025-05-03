@@ -1,10 +1,10 @@
-[gd_scene load_steps=9 format=3 uid="uid://ckgk4ej1kuana"]
+[gd_scene load_steps=11 format=3 uid="uid://ckgk4ej1kuana"]
 
 [ext_resource type="Script" path="res://scripts/utils/ParticleSystemHelper.gd" id="1_gjlwv"]
 
 [sub_resource type="Curve" id="Curve_eo8k0"]
-_data = [Vector2(0.75, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -12.0414, 0.0, 0, 0]
-point_count = 2
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.521, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -5.65, 0.0, 0, 0]
+point_count = 3
 
 [sub_resource type="CurveTexture" id="CurveTexture_ugnj8"]
 curve = SubResource("Curve_eo8k0")
@@ -15,6 +15,13 @@ colors = PackedColorArray(1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1)
 
 [sub_resource type="GradientTexture1D" id="GradientTexture1D_8odhl"]
 gradient = SubResource("Gradient_0c4tf")
+
+[sub_resource type="Curve" id="Curve_7j25b"]
+_data = [Vector2(0, 0.5), 0.0, 2.04704, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.2), -2.71977, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_c0h82"]
+curve = SubResource("Curve_7j25b")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_6alpv"]
 particle_flag_damping_as_friction = true
@@ -30,6 +37,7 @@ initial_velocity_max = 0.3
 gravity = Vector3(0, 0, 0)
 damping_min = 10.0
 damping_max = 10.0
+scale_curve = SubResource("CurveTexture_c0h82")
 color_ramp = SubResource("GradientTexture1D_8odhl")
 alpha_curve = SubResource("CurveTexture_ugnj8")
 turbulence_noise_strength = 12.3
@@ -50,7 +58,6 @@ particleSystem = NodePath("GPUParticles3D")
 [node name="GPUParticles3D" type="GPUParticles3D" parent="."]
 emitting = false
 amount = 150
-lifetime = 1.5
 one_shot = true
 explosiveness = 0.9
 process_material = SubResource("ParticleProcessMaterial_6alpv")

@@ -113,8 +113,7 @@ public partial class GameManager : Node
         _amount = Mathf.Min(_from.troops - 1, _amount); // some sanitizing, should already be taken into account
         _from.troops -= _amount;
         _to.troops += _amount;
-        troopManager.updateDisplay(_from);
-        troopManager.updateDisplay(_to);
+        troopManager.movePawns(_from, _to, _amount);
 
         movementLeft -= 1;
         if(movementLeft == 0)
@@ -134,15 +133,16 @@ public partial class GameManager : Node
 
         _attackingTroops = Mathf.Min(_attacker.troops - 1, _attackingTroops); // some sanitizing, should already be taken into account
         _attacker.troops -= _attackingTroops;
-        _defender.troops = _attackingTroops;
+
+        _defender.troops = 0;
+        troopManager.updateDisplay(_defender); // Boom no more troops
+        _defender.troops = _attackingTroops; // Joking, we display 0 while moving attackers troops but we already put'em there
+
         players[_defender.playerID].removeCountry(_defender);
         _defender.playerID = _attacker.playerID;
         players[_attacker.playerID].addCountry(_defender);
 
-        troopManager.updateDisplay(_attacker);
-        troopManager.updateDisplay(_defender, true); // change colors of pre-existing troops
-        SelectionData selection = HumanPlayerManager.processSelection(this, _defender, players[_attacker.playerID]); // select newly acquired country
-        _applySelection(selection);
+        troopManager.movePawns(_attacker, _defender, _attackingTroops);
     }
 
     private void _startDeploymentPhase()

@@ -43,6 +43,7 @@ public static class HumanPlayerManager
             _gameManager.countryConquest(attacker, _interactedCountry, troopsMovement);
             if(attacker.troops > 1) // If more troops can move
                 FreeMovementManager.Instance.startMovementInteraction(attacker, _interactedCountry); // let player decide what troops to move to new country
+            processSelection(_gameManager, _interactedCountry, _player); // Select newly acquired country
         }
         else
             _gameManager.updateCountryTroopsDisplay(attacker, _interactedCountry);
