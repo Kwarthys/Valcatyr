@@ -8,6 +8,8 @@ public partial class TroopDisplayManager : Node3D
     private PackedScene level1PawnScene;
     [Export]
     private PackedScene level2PawnScene;
+    [Export]
+    private PackedScene explosionFX;
 
     private Dictionary<int, TroopsData> troopsPerState = new();
 
@@ -24,6 +26,8 @@ public partial class TroopDisplayManager : Node3D
 
         TroopsData troops = troopsPerState[_c.state.id];
 
+        bool playExplosions = _c.troops < (troops.level1Pawns.Count + troops.level2Pawns.Count * PAWN_FACTORISATION_COUNT);
+
         // Manage level 1 Pawns
         if(level1Needed > troops.level1Pawns.Count)
         {
@@ -33,7 +37,7 @@ public partial class TroopDisplayManager : Node3D
         else if(level1Needed < troops.level1Pawns.Count)
         {
             // Destroy levelones
-            _destroyPawnsIn(troops.level1Pawns.Count - level1Needed, troops.level1Pawns);
+            _destroyPawnsIn(troops.level1Pawns.Count - level1Needed, troops.level1Pawns, playExplosions);
         }
 
         // Manage level 2 Pawns
@@ -45,7 +49,7 @@ public partial class TroopDisplayManager : Node3D
         else if(level2Needed < troops.level2Pawns.Count)
         {
             // Destroy leveltwos
-            _destroyPawnsIn(troops.level2Pawns.Count - level2Needed, troops.level2Pawns);
+            _destroyPawnsIn(troops.level2Pawns.Count - level2Needed, troops.level2Pawns, playExplosions);
         }
 
         if(_colorUpdate)
@@ -114,7 +118,7 @@ public partial class TroopDisplayManager : Node3D
         return _n;
     }
 
-    private void _destroyPawnsIn(int _n, List<PawnData> _list)
+    private void _destroyPawnsIn(int _n, List<PawnData> _list, bool _playFX)
     {
         if(_n >= _list.Count)
             _n = _list.Count;
@@ -122,6 +126,15 @@ public partial class TroopDisplayManager : Node3D
         for(int i = 0; i < _n; ++i)
         {
             int index = (int)(GD.Randf() * (_list.Count - 1));
+
+            if(_playFX)
+            {
+                Node3D fx = explosionFX.Instantiate<Node3D>();
+                fx.Position = _list[index].instance.Position;
+                fx.Rotation = _list[index].instance.Rotation;
+                AddChild(fx); // fx will desotry ifself at the end of its animation
+            }
+
             RemoveChild(_list[index].instance);
             _list.RemoveAt(index);
         }

@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=32 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://dnry3u2p0r6da" path="res://prefabs/level1Pawn.tscn" id="6_6k61a"]
 [ext_resource type="Material" uid="uid://cypmok4bg16vl" path="res://materials/SkyBoxMaterial.tres" id="6_73edm"]
 [ext_resource type="PackedScene" uid="uid://cjux8np2ds5ot" path="res://prefabs/Level2Pawn.tscn" id="7_7c1ts"]
+[ext_resource type="PackedScene" uid="uid://ckgk4ej1kuana" path="res://prefabs/explosionFx.tscn" id="7_n7v4k"]
 [ext_resource type="PackedScene" uid="uid://ltuob0u7ymlp" path="res://prefabs/AIPresenceMarker.tscn" id="8_lhd5y"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/SkyBoxBuilder.cs" id="9_gnn7f"]
 [ext_resource type="Script" path="res://scripts/GameManagement/GameManager.cs" id="13_37t2g"]
@@ -75,6 +76,7 @@ script = ExtResource("4_yu05o")
 script = ExtResource("5_aytuo")
 level1PawnScene = ExtResource("6_6k61a")
 level2PawnScene = ExtResource("7_7c1ts")
+explosionFX = ExtResource("7_n7v4k")
 
 [node name="ClickCollider" type="Area3D" parent="Planet" node_paths=PackedStringArray("planet", "gameManager", "camera")]
 script = ExtResource("5_qons3")
