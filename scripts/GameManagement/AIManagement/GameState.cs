@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Security.Principal;
 
@@ -31,13 +32,13 @@ public class GameState
         int continentScore = _evaluateContinentScore(); // How much bonus points granted by Continent occupation
         int countryScore = _evaluateOwnedCountriesScore(); // How much points granted by number of owned states
         float threatScore = _evaluateThreatScore(); // How much our borders are unsafe
+        int unusableTroopsScore = _evaluateUnusableTroops(); // How much troops on non bordering states
         if(threatScore < Mathf.Epsilon) // As it cannot be negative, we avoid dividing by zero (can happen for last gamestates where we own all countries, ggs!)
             score = float.MaxValue;
         else
-            score = (continentScore + countryScore) / threatScore; // first try
+            score = (continentScore + countryScore) / (threatScore + unusableTroopsScore);
 
-        //if(depth == 2)
-        //    GD.Print("Continent: " + continentScore + " + Countries:" + countryScore + " / Threat:" + threatScore + " --> " + this);
+        GD.Print("UnusableTroops:" + unusableTroopsScore);
     }
 
     public bool contains(Country _c)
@@ -134,6 +135,33 @@ public class GameState
             threat += localThreat / c.state.neighbors.Count;
         }
         return threat;
+    }
+
+    private int _evaluateUnusableTroops()
+    {
+        int maxAmount = 0; // The country with the most unusable troops does not count as we can move it in the move phase
+        int unusableTroops = 0;
+        foreach(Country c in countries)
+        {
+            bool nearEnemy = false;
+            foreach(int stateID in c.state.neighbors)
+            {
+                Country realCountry = GameManager.Instance.getCountryByState(stateID);
+                if(contains(realCountry) == false)
+                {
+                    nearEnemy = true;
+                    break; // This country has an enemy as neighbor, its troops are useful
+                }
+            }
+
+            if(nearEnemy || c.troops <= 1)
+                continue;
+
+            unusableTroops += c.troops-1;
+            if(maxAmount < c.troops-1)
+                maxAmount = c.troops-1;
+        }
+        return unusableTroops - maxAmount;
     }
 
     /// <summary>
