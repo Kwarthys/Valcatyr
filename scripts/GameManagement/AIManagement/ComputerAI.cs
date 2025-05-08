@@ -25,16 +25,16 @@ public class ComputerAI
     }
 
     private double dtAccumulator = 0.0f;
-    private const double ACTION_COOLDOWN = 1.0f; // Seconds per action
-    private bool slowDown = true; // Used to track when to apply a longer delay, like when changing attack front
+    private const double ACTION_COOLDOWN = 0.5f; // Seconds per action
     private const double SLOW_ACTION_COOLDOWN = 3.0f;
+    private bool slowDown = false; // Used to track when to apply a longer delay, like when changing attack front
 
     private Continent focusedContinent = null;
     private List<CountryThreatPair> threats;
 
     private Queue<GameAction> attackGamePlan = new();
 
-    private GameAction pooledAction;
+    private GameAction pooledAction = new();
 
 
     public void processTurn(double _dt)
@@ -55,7 +55,42 @@ public class ComputerAI
         }
     }
 
-    private void _processFirstDeploy(){} // NYI
+    private void _processFirstDeploy()
+    {
+        if(pooledAction.type == GameAction.GameActionType.Deploy)
+        {
+            _executePooledDeployGameAction(false);
+            pooledAction.type = GameAction.GameActionType.None; // Reset pooled action
+            slowDown = false;
+            return;
+        }
+        
+        // Else Generate Deploy action
+        focusedContinent = _getFocusedContinent();
+        Country toReinforce = null;
+        float maxThreat = 0.0f;
+        foreach(Country c in player.countries)
+        {
+            if(c.continent.id != focusedContinent.id)
+                continue;
+            float threat = computeCountryThreat(c).threatLevel;
+            if(toReinforce == null || maxThreat < threat)
+            {
+                toReinforce = c;
+                maxThreat = threat;
+            }
+        }
+        if(toReinforce == null)
+        {
+            throw new Exception("ProcessFirstDeployment of ComputerAI did not manage to find a country to reinforce");
+        }
+        pooledAction = new GameAction(){ type = GameAction.GameActionType.Deploy, to = toReinforce };
+
+        slowDown = true;
+        GameManager.Instance.askSelection( new(){ selected = toReinforce } );
+        AIVisualMarkerManager.Instance.moveTo(toReinforce.state.barycenter);
+
+    }
 
     private void _processDeploy()
     {
@@ -95,11 +130,15 @@ public class ComputerAI
         return new(){ to = threats[0].country, parameter = 1, type = GameAction.GameActionType.Deploy };
     }
 
-    private void _executePooledDeployGameAction()
+    private void _executePooledDeployGameAction(bool _updateThreats = true)
     {
         if(pooledAction.type != GameAction.GameActionType.Deploy)
             throw new Exception("Wrong GameAction type given to _executePooledDeployGameAction");
         GameManager.Instance.askReinforce(pooledAction.to);
+
+        if(_updateThreats == false)
+            return;
+
         for(int i = 0; i < threats.Count; ++i)
         {
             if(threats[i].country == pooledAction.to)

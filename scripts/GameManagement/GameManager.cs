@@ -58,7 +58,7 @@ public partial class GameManager : Node
 
         List<int> hoomanIndices = new(){0}; // only one human for now, TODO: need game setup menu for local turn based versus
 
-        for(int i = 0; i < 2; ++i) // TODO Adjust number of player 3-6
+        for(int i = 0; i < 4; ++i) // TODO Adjust number of player 3-6
         {
             players.Add(new(i));
             if(hoomanIndices.Contains(i))
@@ -86,26 +86,39 @@ public partial class GameManager : Node
 
     public void askReinforce(Country _c)
     {
-        if(gameState != GameState.Deploy)
-        {
-            GD.PrintErr("GameManager.askReinforce called outisde ouf deployment phase");
+        if(players[activePlayerIndex].id != _c.playerID)
             return;
-        }
-        if(players[activePlayerIndex].id == _c.playerID && reinforcementLeft > 0)
-        {
-            reinforcementLeft--;
-            _c.troops += 8;//1; TODO REMOVE CHEAT
-            troopManager.updateDisplay(_c);
 
-            if(reinforcementLeft == 0)
+        switch(gameState)
+        {
+            default:
+                GD.PrintErr("GameManager.askReinforce called outisde of first deployment or deployment phase");
+                return;
+            case GameState.Deploy:
             {
-                _startAttackPhase();
-            }
-            else
+                if(reinforcementLeft <= 0)
+                    return;
+                // Manage end of Deploy phase
+                if(--reinforcementLeft == 0)
+                    _startAttackPhase();
+                else
+                    _setSecondaryDisplay();
+            } break;
+            case GameState.FirstDeploy:
             {
-                _setSecondaryDisplay();
-            }
+                activePlayerIndex = (activePlayerIndex + 1) % players.Count; // One by one turn by turn, does not change phase but change active player
+                // Manage end of First Deploy phase
+                if(activePlayerIndex == 0) // each time all players have placed a pawn
+                {
+                    if(--reinforcementLeft <= 0)
+                        _startDeploymentPhase(); // End of phase
+                }
+                AIVisualMarkerManager.Instance.setMarkerVisibility(players[activePlayerIndex].isHuman == false); // Display AI Marker if next player is AI
+                _updatePhaseDisplay();
+            }break;
         }
+        _c.troops += 1;
+        troopManager.updateDisplay(_c);
     }
 
     public void askMovement(Country _from, Country _to, int _amount)
@@ -148,7 +161,6 @@ public partial class GameManager : Node
     private void _startDeploymentPhase()
     {
         gameState = GameState.Deploy;
-        activePlayerIndex = (activePlayerIndex + 1) % players.Count;
         reinforcementLeft = _computePlayerNewArmies(players[activePlayerIndex]);
         _updatePhaseDisplay();
     }
@@ -157,8 +169,6 @@ public partial class GameManager : Node
     {
         // triggered when all troops deployed in deploy phase
         gameState = GameState.Attack;
-        _setPhaseDisplay();
-        _setSecondaryDisplay();
         _updatePhaseDisplay();
     }
 
@@ -166,8 +176,6 @@ public partial class GameManager : Node
     {
         gameState = GameState.Reinforce;
         movementLeft = 1;
-        _setPhaseDisplay();
-        _setSecondaryDisplay();
         _updatePhaseDisplay();
     }
 
@@ -175,21 +183,29 @@ public partial class GameManager : Node
     {
         // End of reinforcement phase by button for player, call by AI
         movementLeft = 0; // Not forced to use all
+        activePlayerIndex = (activePlayerIndex + 1) % players.Count;
         _startDeploymentPhase();
         // Only show marker when AIs are playing
         AIVisualMarkerManager.Instance.setMarkerVisibility(players[activePlayerIndex].isHuman == false);
+    }
+
+    private void _startFirstDeployment()
+    {
+        activePlayerIndex = 0; // First player go !
+        gameState = GameState.FirstDeploy;
+        reinforcementLeft = 2; // this can take quite the time, board game setup eh
+        _updatePhaseDisplay();
     }
 
     public void triggerNextPhase()
     {
         switch(gameState)
         {
+            case GameState.Init: _startFirstDeployment(); return;
             case GameState.Attack: _startReinforcePhase(); return;
+            case GameState.Reinforce: _startNextPlayerTurn(); return; // Go Back to Deploy phase
 
-            case GameState.Init:
-            case GameState.FirstDeploy: // first deployment not implemented yet (each player place a single troop turn by turn)
-            case GameState.Reinforce: _startNextPlayerTurn(); return;
-
+            case GameState.FirstDeploy:
             case GameState.Deploy:
                 GD.PrintErr("Should not be in _triggerNextPhase in " + getGameStateAsString() + ", transition is automatic"); return;
         }
@@ -221,7 +237,7 @@ public partial class GameManager : Node
     {
         _setPhaseDisplay();
         _setSecondaryDisplay();
-        SelectionData selection = HumanPlayerManager.processSelection(this, null, players[activePlayerIndex]);
+        SelectionData selection = HumanPlayerManager.processSelection(null, players[activePlayerIndex]);
         _applySelection(selection);
     }
 
@@ -235,7 +251,8 @@ public partial class GameManager : Node
         string s = "";
         switch(gameState)
         {
-            case GameState.Deploy: s = reinforcementLeft + " reinforcement left to place."; break;
+            case GameState.FirstDeploy: // same
+            case GameState.Deploy: s = reinforcementLeft + " reinforcement(s) left to place."; break;
             case GameState.Attack: break;
             case GameState.Reinforce: s = movementLeft + " troop movement left."; break;
         }
@@ -260,7 +277,7 @@ public partial class GameManager : Node
             // Reset selection
             if(currentSelection.selected != null)
             {
-                SelectionData selection = HumanPlayerManager.processSelection(this, null, players[activePlayerIndex]);
+                SelectionData selection = HumanPlayerManager.processSelection(null, players[activePlayerIndex]);
                 _applySelection(selection);
             }
             return;
@@ -272,12 +289,12 @@ public partial class GameManager : Node
             {
                 if(players[activePlayerIndex].isHuman)
                 {
-                    HumanPlayerManager.processAction(this, c, players[activePlayerIndex]);
+                    HumanPlayerManager.processAction(c, players[activePlayerIndex]);
                 }
             }
             else
             {
-                SelectionData selection = HumanPlayerManager.processSelection(this, c, players[activePlayerIndex]);
+                SelectionData selection = HumanPlayerManager.processSelection(c, players[activePlayerIndex]);
                 _applySelection(selection);
             }
         }

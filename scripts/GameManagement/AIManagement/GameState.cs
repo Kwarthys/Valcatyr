@@ -383,6 +383,8 @@ public class GameStateGraph
 
 public struct GameAction
 {
+    public GameAction() { type = GameActionType.None; from = null; to = null; parameter = 0; }
+
     public enum GameActionType{ Attack, Move, Deploy, None };
     public GameActionType type;
     public Country from;
