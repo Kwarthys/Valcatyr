@@ -119,6 +119,7 @@ public partial class GameManager : Node
         }
         _c.troops += 1;
         troopManager.updateDisplay(_c);
+        _notifyCountryTroopUpdate(_c);
     }
 
     public void askMovement(Country _from, Country _to, int _amount)
@@ -127,6 +128,8 @@ public partial class GameManager : Node
         _from.troops -= _amount;
         _to.troops += _amount;
         troopManager.movePawns(_from, _to, _amount);
+
+        _notifyCountryTroopUpdate(_from, _to);
 
         movementLeft -= 1;
         if(movementLeft == 0)
@@ -137,6 +140,7 @@ public partial class GameManager : Node
     {
         troopManager.updateDisplay(_a);
         troopManager.updateDisplay(_b);
+        _notifyCountryTroopUpdate(_a,_b);
     }
 
     public void countryConquest(Country _attacker, Country _defender, int _attackingTroops)
@@ -156,6 +160,16 @@ public partial class GameManager : Node
         players[_attacker.playerID].addCountry(_defender);
 
         troopManager.movePawns(_attacker, _defender, _attackingTroops);
+
+        _notifyCountryTroopUpdate(_attacker,_defender);
+    }
+
+    public void _notifyCountryTroopUpdate(Country _a, Country _b = null)
+    {
+        if(currentSelection.selected == null)
+            return;
+        if(currentSelection.selected == _a || ( _b !=null && currentSelection.selected == _b ))
+            stateDisplayer.setCountryToDisplay(currentSelection.selected); // Refresh display with new troops
     }
 
     private void _startDeploymentPhase()
@@ -181,7 +195,7 @@ public partial class GameManager : Node
 
     private void _startNextPlayerTurn()
     {
-        // End of reinforcement phase by button for player, call by AI
+        // End of last movement phase by button for player, call by AI
         movementLeft = 0; // Not forced to use all
         activePlayerIndex = (activePlayerIndex + 1) % players.Count;
         _startDeploymentPhase();
@@ -237,8 +251,7 @@ public partial class GameManager : Node
     {
         _setPhaseDisplay();
         _setSecondaryDisplay();
-        SelectionData selection = HumanPlayerManager.processSelection(null, players[activePlayerIndex]);
-        _applySelection(selection);
+        _applySelection(HumanPlayerManager.processSelection(null, players[activePlayerIndex]));
     }
 
     private void _setPhaseDisplay()
@@ -326,7 +339,7 @@ public partial class GameManager : Node
         {
             planet.mapManager.resetStateHighlight(currentSelection.selected.state);
         }
-
+        
         // Select new states
         foreach(Country c in _selection.allies)
         {
@@ -339,16 +352,17 @@ public partial class GameManager : Node
                 planet.mapManager.setStateHighlightEnemy(c.state);
         }
 
-        if(_selection.selected != null)
-            planet.mapManager.setStateSelected(_selection.selected.state);
-
         currentSelection = _selection;
-        planet.setMesh();
 
-        if(currentSelection.selected == null)
-            stateDisplayer.setVisible(false);
-        else
+        if(currentSelection.selected != null)
+        {
+            planet.mapManager.setStateSelected(currentSelection.selected.state);
             stateDisplayer.setCountryToDisplay(currentSelection.selected);
+        }
+        else
+            stateDisplayer.setVisible(false);
+
+        planet.setMesh(); // Apply selection visuals
     }
 
     private void _doCountriesRandomAttributions()

@@ -37,8 +37,6 @@ public class GameState
             score = float.MaxValue;
         else
             score = (continentScore + countryScore) / (threatScore + unusableTroopsScore);
-
-        GD.Print("UnusableTroops:" + unusableTroopsScore);
     }
 
     public bool contains(Country _c)

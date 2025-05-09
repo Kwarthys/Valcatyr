@@ -26,7 +26,7 @@ public class ComputerAI
 
     private double dtAccumulator = 0.0f;
     private const double ACTION_COOLDOWN = 0.5f; // Seconds per action
-    private const double SLOW_ACTION_COOLDOWN = 3.0f;
+    private const double SLOW_ACTION_COOLDOWN = 1.0f;
     private bool slowDown = false; // Used to track when to apply a longer delay, like when changing attack front
 
     private Continent focusedContinent = null;
@@ -266,6 +266,7 @@ public class ComputerAI
                 // Could not reinforce, skip
                 pooledAction.type = GameAction.GameActionType.None;
                 GameManager.Instance.triggerNextPhase(); // Skip turn if we could not reinforce anyone, gameManager skips atomaticaly when last move is asked
+                return;
             }
             slowDown = true;
             pooledAction = freeMoveAction;
@@ -275,11 +276,11 @@ public class ComputerAI
         else
         {
             // It's the second time we go here, we can execute the movement
+            GameManager.Instance.resetSelection();
             GameManager.Instance.askMovement(pooledAction.from, pooledAction.to, pooledAction.parameter);
             threats = null; // reset all threats, as they will likely change a lot with all other players turns
             AIVisualMarkerManager.Instance.moveTo(pooledAction.to.state.barycenter);
             pooledAction.type = GameAction.GameActionType.None;
-            GameManager.Instance.resetSelection();
             slowDown = false;
         }
     }
