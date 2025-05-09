@@ -20,8 +20,8 @@ public partial class GameManager : Node
 
     public Planet planet{get; private set;} = null;
 
-    public enum GameState { Init, FirstDeploy, Deploy, Attack, Reinforce };
-    public GameState gameState {get; private set;} = GameState.Init;
+    public enum GamePhase { Init, FirstDeploy, Deploy, Attack, Reinforce, End };
+    public GamePhase gamePhase {get; private set;} = GamePhase.Init;
 
     private List<Country> countries = new();
     Dictionary<State, int> countryIndexPerState = new();
@@ -68,13 +68,19 @@ public partial class GameManager : Node
         }
 
         _doCountriesRandomAttributions();
+        // Init AIs focus
+        foreach(Player p in players)
+        {
+            if(p.isHuman) continue;
+            aiPerPlayer[p].initializeStrategy();
+        }
         countries.ForEach((c) => {c.troops = 1; troopManager.updateDisplay(c); });
     }
 
 
     public override void _Process(double _dt)
     {
-        if(gameState == GameState.Init)
+        if(gamePhase == GamePhase.Init)
             return; // Game has not started yet
         // only treat IA here, as humans play with mouse
         if(players[activePlayerIndex].isHuman == false)
@@ -89,12 +95,12 @@ public partial class GameManager : Node
         if(players[activePlayerIndex].id != _c.playerID)
             return;
 
-        switch(gameState)
+        switch(gamePhase)
         {
             default:
                 GD.PrintErr("GameManager.askReinforce called outisde of first deployment or deployment phase");
                 return;
-            case GameState.Deploy:
+            case GamePhase.Deploy:
             {
                 if(reinforcementLeft <= 0)
                     return;
@@ -104,7 +110,7 @@ public partial class GameManager : Node
                 else
                     _setSecondaryDisplay();
             } break;
-            case GameState.FirstDeploy:
+            case GamePhase.FirstDeploy:
             {
                 activePlayerIndex = (activePlayerIndex + 1) % players.Count; // One by one turn by turn, does not change phase but change active player
                 // Manage end of First Deploy phase
@@ -149,19 +155,28 @@ public partial class GameManager : Node
             GD.PrintErr(_attacker + " attacks " + _defender + " AND THEY ARE ALLIED"); // don't return as we'd stuck the AI in the infinite loop
 
         _attackingTroops = Mathf.Min(_attacker.troops - 1, _attackingTroops); // some sanitizing, should already be taken into account
-        _attacker.troops -= _attackingTroops;
 
         _defender.troops = 0;
         troopManager.updateDisplay(_defender); // Boom no more troops
         _defender.troops = _attackingTroops; // Joking, we display 0 while moving attackers troops but we already put'em there
+
+        if(players[_defender.playerID].countries.Count == 1)
+        {
+            // This player lost its final country, he lost
+            _eliminatePlayerFromGame(players[_defender.playerID]);
+        }
 
         players[_defender.playerID].removeCountry(_defender);
         _defender.playerID = _attacker.playerID;
         players[_attacker.playerID].addCountry(_defender);
 
         troopManager.movePawns(_attacker, _defender, _attackingTroops);
+        _attacker.troops -= _attackingTroops;
 
         _notifyCountryTroopUpdate(_attacker,_defender);
+
+        if(gamePhase == GamePhase.Attack) // Don't apply selection is game is over with this conquest
+            _applySelection(HumanPlayerManager.processSelection(_attacker, players[activePlayerIndex]));
     }
 
     public void _notifyCountryTroopUpdate(Country _a, Country _b = null)
@@ -172,9 +187,30 @@ public partial class GameManager : Node
             stateDisplayer.setCountryToDisplay(currentSelection.selected); // Refresh display with new troops
     }
 
+    private void _eliminatePlayerFromGame(Player _p)
+    {
+        _p.hasLostTheGame = true;
+        Player alivePlayerMemory = null;
+        foreach(Player p in players)
+        {
+            if(p.hasLostTheGame == false)
+            {
+                if(alivePlayerMemory != null)
+                    return; // At least two players are here, continue the game
+                alivePlayerMemory = p;
+            }
+        }
+
+        // Game is done, only one player remaining
+        gamePhase = GamePhase.End;
+        activePlayerIndex = players.IndexOf(alivePlayerMemory);
+        resetSelection();
+        _updatePhaseDisplay();
+    }
+
     private void _startDeploymentPhase()
     {
-        gameState = GameState.Deploy;
+        gamePhase = GamePhase.Deploy;
         reinforcementLeft = _computePlayerNewArmies(players[activePlayerIndex]);
         _updatePhaseDisplay();
     }
@@ -182,13 +218,13 @@ public partial class GameManager : Node
     private void _startAttackPhase()
     {
         // triggered when all troops deployed in deploy phase
-        gameState = GameState.Attack;
+        gamePhase = GamePhase.Attack;
         _updatePhaseDisplay();
     }
 
     private void _startReinforcePhase()
     {
-        gameState = GameState.Reinforce;
+        gamePhase = GamePhase.Reinforce;
         movementLeft = 1;
         _updatePhaseDisplay();
     }
@@ -197,7 +233,12 @@ public partial class GameManager : Node
     {
         // End of last movement phase by button for player, call by AI
         movementLeft = 0; // Not forced to use all
-        activePlayerIndex = (activePlayerIndex + 1) % players.Count;
+        // Find next player still in game
+        do
+        {
+            activePlayerIndex = (activePlayerIndex + 1) % players.Count;
+        }while(players[activePlayerIndex].hasLostTheGame);
+
         _startDeploymentPhase();
         // Only show marker when AIs are playing
         AIVisualMarkerManager.Instance.setMarkerVisibility(players[activePlayerIndex].isHuman == false);
@@ -206,22 +247,23 @@ public partial class GameManager : Node
     private void _startFirstDeployment()
     {
         activePlayerIndex = 0; // First player go !
-        gameState = GameState.FirstDeploy;
+        gamePhase = GamePhase.FirstDeploy;
         reinforcementLeft = 2; // this can take quite the time, board game setup eh
         _updatePhaseDisplay();
     }
 
     public void triggerNextPhase()
     {
-        switch(gameState)
+        switch(gamePhase)
         {
-            case GameState.Init: _startFirstDeployment(); return;
-            case GameState.Attack: _startReinforcePhase(); return;
-            case GameState.Reinforce: _startNextPlayerTurn(); return; // Go Back to Deploy phase
+            case GamePhase.Init: _startFirstDeployment(); return;
+            case GamePhase.Attack: _startReinforcePhase(); return;
+            case GamePhase.Reinforce: _startNextPlayerTurn(); return; // Go Back to Deploy phase
 
-            case GameState.FirstDeploy:
-            case GameState.Deploy:
+            case GamePhase.FirstDeploy:
+            case GamePhase.Deploy:
                 GD.PrintErr("Should not be in _triggerNextPhase in " + getGameStateAsString() + ", transition is automatic"); return;
+            case GamePhase.End: return; // Game is over
         }
 
         throw new Exception(); // should never be in another state
@@ -229,13 +271,14 @@ public partial class GameManager : Node
 
     public string getGameStateAsString()
     {
-        switch(gameState)
+        switch(gamePhase)
         {
-            case GameState.Init: return "Initialisation Phase"; // should not be displayed
-            case GameState.FirstDeploy: return "Initial Deployment Phase";
-            case GameState.Deploy: return "Deployment Phase";
-            case GameState.Attack: return "Attack Phase";
-            case GameState.Reinforce: return "Reinforcement Phase";
+            case GamePhase.Init: return "Initialisation Phase"; // should not be displayed
+            case GamePhase.FirstDeploy: return "Initial Deployment Phase";
+            case GamePhase.Deploy: return "Deployment Phase";
+            case GamePhase.Attack: return "Attack Phase";
+            case GamePhase.Reinforce: return "Reinforcement Phase";
+            case GamePhase.End: return "VICTORY";
         }
         return "<invalid>";
     }
@@ -262,12 +305,13 @@ public partial class GameManager : Node
     private void _setSecondaryDisplay()
     {
         string s = "";
-        switch(gameState)
+        switch(gamePhase)
         {
-            case GameState.FirstDeploy: // same
-            case GameState.Deploy: s = reinforcementLeft + " reinforcement(s) left to place."; break;
-            case GameState.Attack: break;
-            case GameState.Reinforce: s = movementLeft + " troop movement left."; break;
+            case GamePhase.FirstDeploy: // same
+            case GamePhase.Deploy: s = reinforcementLeft + " reinforcement(s) left to place."; break;
+            case GamePhase.Attack: break;
+            case GamePhase.Reinforce: s = movementLeft + " troop movement left."; break;
+            case GamePhase.End: s = "GG"; break;
         }
         GameUI.Instance?.setSecondary(s);
     }
@@ -280,7 +324,7 @@ public partial class GameManager : Node
     public enum PlanetInteraction { Primary, Secondary }
     public void onPlanetInteraction(PlanetInteraction _type, int _vertexClicked)
     {
-        if(gameState == GameState.Init || players[activePlayerIndex].isHuman == false)
+        if(gamePhase == GamePhase.Init || gamePhase == GamePhase.End || players[activePlayerIndex].isHuman == false)
             return; // Don't do anything here while game has not started, or in AI's turn
 
         State s = planet.mapManager.getStateOfVertex(_vertexClicked);

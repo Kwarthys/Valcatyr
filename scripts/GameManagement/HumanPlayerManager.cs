@@ -6,12 +6,12 @@ public static class HumanPlayerManager
 {
     public static void processAction(Country _interactedCountry, Player _player)
     {
-        switch(GameManager.Instance.gameState)
+        switch(GameManager.Instance.gamePhase)
         {
-            case GameManager.GameState.FirstDeploy: // Same as Deploy
-            case GameManager.GameState.Deploy: _processDeploy(_interactedCountry, _player); return;
-            case GameManager.GameState.Attack: _processAttack(_interactedCountry, _player); return;
-            case GameManager.GameState.Reinforce: _processReinforce(_interactedCountry, _player); return;
+            case GameManager.GamePhase.FirstDeploy: // Same as Deploy
+            case GameManager.GamePhase.Deploy: _processDeploy(_interactedCountry, _player); return;
+            case GameManager.GamePhase.Attack: _processAttack(_interactedCountry, _player); return;
+            case GameManager.GamePhase.Reinforce: _processReinforce(_interactedCountry, _player); return;
         }
     }
 
@@ -68,10 +68,10 @@ public static class HumanPlayerManager
         // _interactedCountry will be null when player clicked out of state, perform deselection by not re-adding much
         GameManager.SelectionData selection = new();
         selection.selected = _interactedCountry;
-        switch(GameManager.Instance.gameState)
+        switch(GameManager.Instance.gamePhase)
         {
-            case GameManager.GameState.FirstDeploy: // Same as Deploy
-            case GameManager.GameState.Deploy:
+            case GameManager.GamePhase.FirstDeploy: // Same as Deploy, fallthrough
+            case GameManager.GamePhase.Deploy:
             {
                 // always Highlight ALL allied territories
                 selection.allies.AddRange(_player.countries);
@@ -82,7 +82,7 @@ public static class HumanPlayerManager
                 selection.enemies.AddRange(GameManager.Instance.getNeighboringEnemiesAround(_interactedCountry, _player));
                 break;
             }
-            case GameManager.GameState.Attack:
+            case GameManager.GamePhase.Attack:
             {
                 if(_interactedCountry == null)
                     break;
@@ -97,7 +97,7 @@ public static class HumanPlayerManager
                 }
                 break;
             }
-            case GameManager.GameState.Reinforce:
+            case GameManager.GamePhase.Reinforce:
             {
                 if(_interactedCountry == null)
                     break;
@@ -106,8 +106,8 @@ public static class HumanPlayerManager
                 selection.enemies.AddRange(GameManager.Instance.getNeighboringEnemiesAround(_interactedCountry, _player));
                 break;
             }
-
-            case GameManager.GameState.Init:
+            case GameManager.GamePhase.End: break; // Always empty selection
+            case GameManager.GamePhase.Init:
                 GD.PrintErr("Should not be here in INIT mode");
                 break;
         }

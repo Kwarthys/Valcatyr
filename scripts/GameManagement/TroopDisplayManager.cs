@@ -72,7 +72,9 @@ public partial class TroopDisplayManager : Node3D
             // Remove from origin country
             data.level2Pawns.RemoveAt(index);
         }
+        // Instantly update troops, don't wait for movement end
         data.troops -= _amount;
+        troopsPerState[_destination.state.id].troops += _amount;
     }
 
     public void updateDisplay(Country _c)
@@ -156,9 +158,7 @@ public partial class TroopDisplayManager : Node3D
     private void _manageMovementEnd(PawnsMovement _move)
     {
         TroopsData data = troopsPerState[_move.destination.state.id];
-        // Add panws to the country troops
-        data.troops += _move.troopsValue; // Add the value
-        // Add acutal pawns
+        // Add pawns to the country troops
         for(int i = 0; i < _move.pawns.Count; ++i)
         {
             // Pawn destination becomes its actual point
@@ -175,7 +175,7 @@ public partial class TroopDisplayManager : Node3D
 
         if(data.level1Pawns.Count >= PAWN_FACTORISATION_COUNT)
         {
-            // Too much litle pawns, destroy above factorisation count and spawn a level2
+            // Too much litle pawns, destroy factorisation count and spawn a level2
             _destroyPawnsIn(PAWN_FACTORISATION_COUNT, data.level1Pawns, false);
             _spawnLevelTwos(1, _move.destination);
         }

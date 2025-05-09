@@ -6,6 +6,7 @@ public class Player
 {
     public Player(int _id){ id = _id; }
     public bool isHuman = false;
+    public bool hasLostTheGame = false; // hehe
     public int id = -1;
     public List<Country> countries {get; private set;} = new();
     public Dictionary<Continent, int> stateCountPerContinents {get; private set;} = new();

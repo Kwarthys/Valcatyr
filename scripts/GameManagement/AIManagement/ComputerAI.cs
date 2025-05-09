@@ -19,10 +19,7 @@ public class ComputerAI
 
     public Player player {get; private set;}
 
-    public ComputerAI(Player _player)
-    {
-        player = _player;
-    }
+    public ComputerAI(Player _player) { player = _player; }
 
     private double dtAccumulator = 0.0f;
     private const double ACTION_COOLDOWN = 0.5f; // Seconds per action
@@ -36,6 +33,25 @@ public class ComputerAI
 
     private GameAction pooledAction = new();
 
+    // At the start of the game, many countries will be spread and not worth defending, add their continent here to avoid computing them
+    private List<int> ignoredContinents = new();
+
+    public void initializeStrategy()
+    {
+        foreach(Country c in player.countries)
+        {
+            if(ignoredContinents.Contains(c.continent.id) == false)
+                ignoredContinents.Add(c.continent.id); // At start we ingore ALL of them, then rehabilitates them in the course of the game
+        }
+
+        foreach(Continent controlledContinent in getAllControlledContinents())
+        {
+            _rehabilitateCountriesOf(controlledContinent); // Won't likely happen on first round
+        }
+        
+        focusedContinent = _getFocusedContinent(); // Compute first target
+        _rehabilitateCountriesOf(focusedContinent);
+    }
 
     public void processTurn(double _dt)
     {
@@ -45,18 +61,19 @@ public class ComputerAI
             return; // skip to let player understand what's happening, MAYBE Option to make instant, or at least quicker/slower
         // Do play
         dtAccumulator -= cooldown;
-        switch(GameManager.Instance.gameState)
+        switch(GameManager.Instance.gamePhase)
         {
-            case GameManager.GameState.Init: break; // should not be here
-            case GameManager.GameState.FirstDeploy: _processFirstDeploy(); break;
-            case GameManager.GameState.Deploy: _processDeploy(); break;
-            case GameManager.GameState.Attack: _processAttack(); break;
-            case GameManager.GameState.Reinforce: _processReinforce(); break;
+            case GameManager.GamePhase.Init: break; // should not be here
+            case GameManager.GamePhase.FirstDeploy: _processFirstDeploy(); break;
+            case GameManager.GamePhase.Deploy: _processDeploy(); break;
+            case GameManager.GamePhase.Attack: _processAttack(); break;
+            case GameManager.GamePhase.Reinforce: _processReinforce(); break;
         }
     }
 
     private void _processFirstDeploy()
     {
+        // Execute pooled action if already there (was added here in the previous call of this method)
         if(pooledAction.type == GameAction.GameActionType.Deploy)
         {
             _executePooledDeployGameAction(false);
@@ -64,14 +81,12 @@ public class ComputerAI
             slowDown = false;
             return;
         }
-        
         // Else Generate Deploy action
-        focusedContinent = _getFocusedContinent();
         Country toReinforce = null;
         float maxThreat = 0.0f;
         foreach(Country c in player.countries)
         {
-            if(c.continent.id != focusedContinent.id)
+            if(ignoredContinents.Contains(c.continent.id))
                 continue;
             float threat = computeCountryThreat(c).threatLevel;
             if(toReinforce == null || maxThreat < threat)
@@ -100,17 +115,21 @@ public class ComputerAI
             _executePooledDeployGameAction();
         }
 
-        if(GameManager.Instance.gameState != GameManager.GameState.Deploy)
+        if(GameManager.Instance.gamePhase != GameManager.GamePhase.Deploy)
         {
             // We dropped our last reinforcement, gamemanager switched phase
             pooledAction.type = GameAction.GameActionType.None;
-            GameManager.Instance.resetSelection();
             slowDown = false; // slow down will happen of first loop of attack phase
             return; // Don't generate another deployment order as we're done here
         }
 
         GameAction newAction = _generateDeployGameAction();
-        if(pooledAction.type != GameAction.GameActionType.Deploy || pooledAction.to != newAction.to)
+        if(newAction.type != GameAction.GameActionType.Deploy)
+        {
+            throw new Exception("Could not generate Deploy action");
+        }
+
+        if(pooledAction.to != newAction.to)
         {
             // Only reset bigger timer and update selection if deployment target changes
             slowDown = true;
@@ -123,11 +142,24 @@ public class ComputerAI
         pooledAction = newAction;
     }
 
-    private GameAction _generateDeployGameAction()
+    private GameAction _generateDeployGameAction(bool _recursed = false)
     {
         if(threats == null)
             threats = _computeAndSortOwnCountriesThreatLevel(); // Only compute it the first time we go in here per turn (made null at the end of movement)
-        return new(){ to = threats[0].country, parameter = 1, type = GameAction.GameActionType.Deploy };
+        foreach(CountryThreatPair threatPair in threats)
+        {
+            if(ignoredContinents.Contains(threatPair.country.continent.id))
+                continue; // From highest to lowest threat, ignoring all ignored countries
+            return new(){ to = threatPair.country, parameter = 1, type = GameAction.GameActionType.Deploy };
+        }
+        // If we reach this, we most probably lost our countries in our focused continents, leaving us with only ignored ones
+        if(_recursed == false)
+        {
+            _rehabilitateCountriesOf(_getFocusedContinent());
+            return _generateDeployGameAction(true);
+        }
+        else // If we already come from recursion, don't go deeper and just return empty to throw exception and investigate
+            return new();
     }
 
     private void _executePooledDeployGameAction(bool _updateThreats = true)
@@ -222,7 +254,7 @@ public class ComputerAI
                 actualOrigin = GameState.getRealCountryFromAlternativeState(player.countries, action.from);
                 actualDestination = action.to; // Attacked country is already the right one, as it does not belong to the AI yet
                 // Check if we're in a good state to attack
-                if(actualOrigin.troops < actualDestination.troops * 1.1f) // Cannot attack with less than 10% more troops
+                if(actualOrigin.troops <= 1 || actualOrigin.troops < actualDestination.troops) // Cannot attack with one or less than opponent troops
                 {
                     // We took too many losses, abort attack
                     attackGamePlan.Clear();
@@ -237,6 +269,9 @@ public class ComputerAI
                     // End GameAction, as country has been conquered
                     attackGamePlan.Dequeue();
                     planUpdate = true;
+                    // If conquested country's continent was ignored, rehabilitates it for stronger offense
+                    if(ignoredContinents.Contains(actualDestination.continent.id))
+                        _rehabilitateCountriesOf(actualDestination.continent);
                 }
                 else
                     GameManager.Instance.updateCountryTroopsDisplay(actualOrigin, actualDestination);
@@ -266,6 +301,7 @@ public class ComputerAI
                 // Could not reinforce, skip
                 pooledAction.type = GameAction.GameActionType.None;
                 GameManager.Instance.triggerNextPhase(); // Skip turn if we could not reinforce anyone, gameManager skips atomaticaly when last move is asked
+                threats = null; // reset all threats, as they will likely change a lot with all other players turns
                 return;
             }
             slowDown = true;
@@ -291,6 +327,8 @@ public class ComputerAI
         for(int i = 0; i < threats.Count; ++i)
         {
             Country toReinforce = threats[i].country;
+            if(ignoredContinents.Contains(toReinforce.continent.id))
+                continue; // Country is ignored, it can help but not be reinforced
             List<Country> connectedAllies = GameManager.Instance.getAlliedCountriesAccessibleFrom(toReinforce);
             if(connectedAllies.Count <= 1) // connectedAllies will contain toReinforce
                 continue; // Nobody can help them, skip
@@ -371,13 +409,12 @@ public class ComputerAI
             }
         }
 
+        // priority is null here if we controll all the continents where we have troops
         // Find new neigboring continent, preferably find less heavily defended
-        priority ??= _findNeighborLessDefendedContinent();
-        // This does the same thing at the commented if below, not sure if i like it
-        //if(priority == null)
-        //{
-        //    priority = _findNeighborLessDefendedContinent();
-        //}
+        if(priority == null)
+        {
+            priority = _findNeighborLessDefendedContinent();
+        }
         return priority;
     }
 
@@ -465,7 +502,7 @@ public class ComputerAI
             Country country = GameManager.Instance.getCountryByState(stateID);
             if(country.playerID == _c.playerID)
                 continue; // Country is friendly, zero threat added
-            threat.threatLevel += country.troops;
+            threat.threatLevel += country.troops - 0.9f; // Lone troop only count as 0.1 as it cannot attack at all (but still differentiate from allies at 0)
         }
         
         if(_c.troops == 0)
@@ -473,5 +510,22 @@ public class ComputerAI
         threat.threatLevel /= _c.troops;
 
         return threat;
+    }
+
+    public List<Continent> getAllControlledContinents()
+    {
+        List<Continent> controlled = new();
+        foreach(Continent c in player.stateCountPerContinents.Keys)
+        {
+            if(c.stateIDs.Count == player.stateCountPerContinents[c])
+                controlled.Add(c);
+        }
+        return controlled;
+    }
+
+    private void _rehabilitateCountriesOf(Continent _c)
+    {
+        GD.Print("AI" + player.id + " rehabilitates C" + _c.id);
+        ignoredContinents.Remove(_c.id);
     }
 }

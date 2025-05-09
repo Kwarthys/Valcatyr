@@ -128,7 +128,7 @@ public class GameState
                 Country realCountry = GameManager.Instance.getCountryByState(stateID);
                 if(contains(realCountry))
                     continue; // Real country might not be ours, but in this projected state it is !
-                localThreat += realCountry.troops;
+                localThreat += realCountry.troops - 0.9f; // Lone troop only count as 0.1 as it cannot attack at all (but still differentiate from allies at 0)
             }
             threat += localThreat / c.state.neighbors.Count;
         }
@@ -272,7 +272,7 @@ public class GameStateGraph
             if(_state.contains(neighboringCountry) == false)
             {
                 allAllied = false;
-                if(_country.troops < neighboringCountry.troops * 1.2f) // Need 20% more troops to even try
+                if(_country.troops < neighboringCountry.troops)
                     return; // We must defend, no attack can be launched from here
             }
         }
