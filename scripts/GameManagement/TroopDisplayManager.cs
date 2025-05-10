@@ -32,15 +32,15 @@ public partial class TroopDisplayManager : Node3D
         if(troopsPerState[_origin.state.id].troops <= _amount)
             throw new Exception("Origin country has not enough armies to move");
 
-        TroopsData data = troopsPerState[_origin.state.id];
+        TroopsData originData = troopsPerState[_origin.state.id];
 
         int l1Moving = _amount % PAWN_FACTORISATION_COUNT;
         int l2Moving = _amount / PAWN_FACTORISATION_COUNT;
         // We may have to despawn level2 pawns to create more level 1. If i have 10 and i want to move 5, i'll have to break this one 10 token
-        if(l1Moving > data.level1Pawns.Count)
+        if(l1Moving > originData.level1Pawns.Count)
         {
             // Break a level 2 pawn into multiple level 1 -> It will take more referencepoint than available, so allow doubles
-            _destroyPawnsIn(1, data.level2Pawns, false);
+            _destroyPawnsIn(1, originData.level2Pawns, false);
             _spawnLevelOnes(PAWN_FACTORISATION_COUNT, _origin);
         }
 
@@ -55,25 +55,31 @@ public partial class TroopDisplayManager : Node3D
         List<ReferencePoint> l1Targets = _getReferencePoints(l1Moving, _destination, troopsPerState[_destination.state.id].level1Pawns, false);
         List<ReferencePoint> l2Targets = _getReferencePoints(l2Moving, _destination, troopsPerState[_destination.state.id].level2Pawns, false);
 
+        TroopsData destinationData = troopsPerState[_destination.state.id];
+
         // Retreive pawns that will move, remove them from origin country (and troopsData)
         for(int i = 0; i < l1Moving; ++i)
         {
             // Start from the end, most likely to find overlapping panws there
-            int index = data.level1Pawns.Count - 1;
-            pawnsMovements.Last().pawns.Add(new(){ pawn = data.level1Pawns[index], destination = l1Targets[i], level = 1});
+            int index = originData.level1Pawns.Count - 1;
+            pawnsMovements.Last().pawns.Add(new(){ pawn = originData.level1Pawns[index], destination = l1Targets[i] });
             // Remove from origin country
-            data.level1Pawns.RemoveAt(index);
+            originData.level1Pawns.RemoveAt(index);
+            // Add to destination data
+            destinationData.level1Pawns.Add(pawnsMovements.Last().pawns.Last().pawn);
         }
         for(int i = 0; i < l2Moving; ++i)
         {
             // Start from the end, most likely to find overlapping panws there
-            int index = data.level2Pawns.Count - 1;
-            pawnsMovements.Last().pawns.Add(new(){ pawn = data.level2Pawns[index], destination = l2Targets[i], level = 2});
+            int index = originData.level2Pawns.Count - 1;
+            pawnsMovements.Last().pawns.Add(new(){ pawn = originData.level2Pawns[index], destination = l2Targets[i] });
             // Remove from origin country
-            data.level2Pawns.RemoveAt(index);
+            originData.level2Pawns.RemoveAt(index);
+            // Add to destination data
+            destinationData.level2Pawns.Add(pawnsMovements.Last().pawns.Last().pawn);
         }
         // Instantly update troops, don't wait for movement end
-        data.troops -= _amount;
+        originData.troops -= _amount;
         troopsPerState[_destination.state.id].troops += _amount;
     }
 
@@ -133,6 +139,12 @@ public partial class TroopDisplayManager : Node3D
 
             foreach(TransitingPawn pawn in movement.pawns)
             {
+                if(pawn.pawn.instance.IsInsideTree() == false)
+                {
+                    // Pawn must have been destroyed while moving, happens when player attacks next country without waiting movement end
+                    // Simply skip it, don't bother delete, it will happen at the end of the movement anyway
+                    continue; 
+                }
                 float baseElevation = Mathf.Lerp(pawn.pawn.point.vertex.Length(), pawn.destination.vertex.Length(), time);
                 Vector3 pos = pawn.pawn.point.vertex.Lerp(pawn.destination.vertex, time);
                 pos = pos.Normalized() * (baseElevation + elevation);
@@ -163,14 +175,6 @@ public partial class TroopDisplayManager : Node3D
         {
             // Pawn destination becomes its actual point
             _move.pawns[i].pawn.point = _move.pawns[i].destination;
-            if( _move.pawns[i].level == 1)
-            {
-                data.level1Pawns.Add(_move.pawns[i].pawn);
-            }
-            else // level 2
-            {
-                data.level2Pawns.Add(_move.pawns[i].pawn);
-            }
         }
 
         if(data.level1Pawns.Count >= PAWN_FACTORISATION_COUNT)
@@ -289,7 +293,7 @@ public partial class TroopDisplayManager : Node3D
         public List<PawnData> level2Pawns = new();
     }
 
-    public struct PawnData
+    public class PawnData
     {
         public Node3D instance;
         public ReferencePoint point;
@@ -299,7 +303,6 @@ public partial class TroopDisplayManager : Node3D
     {
         public PawnData pawn;
         public ReferencePoint destination; // Origin is stored in the PawnData Reference point field
-        public int level;
     }
 
     public class PawnsMovement
