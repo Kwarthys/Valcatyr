@@ -26,7 +26,6 @@ public class Country
     {
         return "Country_" + state.id + " P_" + playerID + "(" + troops + ")";
     }
-
 }
 
 public struct ReferencePoint
