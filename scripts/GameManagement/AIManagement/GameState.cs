@@ -25,6 +25,8 @@ public class GameState
         depth = _depth;
         actionToThisState = _action;
         parent = _parent;
+
+        aiPersonality = GameManager.Instance.getAIPersonalityByPlayerID(playerID);
     }
 
     public float score { get; private set; } = -1;
@@ -37,6 +39,7 @@ public class GameState
 
     public GameState parent = null;
     public List<GameState> children = new();
+    private AICharacteristicsData aiPersonality;
 
     public void evaluate()
     {
@@ -48,7 +51,10 @@ public class GameState
         if (threatScore < Mathf.Epsilon) // As it cannot be negative, we avoid dividing by zero (can happen for last gamestates where we own all countries, ggs!)
             score = float.MaxValue;
         else
-            score = (continentScore + countryScore) / (threatScore + unusableTroopsScore);
+        {
+            score = continentScore * aiPersonality.continentFactor + countryScore * aiPersonality.countryFactor;
+            score /= threatScore * aiPersonality.threatFactor + unusableTroopsScore * aiPersonality.unusableTroopsFactor;
+        }
     }
 
     public bool contains(Country _c)

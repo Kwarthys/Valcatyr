@@ -187,15 +187,24 @@ public partial class GameManager : Node
             stateDisplayer.setCountryToDisplay(currentSelection.selected); // Refresh display with new troops
     }
 
+    public AICharacteristicsData getAIPersonalityByPlayerID(int _id)
+    {
+        if (_id < 0 || _id >= players.Count)
+            throw new Exception("Invalid player id " + _id);
+        if (players[_id].isHuman)
+            throw new Exception("Trying to get AI Data of a human player");
+        return aiPerPlayer[players[_id]].personality * AICharacteristics.baseline;
+    }
+
     private void _eliminatePlayerFromGame(Player _p)
     {
         _p.hasLostTheGame = true;
         Player alivePlayerMemory = null;
-        foreach(Player p in players)
+        foreach (Player p in players)
         {
-            if(p.hasLostTheGame == false)
+            if (p.hasLostTheGame == false)
             {
-                if(alivePlayerMemory != null)
+                if (alivePlayerMemory != null)
                     return; // At least two players are here, continue the game
                 alivePlayerMemory = p;
             }

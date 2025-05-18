@@ -31,6 +31,8 @@ public class ComputerAI
 
     private GameAction pooledAction = new();
 
+    public AICharacteristicsData personality = AICharacteristics.neutral;
+
     // At the start of the game, many countries will be spread and not worth defending, add their continent here to avoid computing them
     private List<int> ignoredContinents = new();
 
