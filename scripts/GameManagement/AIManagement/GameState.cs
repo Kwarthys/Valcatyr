@@ -171,31 +171,40 @@ public class GameState
 
     /// <summary>
     /// Recursively evaluate all children states, removing all states with a lower minax score.
-    /// Called on the root state, this will reduce all tree to only one branch
+    /// Called on the root state, this will reduce all tree to only one branch.
+    /// KeepChild prevents a GameState from removing all of its offsprings if all have lower or equivalent score
     /// </summary>
-    public void pruneChildren()
+    public void pruneChildren(bool _keepChild = false)
     {
-        minmaxScore = score;
+        if (minmaxScore > 0.0f)
+            return; // If minmaxScore is set, we already scanned this state and its offsprings, don't bother doing it again
+
         if (children.Count == 0)
+        {
+            minmaxScore = score;
             return;
+        }
 
         int bestChildIndex = -1;
+        float childBestScore = 0.0f;
         for (int i = 0; i < children.Count; ++i)
         {
             children[i].pruneChildren();
-            if (children[i].minmaxScore > minmaxScore)
+            if (bestChildIndex == -1 || children[i].minmaxScore > childBestScore)
             {
                 bestChildIndex = i;
-                minmaxScore = children[i].minmaxScore;
+                childBestScore = children[i].minmaxScore;
             }
         }
 
-        if (bestChildIndex == -1)
+        if (_keepChild == false && childBestScore < score)
         {
+            minmaxScore = score;
             children.Clear(); // Remove all, current state is better than subsequent states
         }
         else
         {
+            minmaxScore = childBestScore;
             for (int i = children.Count - 1; i >= 0; --i)
             {
                 if (i != bestChildIndex)

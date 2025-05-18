@@ -28,26 +28,6 @@ public class GameStateGraph
         // Retreive all leaves from graph, to start attacks from each and every one of them (that'll be many)
         List<GameState> deploymentLeaves = _findLeavesFrom(rootGameState);
 
-        /******** DEBUG DEPLOYEMENT STATES ********/
-        foreach (GameState leaf in deploymentLeaves)
-        {
-            if (leaf.actionToThisState.type == GameAction.GameActionType.None)
-                continue;
-            string log = leaf.actionToThisState.ToString();
-            GameState parent = leaf.parent;
-            int sum = leaf.actionToThisState.parameter;
-            while (true) // scary
-            {
-                if (parent.actionToThisState.type == GameAction.GameActionType.None)
-                    break;
-                log = parent.actionToThisState + " -> " + log;
-                sum += parent.actionToThisState.parameter;
-                parent = parent.parent;
-            }
-            GD.Print(sum + ": " + log);
-        }
-        /******************************************/
-
         foreach (GameState state in deploymentLeaves)
         {
             // Recursively create all attacks and movements available from this state
@@ -67,14 +47,15 @@ public class GameStateGraph
             }
             // We'll try here to prune the tree as we go, to avoid it taking up all the computer space
             // Here we only keep one attack path per possible deployment state (which is still quite a lot)
+            // Perform a kindda minmax, where each game state only keeps the best of its offsprings (or none), until only one branch remains
             state.pruneChildren();
         }
     }
 
     public Queue<GameAction> getBestMoveActions()
     {
-        // Perform a kindda minmax, where each game state only keeps the best of its offsprings (or none), until only one branch remains
-        rootGameState.pruneChildren();
+        // Special case of the minmax for the deployments move, as we're forced to do all of them
+        rootGameState.pruneChildren(true);
         if (rootGameState.children.Count == 0)
         {
             GD.Print("RootState has no child state");
