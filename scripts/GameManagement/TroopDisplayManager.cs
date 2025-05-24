@@ -279,6 +279,7 @@ public partial class TroopDisplayManager : Node3D
                 fx.Position = _list[index].instance.Position;
                 fx.Rotation = _list[index].instance.Rotation;
                 AddChild(fx); // fx will desotry ifself at the end of its animation
+                CameraShaker.shake();
             }
 
             RemoveChild(_list[index].instance);

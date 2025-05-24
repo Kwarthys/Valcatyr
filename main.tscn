@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=34 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
@@ -14,6 +14,7 @@
 [ext_resource type="PackedScene" uid="uid://ckgk4ej1kuana" path="res://prefabs/explosionFx.tscn" id="7_n7v4k"]
 [ext_resource type="PackedScene" uid="uid://ltuob0u7ymlp" path="res://prefabs/AIPresenceMarker.tscn" id="8_lhd5y"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/SkyBoxBuilder.cs" id="9_gnn7f"]
+[ext_resource type="Script" path="res://scripts/CameraShaker.cs" id="11_lel5q"]
 [ext_resource type="Script" path="res://scripts/GameManagement/GameManager.cs" id="13_37t2g"]
 [ext_resource type="Script" path="res://scripts/UIManagement/GameUI.cs" id="14_bob1v"]
 [ext_resource type="Script" path="res://scripts/GameManagement/CombatManager.cs" id="14_i4lgw"]
@@ -87,7 +88,7 @@ pawnMovementSpeedCurve = SubResource("Curve_0lgr4")
 script = ExtResource("5_qons3")
 planet = NodePath("..")
 gameManager = NodePath("../../Managers/GameManager")
-camera = NodePath("../../CameraHorizontalHelper/CameraVerticalHelper/Camera3D")
+camera = NodePath("../../CameraHorizontalHelper/CameraVerticalHelper/CameraShaker/Camera3D")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Planet/ClickCollider"]
 shape = SubResource("SphereShape3D_nvriv")
@@ -105,8 +106,11 @@ VERTICAL_SPEED = 3.0
 
 [node name="CameraVerticalHelper" type="Node3D" parent="CameraHorizontalHelper"]
 
-[node name="Camera3D" type="Camera3D" parent="CameraHorizontalHelper/CameraVerticalHelper"]
+[node name="CameraShaker" type="Node3D" parent="CameraHorizontalHelper/CameraVerticalHelper"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+script = ExtResource("11_lel5q")
+
+[node name="Camera3D" type="Camera3D" parent="CameraHorizontalHelper/CameraVerticalHelper/CameraShaker"]
 
 [node name="DirectionalLight3D2" type="DirectionalLight3D" parent="CameraHorizontalHelper/CameraVerticalHelper"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3.7259)
