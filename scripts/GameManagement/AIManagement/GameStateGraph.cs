@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 
 /// <summary>
 /// Stores a tree of possible game states by populating a root state
@@ -21,10 +22,10 @@ public class GameStateGraph
 
     public void generate(int _deploymentTroops, List<int> _ignoredContinentsIndices, int _maxDepth)
     {
-        GD.Print("Generating a graph for " + _deploymentTroops + " reinforcments");
+        int statesToEvaluate = rootGameState.getBorderCountries(_ignoredContinentsIndices).Count;
         // Generate all possible cases of reinforcements (ignoring countries surrounded by allies)
         if (_deploymentTroops > 0) // we can skip deployment generation by calling with zero troops
-            _generateAllDeployActionsFromState(rootGameState, _deploymentTroops, _ignoredContinentsIndices); // start deploy recursion
+            _generateAllDeployActionsFromState(_deploymentTroops, _ignoredContinentsIndices);
         // Retreive all leaves from graph, to start attacks from each and every one of them (that'll be many)
         List<GameState> deploymentLeaves = _findLeavesFrom(rootGameState);
 
@@ -58,15 +59,12 @@ public class GameStateGraph
         rootGameState.pruneChildren(true);
         if (rootGameState.children.Count == 0)
         {
-            GD.Print("RootState has no child state");
             return new();
         }
         Queue<GameAction> actions = new();
         GameState nextState = rootGameState.children[0];
-        GD.Print("Gameplan:");
         while (true) // scary
         {
-            GD.Print(nextState);
             actions.Enqueue(nextState.actionToThisState);
             if (nextState.children.Count == 0)
                 break;
@@ -77,46 +75,58 @@ public class GameStateGraph
         return actions;
     }
 
-    private void _generateAllDeployActionsFromState(GameState _state, int _troops, List<int> _ignoredContinentsIndices)
+    private void _generateAllDeployActionsFromState(int _deploymentTroops, List<int> _ignoredContinentsIndices)
     {
-        List<Country> allCountriesToScan = new();
-        foreach (Country c in _state.countries)
+        List<Country> countriesToReinforce = _getBorderCountriesForDeployment(rootGameState, _ignoredContinentsIndices);
+        GD.Print("N:" + _deploymentTroops + " P:" + countriesToReinforce.Count);
+        // Check arbitrary thresholds to use extensive or simplified computation
+        float usecStart = Time.GetTicksUsec();
+        if (_deploymentTroops > 10 && countriesToReinforce.Count > 5)
         {
-            if (_ignoredContinentsIndices != null && _ignoredContinentsIndices.Contains(c.continent.id))
-                continue;
-
-            bool border = false; // has it enemies as neighbors
-            foreach (int stateID in c.state.neighbors)
-            {
-                Country neigbhor = GameManager.Instance.getCountryByState(stateID);
-                if (neigbhor.playerID != c.playerID)
-                {
-                    border = true;
-                    break;
-                }
-            }
-
-            if (border)
-                allCountriesToScan.Add(c);
+            _generateLimitedDeployActionsFromState(rootGameState, _deploymentTroops, countriesToReinforce);
         }
-
-        if (allCountriesToScan.Count == 0)
+        else
         {
-            // We may ignore all our states, can happen when we lose our last non-ignored country in a continent
-            // Rehabilitate one and go again
+            _generateDeployActionsToCountries(rootGameState, countriesToReinforce, _deploymentTroops); // start complex deploy recursion
+        }
+        GD.Print("Generating deployment GameStates took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
+    }
+
+    private List<Country> _getBorderCountriesForDeployment(GameState _state, List<int> _ignoredContinentsIndices)
+    {
+        List<Country> allCountriesToScan = _state.getBorderCountries(_ignoredContinentsIndices);
+        if(allCountriesToScan.Count == 0)
+        {
             _ignoredContinentsIndices.Remove(_state.getContinentToFocus().id);
-            _generateAllDeployActionsFromState(_state, _troops, _ignoredContinentsIndices);
-            return;
+            allCountriesToScan = _state.getBorderCountries(_ignoredContinentsIndices);
         }
+        return allCountriesToScan;
+    }
 
-        _generateDeployActionsToCountries(_state, allCountriesToScan, _troops);
+    /// <summary>
+    /// When computation time of exhaustive method gets too high, use this simplified version that does not check all possibilities
+    /// Only checks all troops to a single country, and troops distributed in only two countries.
+    /// </summary>
+    private void _generateLimitedDeployActionsFromState(GameState _state, int _troops, List<Country> _countries)
+    {
+        for (int j = 0; j < _countries.Count; ++j)
+        {
+            // All troops to this country
+            _createDeployGameState(_state, _countries[j], _troops);
+            // Half to this country and half to every other
+            int oddDeploymentComplement = _troops % 2 == 0 ? 0 : 1; // Make sure to deploy all troops, even for odd reinforcments
+            GameState halfState = _createDeployGameState(_state, _countries[j], _troops / 2 + oddDeploymentComplement);
+            for (int i = j + 1; i < _countries.Count; ++i)
+            {
+                _createDeployGameState(halfState, _countries[i], _troops / 2);
+            }
+        }
     }
 
     private void _generateDeployActionsToCountries(GameState _parentState, List<Country> _countries, int _troops)
     {
         if (_countries.Count < 1 || _troops == 0)
             return; // Cannot deploy in no countries, or cannot deploy no troops
-
 
         Country toDeployIn = _countries[0];
         if (_countries.Count == 1)

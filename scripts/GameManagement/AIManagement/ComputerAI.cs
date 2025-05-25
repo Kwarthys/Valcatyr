@@ -77,7 +77,9 @@ public class ComputerAI
             GameStateGraph graph = new();
             graph.initialize(player);
             int reinforcementToCompute = GameManager.Instance.gamePhase == GameManager.GamePhase.Deploy ? GameManager.Instance.reinforcementLeft : 0;
-            graph.generate(reinforcementToCompute, ignoredContinents, 3);
+            float usecStart = Time.GetTicksUsec();
+            graph.generate(reinforcementToCompute, ignoredContinents, 5);
+            GD.Print("Generating GameStates graph took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
             turnGamePlan = graph.getBestMoveActions();
             pooledAction.reset();
         }
@@ -138,7 +140,6 @@ public class ComputerAI
 
     private void _executePooledAction()
     {
-        GD.Print("Executing:" + pooledAction);
         switch (pooledAction.type)
         {
             case GameAction.GameActionType.Deploy: _executePooledDeployGameAction(); return;
@@ -232,7 +233,6 @@ public class ComputerAI
             // We took too many losses, abort attack
             _resetGamePlan();
             pooledAction.reset();
-            GD.Print("Too Many losses, recompute");
             return;
         }
         // Process the attack
@@ -304,7 +304,6 @@ public class ComputerAI
 
     private void _rehabilitateCountriesOf(int _cid)
     {
-        GD.Print("AI" + player.id + " rehabilitates C" + _cid);
         ignoredContinents.Remove(_cid);
     }
 

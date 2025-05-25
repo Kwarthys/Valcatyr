@@ -245,6 +245,32 @@ public class GameState
         return threats;
     }
 
+
+    public List<Country> getBorderCountries(List<int> _ignoredContinentsIndices)
+    {
+        List<Country> allCountriesToScan = new();
+        foreach (Country c in countries)
+        {
+            if (_ignoredContinentsIndices != null && _ignoredContinentsIndices.Contains(c.continent.id))
+                continue;
+
+            bool border = false; // has it enemies as neighbors
+            foreach (int stateID in c.state.neighbors)
+            {
+                Country neigbhor = GameManager.Instance.getCountryByState(stateID);
+                if (neigbhor.playerID != c.playerID)
+                {
+                    border = true;
+                    break;
+                }
+            }
+
+            if (border)
+                allCountriesToScan.Add(c);
+        }
+        return allCountriesToScan;
+    }
+
     public List<Country> getAlliedCountriesAccessibleFrom(Country _c)
     {
         List<Country> accessibleCountries = new();
