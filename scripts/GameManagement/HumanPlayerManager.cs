@@ -19,7 +19,12 @@ public static class HumanPlayerManager
     {
         if(_interactedCountry.playerID == _player.id)
         {
-            GameManager.Instance.askReinforce(_interactedCountry);
+            int amount = 1;
+            if (Input.IsActionPressed("ModifierShift"))
+                amount = GameManager.Instance.reinforcementLeft;
+            else if (Input.IsActionPressed("ModifierCtrl"))
+                amount = 5;
+            GameManager.Instance.askReinforce(_interactedCountry, amount);
         }
     }
 

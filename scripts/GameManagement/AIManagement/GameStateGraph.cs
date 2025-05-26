@@ -79,8 +79,7 @@ public class GameStateGraph
     {
         List<Country> countriesToReinforce = _getBorderCountriesForDeployment(rootGameState, _ignoredContinentsIndices);
         GD.Print("N:" + _deploymentTroops + " P:" + countriesToReinforce.Count);
-        // Check arbitrary thresholds to use extensive or simplified computation
-        float usecStart = Time.GetTicksUsec();
+        // Check arbitrary thresholds to use extensive or simplified computation -> it appears that it's the attack computations that takes MUCH MORE TIME
         if (_deploymentTroops > 10 && countriesToReinforce.Count > 5)
         {
             _generateLimitedDeployActionsFromState(rootGameState, _deploymentTroops, countriesToReinforce);
@@ -89,7 +88,6 @@ public class GameStateGraph
         {
             _generateDeployActionsToCountries(rootGameState, countriesToReinforce, _deploymentTroops); // start complex deploy recursion
         }
-        GD.Print("Generating deployment GameStates took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
     }
 
     private List<Country> _getBorderCountriesForDeployment(GameState _state, List<int> _ignoredContinentsIndices)

@@ -18,8 +18,11 @@ public partial class PlanetInputManager : Area3D
         _processInput(@event);
     }
 
-    private void _processInput(InputEvent @event)
+    private void _processInput(InputEvent _event)
     {
+        if(_event.IsAction("Primary") == false && _event.IsAction("Secondary") == false)
+            return; // Only treat mouse. When clicking while holding a keyboard key, an event will be sent for both
+
         bool primary = Input.IsActionJustPressed("Primary");
         bool secondary = Input.IsActionJustPressed("Secondary");
         if(primary || secondary)

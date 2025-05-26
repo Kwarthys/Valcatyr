@@ -90,7 +90,7 @@ public partial class GameManager : Node
         }
     }
 
-    public void askReinforce(Country _c)
+    public void askReinforce(Country _c, int _amount = 1)
     {
         if(players[activePlayerIndex].id != _c.playerID)
             return;
@@ -102,10 +102,12 @@ public partial class GameManager : Node
                 return;
             case GamePhase.Deploy:
             {
-                if(reinforcementLeft <= 0)
+                if (reinforcementLeft <= 0)
                     return;
                 // Manage end of Deploy phase
-                if(--reinforcementLeft == 0)
+                _amount = Mathf.Min(_amount, reinforcementLeft);
+                reinforcementLeft -= _amount;
+                if (reinforcementLeft == 0)
                     _startAttackPhase();
                 else
                     _setSecondaryDisplay();
@@ -121,9 +123,10 @@ public partial class GameManager : Node
                 }
                 AIVisualMarkerManager.Instance.setMarkerVisibility(players[activePlayerIndex].isHuman == false); // Display AI Marker if next player is AI
                 _updatePhaseDisplay();
+                _amount = 1; // Cannot deploy more in FirstDeploy
             }break;
         }
-        _c.troops += 1;
+        _c.troops += _amount;
         troopManager.updateDisplay(_c);
         _notifyCountryTroopUpdate(_c);
     }
