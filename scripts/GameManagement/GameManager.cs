@@ -307,6 +307,21 @@ public partial class GameManager : Node
         _setPhaseDisplay();
         _setSecondaryDisplay();
         _applySelection(HumanPlayerManager.processSelection(null, players[activePlayerIndex]));
+
+        GameUI.Instance.setPhaseButtonVisibility(_shouldDisplayEndPhaseButton());
+        GameUI.Instance.setGameButtonVisibility(_shouldDisplayStartGameButton());
+    }
+
+    private bool _shouldDisplayEndPhaseButton()
+    {
+        if (activePlayerIndex < 0 && activePlayerIndex >= players.Count)
+            return false;
+        return players[activePlayerIndex].isHuman && (gamePhase == GamePhase.Attack || gamePhase == GamePhase.Reinforce);
+    }
+
+    private bool _shouldDisplayStartGameButton()
+    {
+        return gamePhase == GamePhase.Init;
     }
 
     private void _setPhaseDisplay()

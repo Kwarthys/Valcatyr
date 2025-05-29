@@ -33,6 +33,7 @@ public partial class StateDisplayerManager : Control
         defaultPosition = Position;
         targetPosition = Position;
         offsetPosition = new(offsetToHide, 0.0f);
+        setVisible(false);
     }
 
     public override void _Process(double delta)

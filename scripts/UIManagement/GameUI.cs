@@ -3,7 +3,7 @@ using System;
 
 public partial class GameUI : Control
 {
-    public static GameUI Instance{get; private set;}
+    public static GameUI Instance { get; private set; }
 
     [Export]
     RichTextLabel primaryText;
@@ -11,10 +11,17 @@ public partial class GameUI : Control
     RichTextLabel secondaryText;
     [Export]
     Button endTurnButton;
+    [Export]
+    Button startGameButton;
 
     public override void _Ready()
     {
         Instance = this;
+        // Initialize states
+        setPhaseButtonVisibility(false);
+        setGameButtonVisibility(true);
+        setPrimary("");
+        setSecondary("");
     }
 
     public void setPrimary(string _text)
@@ -30,5 +37,15 @@ public partial class GameUI : Control
     public static string makeBold(string _text)
     {
         return "[b]" + _text + "[/b]";
+    }
+
+    public void setPhaseButtonVisibility(bool _status)
+    {
+        endTurnButton.Visible = _status;
+    }
+
+    public void setGameButtonVisibility(bool _status)
+    {
+        startGameButton.Visible = _status;
     }
 }

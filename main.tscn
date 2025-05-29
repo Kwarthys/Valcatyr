@@ -1,4 +1,4 @@
-[gd_scene load_steps=34 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=35 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
@@ -61,6 +61,9 @@ default_font_size = 50
 
 [sub_resource type="Theme" id="Theme_bsgaf"]
 default_font_size = 25
+
+[sub_resource type="Theme" id="Theme_6fxdb"]
+Button/font_sizes/font_size = 30
 
 [sub_resource type="Theme" id="Theme_5n5qb"]
 default_font_size = 25
@@ -157,7 +160,7 @@ destinationLabel = NodePath("../../GameUI/MovementUIHolder/TextHolder/Destinatio
 script = ExtResource("17_o4gch")
 marker = NodePath("../../Planet/AIPresenceMarker")
 
-[node name="GameUI" type="Control" parent="." node_paths=PackedStringArray("primaryText", "secondaryText", "endTurnButton")]
+[node name="GameUI" type="Control" parent="." node_paths=PackedStringArray("primaryText", "secondaryText", "endTurnButton", "startGameButton")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -168,7 +171,8 @@ mouse_filter = 1
 script = ExtResource("14_bob1v")
 primaryText = NodePath("MainLabel")
 secondaryText = NodePath("SecondaryLabel")
-endTurnButton = NodePath("Button")
+endTurnButton = NodePath("EndPhaseButton")
+startGameButton = NodePath("StartGameButton")
 
 [node name="MainLabel" type="RichTextLabel" parent="GameUI"]
 layout_mode = 1
@@ -202,7 +206,23 @@ fit_content = true
 scroll_active = false
 autowrap_mode = 0
 
-[node name="Button" type="Button" parent="GameUI"]
+[node name="StartGameButton" type="Button" parent="GameUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -4.0
+offset_top = -4.0
+offset_right = 4.0
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_6fxdb")
+text = "Start Game"
+
+[node name="EndPhaseButton" type="Button" parent="GameUI"]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -318,6 +338,7 @@ offset_top = -353.0
 offset_right = 223.0
 offset_bottom = -46.0
 
-[connection signal="pressed" from="GameUI/Button" to="Managers/GameManager" method="onEndTurnButtonPressed"]
+[connection signal="pressed" from="GameUI/StartGameButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
+[connection signal="pressed" from="GameUI/EndPhaseButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
 [connection signal="value_changed" from="GameUI/MovementUIHolder/HSlider" to="Managers/FreeMovementManager" method="onSliderUpdate"]
 [connection signal="pressed" from="GameUI/MovementUIHolder/Button" to="Managers/FreeMovementManager" method="onMovementValidation"]
