@@ -11,7 +11,7 @@ public class GameStateGraph
 {
     private GameState rootGameState = null; // RootGameState will have a null Parent and a None type ActionToThisState
 
-    public void initialize(Player _player)
+    public GameStateGraph(Player _player)
     {
         rootGameState = new(_player.id, 0, null, new GameAction() { type = GameAction.GameActionType.None });
         _player.countries.ForEach((c) => rootGameState.countries.Add(new(c))); // Deep copy
@@ -20,43 +20,47 @@ public class GameStateGraph
         rootGameState.evaluate(); // base comparison for next moves. We won't do anything that lowers this score
     }
 
-    public void generate(int _deploymentTroops, List<int> _ignoredContinentsIndices, int _maxDepth)
+    public static Queue<GameAction> generate(Player _player, int _deploymentTroops, List<int> _ignoredContinentsIndices, int _maxDepth)
+    {
+        GameStateGraph graph = new(_player);
+        graph._generate(_deploymentTroops, _ignoredContinentsIndices, _maxDepth);
+        return graph._getBestMoveActions();
+    }
+
+    public static GameAction generateLastMove(Player _player, List<int> _ignoredContinentsIndices)
+    {
+        GameStateGraph graph = new(_player);
+        return graph._generateFreeMoveActionFromGameState(graph.rootGameState, _ignoredContinentsIndices);
+    }
+
+    /// <summary>
+    /// Generates deploy decision tree and a first wave of attacks from a country
+    /// </summary>
+    private void _generate(int _deploymentTroops, List<int> _ignoredContinentsIndices, int _maxDepth)
     {
         int statesToEvaluate = rootGameState.getBorderCountries(_ignoredContinentsIndices).Count;
         // Generate all possible cases of reinforcements (ignoring countries surrounded by allies)
         if (_deploymentTroops > 0) // we can skip deployment generation by calling with zero troops
             _generateAllDeployActionsFromState(_deploymentTroops, _ignoredContinentsIndices);
-        // Retreive all leaves from graph, to start attacks from each and every one of them (that'll be many)
+        // Retreive all leaves from graph, to start attacks from each and every one of them (that'll be many, or just rootState when troops == 0)
         List<GameState> deploymentLeaves = _findLeavesFrom(rootGameState);
 
         foreach (GameState state in deploymentLeaves)
         {
             // Recursively create all attacks and movements available from this state
-            _generateAllAttackActionsFromState(state, _maxDepth);
-            // Generate free move at the end from each created leaves
-            List<GameState> attackPhaseLastStates = _findLeavesFrom(state);
-            foreach (GameState gs in attackPhaseLastStates)
-            {
-                GameAction action = _generateFreeMoveActionFromGameState(gs, _ignoredContinentsIndices);
-                if (action.type == GameAction.GameActionType.None)
-                    continue; // No movement is possible from this state
-                GameState freeMoveGameState = _createCopyOfParentAsChild(gs);
-                freeMoveGameState.actionToThisState = action;
-                freeMoveGameState.getEquivalentCountry(action.from).troops -= action.parameter;
-                freeMoveGameState.getEquivalentCountry(action.to).troops += action.parameter;
-                freeMoveGameState.evaluate();
-            }
+            _generateAllAttackActionsFromGameState(state, _maxDepth);
             // We'll try here to prune the tree as we go, to avoid it taking up all the computer space
             // Here we only keep one attack path per possible deployment state (which is still quite a lot)
             // Perform a kindda minmax, where each game state only keeps the best of its offsprings (or none), until only one branch remains
             state.pruneChildren();
         }
-    }
 
-    public Queue<GameAction> getBestMoveActions()
-    {
         // Special case of the minmax for the deployments move, as we're forced to do all of them
         rootGameState.pruneChildren(true);
+    }
+
+    private Queue<GameAction> _getBestMoveActions()
+    {
         if (rootGameState.children.Count == 0)
         {
             return new();
@@ -162,25 +166,11 @@ public class GameStateGraph
         return newState;
     }
 
-    private void _generateAllAttackActionsFromState(GameState _state, int _maxDepth)
+    private void _generateAllAttackActionsFromGameState(GameState _state, int _maxDepth)
     {
         foreach (Country c in _state.countries)
         {
-            _generateCountryAttackActionFromState(_state, c, _maxDepth); // No longer recursive, just does one attack layer and one movement layer
-        }
-
-        if (_state.children.Count > 0)
-        {
-            // Managed to create at least an attack, press on !
-            foreach (GameState childState in _state.children)
-            {
-                _generateAllAttackActionsFromState(childState, _maxDepth);
-                // Also generate attack from subsequent movement of this child attack state
-                foreach (GameState childOfChild in childState.children)
-                {
-                    _generateAllAttackActionsFromState(childOfChild, _maxDepth);
-                }
-            }
+            _generateCountryAttackActionFromState(_state, c, _maxDepth); // Recursive once again
         }
     }
 
@@ -238,22 +228,27 @@ public class GameStateGraph
             if (movementOriginCountry.troops > 1)
             {
                 GameState moveAllState = _generateReinforceGameState(attackGameState, movementOriginCountry, movementDestinationCountry, movementOriginCountry.troops - 1);
-                attackGameState.children.Add(moveAllState);
+                _generateCountryAttackActionFromState(moveAllState, moveAllState.getEquivalentCountry(movementDestinationCountry), maxDepth);
                 if (movementOriginCountry.troops > 3) // Below 3, half would make us move nothing
                 {
                     // We want to move troops to have approximately the same number of troops in both states. (so not technically "move half")
                     // So the number to move is actually half the difference between the two
                     int troopsToMove = (movementOriginCountry.troops - movementDestinationCountry.troops) / 2;
                     GameState moveHalfState = _generateReinforceGameState(attackGameState, movementOriginCountry, movementDestinationCountry, troopsToMove);
-                    attackGameState.children.Add(moveHalfState);
+                    _generateCountryAttackActionFromState(moveHalfState, moveHalfState.getEquivalentCountry(movementOriginCountry), maxDepth);
+                    _generateCountryAttackActionFromState(moveHalfState, moveHalfState.getEquivalentCountry(movementDestinationCountry), maxDepth);
                 }
             }
+            // Generate attack actions after a Move None
+            _generateCountryAttackActionFromState(attackGameState, movementOriginCountry, maxDepth); // remaining troops attacks from here
+            _generateCountryAttackActionFromState(attackGameState, movementDestinationCountry, maxDepth); // 3 troops will be here
         }
     }
 
     private GameState _generateAttackGameState(GameState _parent, Country _from, Country _to)
     {
         GameState attackGameState = _createCopyOfParentAsChild(_parent);
+        int estimatedTroopLoss = Mathf.CeilToInt(_to.troops * 0.5f); // Approximate attacker to lose 50% of defender troops
         attackGameState.actionToThisState = new GameAction()
         {
             from = _from,
@@ -261,7 +256,8 @@ public class GameStateGraph
             type = GameAction.GameActionType.Attack
         };
         Country originCopy = attackGameState.getEquivalentCountry(_from);
-        originCopy.troops = (int)Mathf.Floor(originCopy.troops - (_to.troops * 0.5f)); // Approximate attacker to lose 50% of defender troops
+        originCopy.troops -= estimatedTroopLoss;
+        attackGameState.actionToThisState.parameter = originCopy.troops; // When executing this GameAction, if attackers troops go below this parameter we will cancel attack and recompute
         originCopy.troops = Mathf.Max(1, originCopy.troops);
         int troopMovement = Mathf.Min(3, originCopy.troops - 1); // cannot empty origin country
         originCopy.troops -= troopMovement; // Remove the troops that moved to the conquered country

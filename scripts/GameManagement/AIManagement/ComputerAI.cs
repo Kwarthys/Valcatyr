@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 
 public class ComputerAI
@@ -74,14 +75,12 @@ public class ComputerAI
         if (turnGamePlan == null)
         {
             // Generate a new Plan if we don't have one
-            GameStateGraph graph = new();
-            graph.initialize(player);
-            int reinforcementToCompute = GameManager.Instance.gamePhase == GameManager.GamePhase.Deploy ? GameManager.Instance.reinforcementLeft : 0;
-            float usecStart = Time.GetTicksUsec();
-            graph.generate(reinforcementToCompute, ignoredContinents, 5);
-            GD.Print("Generating GameStates graph took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
-            turnGamePlan = graph.getBestMoveActions();
             pooledAction.reset();
+            int reinforcementToCompute = GameManager.Instance.gamePhase == GameManager.GamePhase.Deploy ? GameManager.Instance.reinforcementLeft : 0;
+
+            float usecStart = Time.GetTicksUsec();
+            turnGamePlan = GameStateGraph.generate(player, reinforcementToCompute, ignoredContinents, 7);
+            GD.Print("Generating GameStates graph took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
         }
 
         if (turnGamePlan == null)
@@ -97,30 +96,31 @@ public class ComputerAI
         }
         else if (pooledAction.type == GameAction.GameActionType.None) // Action has been reset
         {
+            GameAction nextAction = new();
             // We may not have actions left, while still being the active player
             if (turnGamePlan.Count == 0)
             {
                 if (GameManager.Instance.gamePhase == GameManager.GamePhase.Attack)
-                    GameManager.Instance.triggerNextPhase();
-                if (GameManager.Instance.gamePhase == GameManager.GamePhase.Reinforce)
                 {
-                    GameManager.Instance.triggerNextPhase();
-                    _resetGamePlan();
+                    GameManager.Instance.triggerNextPhase(); // No attacks will further improve our situation, go to last move phase
+                    nextAction = GameStateGraph.generateLastMove(player, ignoredContinents);
+                    if (nextAction.type == GameAction.GameActionType.None)
+                    {
+                        // Could not generate a freeMove, skip turn
+                        GameManager.Instance.triggerNextPhase();
+                        _resetGamePlan();
+                        return;
+                    }
                 }
-                return;
+                else
+                    throw new Exception("ComputerAI Turn not in AttackPhase");
             }
-
-            GameAction newAction = turnGamePlan.Dequeue();
-            GameManager.Instance.askSelection(new() { selected = newAction.to }); // display selection for human understanding
-            AIVisualMarkerManager.Instance.moveTo(newAction.to.state.barycenter); // move marker to guide human to the right place (if he wants to follow)
-            pooledAction = newAction;
+            else
+                nextAction = turnGamePlan.Dequeue();
+            GameManager.Instance.askSelection(new() { selected = nextAction.to }); // display selection for human understanding
+            AIVisualMarkerManager.Instance.moveTo(nextAction.to.state.barycenter); // move marker to guide human to the right place (if he wants to follow)
+            pooledAction = nextAction;
             slowDown = true;
-
-            // Process end of attack phase
-            if (pooledAction.type == GameAction.GameActionType.FreeMove && GameManager.Instance.gamePhase == GameManager.GamePhase.Attack)
-            {
-                GameManager.Instance.triggerNextPhase(); // A freeMove means that AI wants to stop attacking for this turn, and is ready to end turn
-            }
         }
         else
             throw new Exception("Wrong pooledAction type in ProcessPlan " + GameManager.Instance.gamePhase + " -- " + pooledAction.type);
@@ -227,8 +227,9 @@ public class ComputerAI
         // Attack until conquered or too many losses
         Country actualOrigin = GameState.getRealCountryFromAlternativeState(player.countries, pooledAction.from);
         Country actualDestination = pooledAction.to; // Attacked country is already the right one, as it does not belong to the AI yet
-        // Check if we're in a good state to attack
-        if (actualOrigin.troops <= 1 || actualOrigin.troops < actualDestination.troops) // Cannot attack with one or less than opponent troops
+        // Check if we're in a good state to attack. Cannot attack with:
+        //  less troops than anticipated                    one                     or less than opponent troops
+        if (actualOrigin.troops < pooledAction.parameter || actualOrigin.troops <= 1 || actualOrigin.troops < actualDestination.troops)
         {
             // We took too many losses, abort attack
             _resetGamePlan();

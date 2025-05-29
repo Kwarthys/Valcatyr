@@ -52,8 +52,10 @@ public class GameState
             score = float.MaxValue;
         else
         {
+            // Maximize
             score = continentScore * aiPersonality.continentFactor + countryScore * aiPersonality.countryFactor;
-            score /= threatScore * aiPersonality.threatFactor + unusableTroopsScore * aiPersonality.unusableTroopsFactor;
+            // Minimize
+            score -= threatScore * aiPersonality.threatFactor + unusableTroopsScore * aiPersonality.unusableTroopsFactor;
         }
     }
 
@@ -146,7 +148,7 @@ public class GameState
                 Country realCountry = GameManager.Instance.getCountryByState(stateID);
                 if (contains(realCountry))
                     continue; // Real country might not be ours, but in this projected state it is !
-                localThreat += realCountry.troops - 0.9f; // Lone troop only count as 0.1 as it cannot attack at all (but still differentiate from allies at 0)
+                localThreat += realCountry.troops;
             }
             threat += localThreat / c.state.neighbors.Count;
         }
@@ -156,6 +158,7 @@ public class GameState
     private int _evaluateUnusableTroops()
     {
         int unusableTroops = 0;
+        int maxAmount = 0;
         foreach (Country c in countries)
         {
             bool nearEnemy = false;
@@ -170,9 +173,12 @@ public class GameState
             }
             if (nearEnemy || c.troops <= 1)
                 continue;
-            unusableTroops += c.troops - 1;
+            int troops = c.troops - 1;
+            unusableTroops += troops;
+            if(troops > maxAmount)
+                maxAmount = c.troops - 1;
         }
-        return unusableTroops;
+        return unusableTroops - maxAmount; // Biggest spot of unused troops does not count as it will be moved in the last move phase
     }
 
     /// <summary>
