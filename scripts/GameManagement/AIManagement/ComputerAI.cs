@@ -1,8 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Runtime.InteropServices;
+using System.Threading;
 
 public class ComputerAI
 {
@@ -36,6 +35,12 @@ public class ComputerAI
 
     // At the start of the game, many countries will be spread and not worth defending, add their continent here to avoid computing them
     private List<int> ignoredContinents = new();
+
+    // Threading synchronization variables
+    private volatile bool generatingGamePlan = false;
+    private volatile bool gamePlanGenerationDone = false; // These two are kindda locks
+    private Thread workerThread;
+    private Queue<GameAction> generatedGamePlan;
 
     public void initializeStrategy()
     {
@@ -74,18 +79,31 @@ public class ComputerAI
     {
         if (turnGamePlan == null)
         {
-            // Generate a new Plan if we don't have one
-            pooledAction.reset();
-            int reinforcementToCompute = GameManager.Instance.gamePhase == GameManager.GamePhase.Deploy ? GameManager.Instance.reinforcementLeft : 0;
+            // Generate a new Plan if we don't have one already cooking
+            if (generatingGamePlan == false)
+            {
+                _generateNewGamePlan();
+                // Display cooking widget
+                AICookingWidgetManager.showWidget();
+            }
 
-            float usecStart = Time.GetTicksUsec();
-            turnGamePlan = GameStateGraph.generate(player, reinforcementToCompute, ignoredContinents, 7);
-            GD.Print("Generating GameStates graph took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
+            if (gamePlanGenerationDone) // Thread finished cooking us the game plan
+            {
+                // Retreive computation results
+                turnGamePlan = generatedGamePlan;
+                // Reset everything
+                generatedGamePlan = null;
+                workerThread = null;
+                generatingGamePlan = false;
+                gamePlanGenerationDone = false;
+                // Reset cooking widget
+                AICookingWidgetManager.hideWidget();
+            }
         }
 
         if (turnGamePlan == null)
         {
-            throw new Exception("GamePlan Is NULL");
+            return; // generation most probably not done yet
         }
 
         if (_isActionValid(pooledAction.type)) // Else it means we need to dequeue a new one
@@ -124,6 +142,28 @@ public class ComputerAI
         }
         else
             throw new Exception("Wrong pooledAction type in ProcessPlan " + GameManager.Instance.gamePhase + " -- " + pooledAction.type);
+    }
+
+    private void _generateNewGamePlan()
+    {
+        generatingGamePlan = true;
+        pooledAction.reset();
+
+        workerThread = new Thread(new ThreadStart(_blockingGamePlanGeneration));
+        workerThread.Start();
+    }
+
+    /// <summary>
+    /// Should not be called on the mainthread, can take up to dozens of seconds
+    /// </summary>
+    private void _blockingGamePlanGeneration()
+    {
+        int reinforcementToCompute = GameManager.Instance.gamePhase == GameManager.GamePhase.Deploy ? GameManager.Instance.reinforcementLeft : 0;
+        float usecStart = Time.GetTicksUsec();
+        generatedGamePlan = GameStateGraph.generate(player, reinforcementToCompute, ignoredContinents, 7);
+        GD.Print("Generating GameStates graph took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
+
+        gamePlanGenerationDone = true;
     }
 
     private bool _isActionValid(GameAction.GameActionType _type)

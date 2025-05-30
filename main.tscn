@@ -1,4 +1,4 @@
-[gd_scene load_steps=35 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=43 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Script" path="res://scripts/MainController.cs" id="1_sm8de"]
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
@@ -22,6 +22,8 @@
 [ext_resource type="Script" path="res://scripts/GameManagement/AIManagement/AIVisualMarkerManager.cs" id="17_o4gch"]
 [ext_resource type="Theme" uid="uid://c5uh4sjxrrsa0" path="res://UI/uiTextTheme.tres" id="17_ponek"]
 [ext_resource type="PackedScene" uid="uid://ce27jvse606x8" path="res://prefabs/StateDataMenu.tscn" id="18_12su4"]
+[ext_resource type="Script" path="res://scripts/UIManagement/AICookingWidgetManager.cs" id="20_uq872"]
+[ext_resource type="Texture2D" uid="uid://bviorge2u5ei" path="res://assets/TieKPOW_SHEET.png" id="21_ed6oq"]
 
 [sub_resource type="Curve" id="Curve_0lgr4"]
 _data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 0.5), 3.0, 3.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
@@ -55,6 +57,58 @@ metadata/_snap_count = 12
 [sub_resource type="Curve" id="Curve_3lt5j"]
 _data = [Vector2(0.1, 0), 0.0, 0.0, 0, 0, Vector2(0.4, 1), 0.775511, 0.0, 0, 1, Vector2(1, 1), 0.0, 0.0, 1, 0]
 point_count = 3
+
+[sub_resource type="Curve" id="Curve_4hvma"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 0.5), 4.51532, 4.51532, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dnfkl"]
+atlas = ExtResource("21_ed6oq")
+region = Rect2(0, 0, 30, 30)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fu2fp"]
+atlas = ExtResource("21_ed6oq")
+region = Rect2(30, 0, 30, 30)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_80tgy"]
+atlas = ExtResource("21_ed6oq")
+region = Rect2(60, 0, 30, 30)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o0xwt"]
+atlas = ExtResource("21_ed6oq")
+region = Rect2(90, 0, 30, 30)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_kwpd3"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dnfkl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fu2fp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_80tgy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o0xwt")
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}, {
+"duration": 1.0,
+"texture": null
+}],
+"loop": true,
+"name": &"default",
+"speed": 12.0
+}]
 
 [sub_resource type="Theme" id="Theme_e8o0g"]
 default_font_size = 50
@@ -159,6 +213,19 @@ destinationLabel = NodePath("../../GameUI/MovementUIHolder/TextHolder/Destinatio
 [node name="AIVisualMarkerManager" type="Node" parent="Managers" node_paths=PackedStringArray("marker")]
 script = ExtResource("17_o4gch")
 marker = NodePath("../../Planet/AIPresenceMarker")
+
+[node name="AICookingHolder" type="Node2D" parent="."]
+position = Vector2(100, 100)
+script = ExtResource("20_uq872")
+movementCurve = SubResource("Curve_4hvma")
+
+[node name="Node2D" type="Node2D" parent="AICookingHolder"]
+scale = Vector2(4, 4)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="AICookingHolder/Node2D"]
+sprite_frames = SubResource("SpriteFrames_kwpd3")
+autoplay = "default"
+frame_progress = 0.861227
 
 [node name="GameUI" type="Control" parent="." node_paths=PackedStringArray("primaryText", "secondaryText", "endTurnButton", "startGameButton")]
 layout_mode = 3
