@@ -185,7 +185,6 @@ script = ExtResource("9_gnn7f")
 shader = ExtResource("6_73edm")
 starColors = SubResource("Gradient_hdbyp")
 cloudColors = SubResource("Gradient_stbvo")
-debugLightGeneration = true
 cloudsNoiseToAlpha = SubResource("Curve_3lt5j")
 
 [node name="Managers" type="Node" parent="."]

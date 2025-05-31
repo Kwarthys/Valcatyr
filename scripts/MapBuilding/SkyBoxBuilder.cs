@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Linq;
 using System.Security.AccessControl;
+using System.Threading;
 
 public partial class SkyBoxBuilder : Node
 {
@@ -19,50 +20,61 @@ public partial class SkyBoxBuilder : Node
     private Gradient starColors;
     [Export]
     private Gradient cloudColors;
-    [Export]
-    private bool debugLightGeneration;
 
     public override void _Ready()
     {
-        base._Ready();
-
-        Image img = Image.CreateEmpty(WIDTH, HEIGHT, false, Image.Format.Rgb8);
-        img.Fill(Colors.Black);
-
-        if(debugLightGeneration)
-        {
-            _starPass(ref img, 1.0f);
-        }
-        else
-        {
-            // Generating clouds takes 10 times more time than stars, due to many perlin nosie sampling and not ignoring top and bottom part, where many points overlap
-            float usecStart = Time.GetTicksUsec();
-            // making use of Alpha by layering clouds and stars
-            _starPass(ref img, 0.4f);
-            _cloudPass(ref img, 0.5f);
-            _starPass(ref img, 0.3f);
-            _cloudPass(ref img, 1.3f);
-            _cloudPass(ref img, 2.8f);
-            _starPass(ref img, 0.1f);
-            GD.Print("Creating Skybox image took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
-        }
-
-
-        Texture2D tex= ImageTexture.CreateFromImage(img);
-        shader.SetShaderParameter("skyPanorama", tex);
+        Thread t = new(new ThreadStart(_skyBoxCreation));
+        t.Start();
     }
 
-    private void _editPixel(int _x, int _y, Color _c, ref Image _img)
+    /// <summary>
+    /// Don't call on mainthread, it's quite long (dozens of seconds)
+    /// </summary>
+    private void _skyBoxCreation()
     {
-        Color from = _img.GetPixel(_x,_y);
+        Image img = Image.CreateEmpty(WIDTH, HEIGHT, false, Image.Format.Rgb8);
+        img.Fill(Colors.Black);
+        
+        // Generating clouds takes 10 times more time than stars, due to many perlin noise sampling and not ignoring top and bottom part, where many points overlap
+        float usecStart = Time.GetTicksUsec();
+        // making use of Alpha by layering clouds and stars
+        _starPass(img, 0.4f);
+        _applyImageToTexture(img);
+        _cloudPass(img, 0.5f);
+
+        _starPass(img, 0.3f);
+        _applyImageToTexture(img);
+        _cloudPass(img, 1.3f);
+
+        _applyImageToTexture(img);
+        _cloudPass(img, 2.8f);
+
+        _applyImageToTexture(img);
+        _cloudPass(img, -0.2f);
+
+        _starPass(img, 0.1f);
+        _applyImageToTexture(img);
+
+        GD.Print("Creating Skybox image took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
+    }
+
+    private void _applyImageToTexture(Image _img)
+    {
+        Texture2D tex = ImageTexture.CreateFromImage(_img);
+        shader.SetShaderParameter("skyPanorama", tex); // Thankfully this works outside of the mainthread, avoiding having to declare a PROCESS method
+    }
+
+    private void _editPixel(int _x, int _y, Color _c, Image _img)
+    {
+        Color from = _img.GetPixel(_x, _y);
         Color finalColor = from.Lerp(_c, _c.A);
-        _img.SetPixel(_x,_y,finalColor);
+        _img.SetPixel(_x, _y, finalColor);
     }
 
     [Export]
     private Curve cloudsNoiseToAlpha;
 
-    private void _cloudPass(ref Image _img, float _offset = 1.0f)
+    private void _cloudPass(Image _img, float _offset = 1.0f)
     {
         Color cloudColor = cloudColors.Sample(GD.Randf());
         Vector3 sampleOffset = new(_offset, _offset, _offset);
@@ -82,12 +94,12 @@ public partial class SkyBoxBuilder : Node
                 if(alpha > 0.99f)
                     _img.SetPixel(x,y,cloudColor);
                 else
-                    _editPixel(x,y, new(cloudColor, alpha), ref _img);
+                    _editPixel(x,y, new(cloudColor, alpha), _img);
             }
         }
     }
 
-    private void _starPass(ref Image _img, float _procCoef = 1.0f)
+    private void _starPass(Image _img, float _procCoef = 1.0f)
     {
         for(int y = 0; y < HEIGHT; ++y)
         {
