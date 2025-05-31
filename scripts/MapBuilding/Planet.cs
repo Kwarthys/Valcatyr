@@ -18,6 +18,9 @@ public partial class Planet : MeshInstance3D
     [Export]
     public bool fastBridges = false; // Shortcut bridge over land checks, which take TONS of time and is useless while debugging
 
+    [Export]
+    private float planetRotationPeriodSec = 300.0f;
+
     public const int SIDE_TOP = 0;
     public const int SIDE_BACK = 1;
     public const int SIDE_LEFT = 2;
@@ -76,8 +79,10 @@ public partial class Planet : MeshInstance3D
     {
         if(Input.IsActionJustPressed("Rotate"))
             rotate = !rotate;
-        if(rotate)
-            Rotate(Vector3.Up, (float)(delta * Math.Tau / 7.0)); // Want a turn in 7 seconds for nice looping gifs
+        float period = planetRotationPeriodSec;
+        if (rotate)
+            period = 7.0f;
+        Rotate(Vector3.Up, (float)(delta * Math.Tau / period));
     }
 
     public void setMesh()

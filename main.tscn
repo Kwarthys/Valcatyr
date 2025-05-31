@@ -130,6 +130,7 @@ script = ExtResource("2_hkox7")
 mainController = NodePath("../Managers/MainController")
 bridgeBuilder = NodePath("BridgeBuilder")
 fastBridges = true
+planetRotationPeriodSec = 300.0
 
 [node name="BridgeBuilder" type="Node3D" parent="Planet"]
 script = ExtResource("4_yu05o")
@@ -145,39 +146,39 @@ pawnMovementSpeedCurve = SubResource("Curve_0lgr4")
 script = ExtResource("5_qons3")
 planet = NodePath("..")
 gameManager = NodePath("../../Managers/GameManager")
-camera = NodePath("../../CameraHorizontalHelper/CameraVerticalHelper/CameraShaker/Camera3D")
+camera = NodePath("../CameraHorizontalHelper/CameraVerticalHelper/CameraShaker/Camera3D")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Planet/ClickCollider"]
 shape = SubResource("SphereShape3D_nvriv")
 
 [node name="AIPresenceMarker" parent="Planet" instance=ExtResource("8_lhd5y")]
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 9.11442)
-shadow_enabled = true
-
-[node name="CameraHorizontalHelper" type="Node3D" parent="."]
+[node name="CameraHorizontalHelper" type="Node3D" parent="Planet"]
 script = ExtResource("4_1mtfn")
 HORIZONTAL_SPEED = 3.0
 VERTICAL_SPEED = 3.0
 
-[node name="CameraVerticalHelper" type="Node3D" parent="CameraHorizontalHelper"]
+[node name="CameraVerticalHelper" type="Node3D" parent="Planet/CameraHorizontalHelper"]
 
-[node name="CameraShaker" type="Node3D" parent="CameraHorizontalHelper/CameraVerticalHelper"]
+[node name="CameraShaker" type="Node3D" parent="Planet/CameraHorizontalHelper/CameraVerticalHelper"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
 script = ExtResource("11_lel5q")
 
-[node name="Camera3D" type="Camera3D" parent="CameraHorizontalHelper/CameraVerticalHelper/CameraShaker"]
+[node name="Camera3D" type="Camera3D" parent="Planet/CameraHorizontalHelper/CameraVerticalHelper/CameraShaker"]
 
-[node name="DirectionalLight3D2" type="DirectionalLight3D" parent="CameraHorizontalHelper/CameraVerticalHelper"]
+[node name="DirectionalLight3D2" type="DirectionalLight3D" parent="Planet/CameraHorizontalHelper/CameraVerticalHelper"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3.7259)
 light_energy = 0.4
 
-[node name="AtmosphereQuad" type="MeshInstance3D" parent="CameraHorizontalHelper/CameraVerticalHelper"]
+[node name="AtmosphereQuad" type="MeshInstance3D" parent="Planet/CameraHorizontalHelper/CameraVerticalHelper"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.1)
 material_override = ExtResource("5_3hgdn")
 mesh = SubResource("QuadMesh_onmyu")
-skeleton = NodePath("../../../Planet")
+skeleton = NodePath("../../..")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 9.11442)
+shadow_enabled = true
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_4tpp0")
