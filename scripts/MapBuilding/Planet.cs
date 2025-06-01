@@ -2,16 +2,9 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.CompilerServices;
-using System.Transactions;
 
 public partial class Planet : MeshInstance3D
 {
-    [Export]
-    private MainController mainController;
-
     [Export]
     public  BridgeBuilder bridgeBuilder {get; private set;}
 
@@ -67,6 +60,9 @@ public partial class Planet : MeshInstance3D
 
     public float[] map = new float[MAP_SIZE];
 
+    private volatile List<Vector2I> bridgeCreationRequests = new();
+    private readonly object bridgeQueueLock = new();
+
     public override void _Ready()
     {
         surfaceArrays.Resize((int)Mesh.ArrayType.Max);
@@ -74,43 +70,74 @@ public partial class Planet : MeshInstance3D
     }
 
     private bool rotate = false;
+    private bool notifyGameManagerGenerationComplete = false;
+    private bool scanForBridgesRequests = true;
+    public void notifyGenerationComplete() { notifyGameManagerGenerationComplete = true; }
 
     public override void _Process(double delta)
     {
-        if(Input.IsActionJustPressed("Rotate"))
+        if (Input.IsActionJustPressed("Rotate"))
             rotate = !rotate;
         float period = planetRotationPeriodSec;
         if (rotate)
             period = 7.0f;
         Rotate(Vector3.Up, (float)(delta * Math.Tau / period));
+
+        if (notifyGameManagerGenerationComplete && GameManager.Instance != null)
+        {
+            notifyGameManagerGenerationComplete = false;
+            GameManager.Instance.initialize(this);
+        }
+
+        if (scanForBridgesRequests)
+            _manageBridgeCreation();
+    }
+
+    private void _manageBridgeCreation()
+    {
+        List<Vector2I> requestCopies = new();
+        lock (bridgeQueueLock)
+        {
+            if (bridgeCreationRequests.Count != 0)
+            {
+                requestCopies.AddRange(bridgeCreationRequests);
+                bridgeCreationRequests.Clear();
+            }
+        }
+        requestCopies.ForEach((indices) => _executeBridgeCreation(indices));
     }
 
     public void setMesh()
     {
-        if((refreshFlags & REFRESH_FLAG_VERTICES) != 0)
+        if ((refreshFlags & REFRESH_FLAG_VERTICES) != 0)
             surfaceArrays[(int)Mesh.ArrayType.Vertex] = vertices.ToArray();
 
-        if((refreshFlags & REFRESH_FLAG_UVS) != 0)
+        if ((refreshFlags & REFRESH_FLAG_UVS) != 0)
             surfaceArrays[(int)Mesh.ArrayType.TexUV] = uvs.ToArray();
 
-        if((refreshFlags & REFRESH_FLAG_NORMALS) != 0)
+        if ((refreshFlags & REFRESH_FLAG_NORMALS) != 0)
             surfaceArrays[(int)Mesh.ArrayType.Normal] = normals.ToArray();
 
-        if((refreshFlags & REFRESH_FLAG_INDICES) != 0)
+        if ((refreshFlags & REFRESH_FLAG_INDICES) != 0)
             surfaceArrays[(int)Mesh.ArrayType.Index] = indices.ToArray();
 
-        if((refreshFlags & REFRESH_FLAG_COLORS) != 0)
+        if ((refreshFlags & REFRESH_FLAG_COLORS) != 0)
             surfaceArrays[(int)Mesh.ArrayType.Color] = colors.ToArray();
 
         arrayMesh = new();
         arrayMesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, surfaceArrays);
-        
+
         Mesh = arrayMesh;
         ShaderMaterial mat = (ShaderMaterial)GetActiveMaterial(0);
-        mat.SetShaderParameter("customTexture", mapManager.tex);
         mat.SetShaderParameter("shallowWaterColor", MapManager.shallowSeaColor);
 
         refreshFlags = REFRESH_FLAG_NONE;
+    }
+
+    public void setPlanetTexture(Texture2D _tex)
+    {
+        ShaderMaterial mat = (ShaderMaterial)GetActiveMaterial(0);
+        mat.SetShaderParameter("customTexture", _tex);
     }
 
     public void generateMesh()
@@ -144,7 +171,7 @@ public partial class Planet : MeshInstance3D
 
         float usecStart = Time.GetTicksUsec();
 
-        for(int sideIndex = 0; sideIndex < SIDE_COUNT; ++sideIndex)
+        for (int sideIndex = 0; sideIndex < SIDE_COUNT; ++sideIndex)
         {
             _appendSurface(ups[sideIndex], forwards[sideIndex], sideIndex);
         }
@@ -153,27 +180,34 @@ public partial class Planet : MeshInstance3D
         _stichFacesAndCorners();
         _assignNormals();
 
-        GD.Print("Creating Planet took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
-
         nodeFinder = new(this);
         mapManager = new(this);
-        mapManager.RegisterMap(map);
 
         refreshFlags = REFRESH_FLAG_ALL;
-        
+
         Callable callable = new(this, MethodName.setMesh);
         callable.Call();
 
-        mainController.notifyPlanetGenerationComplete();
+        mapManager.BuildMap(map); // Start asynchronous map generation
+
+        CustomLogger.print("Creating Planet took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
     }
 
     /// <summary>
-    /// Build a bridge from vertex at index _indices.X to vertex at index _indices.Y
+    /// Build a bridge from vertex at index _indices.X to vertex at index _indices.Y. Only call on mainthread
     /// </summary>
+    private void _executeBridgeCreation(Vector2I _indices)
+    {
+        if (_indices.X >= 0 && _indices.Y >= 0 && _indices.X < MAP_SIZE && _indices.Y < MAP_SIZE)
+            bridgeBuilder.buildBridge(vertices[_indices.X], vertices[_indices.Y]);
+    }
+
     public void askBridgeCreation(Vector2I _indices)
     {
-        if(_indices.X >= 0 && _indices.Y >= 0 && _indices.X < MAP_SIZE && _indices.Y < MAP_SIZE)
-            bridgeBuilder.buildBridge(vertices[_indices.X], vertices[_indices.Y]);
+        lock (bridgeQueueLock)
+        {
+            bridgeCreationRequests.Add(_indices);
+        }
     }
 
     public int getApproximateVertexAt(int side, Vector2 uv)

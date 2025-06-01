@@ -99,10 +99,10 @@ void fragment()
 		}
 
 		ALBEDO = mix(waterColor, waveWaterColor.rgb, amountMixed);
-		vec3 samplePos = vertexWorldPos * (1.0 + 0.5 * triangle(TIME * 0.05));
+		vec3 samplePos = vertexWorldPos * (1.0 + 0.5 * triangle(TIME * 0.04));
 		vec3 noise = texture(waterNoise, samplePos).rgb;
 		vec3 waveNormalMap = vec3(amountMixed);
-		NORMAL_MAP = mix(NORMAL_MAP, noise * 0.5 + waveNormalMap, 0.05);
+		NORMAL_MAP = mix(NORMAL_MAP, noise * 0.8 + waveNormalMap, 0.05);
 
 		ROUGHNESS = 0.3;
 	}

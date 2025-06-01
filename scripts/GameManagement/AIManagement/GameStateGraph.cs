@@ -82,7 +82,6 @@ public class GameStateGraph
     private void _generateAllDeployActionsFromState(int _deploymentTroops, List<int> _ignoredContinentsIndices)
     {
         List<Country> countriesToReinforce = _getBorderCountriesForDeployment(rootGameState, _ignoredContinentsIndices);
-        GD.Print("N:" + _deploymentTroops + " P:" + countriesToReinforce.Count);
         // Check arbitrary thresholds to use extensive or simplified computation -> it appears that it's the attack computations that takes MUCH MORE TIME
         if (_deploymentTroops > 20 || (_deploymentTroops > 10 && countriesToReinforce.Count > 5))
         {

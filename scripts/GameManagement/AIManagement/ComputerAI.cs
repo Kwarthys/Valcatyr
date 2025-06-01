@@ -158,9 +158,7 @@ public class ComputerAI
     private void _blockingGamePlanGeneration()
     {
         int reinforcementToCompute = GameManager.Instance.gamePhase == GameManager.GamePhase.Deploy ? GameManager.Instance.reinforcementLeft : 0;
-        float usecStart = Time.GetTicksUsec();
         generatedGamePlan = GameStateGraph.generate(player, reinforcementToCompute, ignoredContinents, 7);
-        GD.Print("Generating GameStates graph took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
 
         gamePlanGenerationDone = true;
     }

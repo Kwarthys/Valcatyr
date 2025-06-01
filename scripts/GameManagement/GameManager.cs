@@ -53,15 +53,16 @@ public partial class GameManager : Node
 
     public void initialize(Planet _planet)
     {
+        CustomLogger.print("Starting GameManager initialization");
         planet = _planet;
         _initializeCountries();
 
-        List<int> hoomanIndices = new(){0}; // only one human for now, TODO: need game setup menu for local turn based versus
+        List<int> hoomanIndices = new() { 0 }; // only one human for now, TODO: need game setup menu for local turn based versus
 
-        for(int i = 0; i < 4; ++i) // TODO Adjust number of player 3-6
+        for (int i = 0; i < 4; ++i) // TODO Adjust number of player 3-6
         {
             players.Add(new(i));
-            if(hoomanIndices.Contains(i))
+            if (hoomanIndices.Contains(i))
                 players[i].isHuman = true; // set player as human
             else
                 aiPerPlayer.Add(players[i], new(players[i])); // instantiate AI
@@ -69,12 +70,15 @@ public partial class GameManager : Node
 
         _doCountriesRandomAttributions();
         // Init AIs focus
-        foreach(Player p in players)
+        foreach (Player p in players)
         {
-            if(p.isHuman) continue;
+            if (p.isHuman) continue;
             aiPerPlayer[p].initializeStrategy();
         }
-        countries.ForEach((c) => {c.troops = 1; troopManager.updateDisplay(c); });
+        countries.ForEach((c) => { c.troops = 1; troopManager.updateDisplay(c); });
+        CustomLogger.print("GameManager initialized");
+
+        _updatePhaseDisplay();
     }
 
 
@@ -266,7 +270,7 @@ public partial class GameManager : Node
 
     public void triggerNextPhase()
     {
-        switch(gamePhase)
+        switch (gamePhase)
         {
             case GamePhase.Init: _startFirstDeployment(); return;
             case GamePhase.Attack: _startReinforcePhase(); return;
@@ -304,9 +308,12 @@ public partial class GameManager : Node
 
     private void _updatePhaseDisplay()
     {
-        _setPhaseDisplay();
-        _setSecondaryDisplay();
-        _applySelection(HumanPlayerManager.processSelection(null, players[activePlayerIndex]));
+        if (gamePhase != GamePhase.Init)
+        {
+            _setPhaseDisplay();
+            _setSecondaryDisplay();
+            _applySelection(HumanPlayerManager.processSelection(null, players[activePlayerIndex]));
+        }
 
         GameUI.Instance.setPhaseButtonVisibility(_shouldDisplayEndPhaseButton());
         GameUI.Instance.setGameButtonVisibility(_shouldDisplayStartGameButton());
@@ -314,14 +321,14 @@ public partial class GameManager : Node
 
     private bool _shouldDisplayEndPhaseButton()
     {
-        if (activePlayerIndex < 0 && activePlayerIndex >= players.Count)
+        if(activePlayerIndex < 0 || activePlayerIndex >= players.Count)
             return false;
         return players[activePlayerIndex].isHuman && (gamePhase == GamePhase.Attack || gamePhase == GamePhase.Reinforce);
     }
 
     private bool _shouldDisplayStartGameButton()
     {
-        return gamePhase == GamePhase.Init;
+        return planet != null && gamePhase == GamePhase.Init;
     }
 
     private void _setPhaseDisplay()

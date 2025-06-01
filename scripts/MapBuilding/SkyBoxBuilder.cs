@@ -55,7 +55,7 @@ public partial class SkyBoxBuilder : Node
         _starPass(img, 0.1f);
         _applyImageToTexture(img);
 
-        GD.Print("Creating Skybox image took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
+        CustomLogger.print("Creating Skybox image took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + "s.");
     }
 
     private void _applyImageToTexture(Image _img)

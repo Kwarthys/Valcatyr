@@ -1,15 +1,9 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.Design;
 using System.Diagnostics;
-using System.Diagnostics.Tracing;
 using System.Linq;
-using System.Net;
-using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
-using System.Runtime.Intrinsics.X86;
+using System.Threading;
 
 public class MapManager
 {
@@ -18,8 +12,6 @@ public class MapManager
     private Planet planet;
 
     MapNode[] map = new MapNode[Planet.MAP_SIZE];
-
-    public Texture2D tex {get; private set;}
 
     private const int STATES_COUNT = 60; // 60 is so cool, can be divided by 2, 3, 4, 5 and 6, and it looks cool on the planet
     private const int MIN_STATE_SIZE = 100;
@@ -38,23 +30,18 @@ public class MapManager
     public static Color shallowSeaColor = new(0.1f, 0.3f, 0.7f);
 
     public MapManager(Planet _owner){ planet = _owner; Instance = this; }
-    public void RegisterMap(float[] planetMap)
+    public void BuildMap(float[] planetMap)
     {
-        for(int mapIndex = 0; mapIndex < planetMap.Length; ++mapIndex)
+        for (int mapIndex = 0; mapIndex < planetMap.Length; ++mapIndex)
         {
             map[mapIndex] = new MapNode();
             map[mapIndex].height = planetMap[mapIndex];
             map[mapIndex].fullMapIndex = mapIndex;
-            if(planetMap[mapIndex] <= Planet.SEA_LEVEL)
+            if (planetMap[mapIndex] <= Planet.SEA_LEVEL)
                 map[mapIndex].nodeType = MapNode.NodeType.Water;
         }
 
-        float usecStart = Time.GetTicksUsec();
-        _buildStates();
-        _buildContinents();
-        GD.Print("Creating States and Continents took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
-        _buildTexture();
-        _buildStatesTextures();
+        _startAsynchronousGeneration();
     }
 
     public State getStateOfVertex(int _vertexID)
@@ -67,54 +54,69 @@ public class MapManager
         return getStateByStateID(stateID);
     }
 
-    private void _buildTexture()
+    private void _startAsynchronousGeneration()
+    {
+        Thread t = new(new ThreadStart(_generateMap));
+        t.Start();
+    }
+
+    private void _generateMap()
+    {
+        float usecStart = Time.GetTicksUsec();
+        _buildStates();
+        _buildContinents();
+        _buildAndApplyTexture();
+        _buildStatesTextures();
+        CustomLogger.print("Creating States and Continents took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
+
+        planet.notifyGenerationComplete();
+    }
+
+    private void _buildAndApplyTexture()
     {
         int imgHeight = (map.Length / MAX_IMAGE_SIZE) + 1;
         int imgWidth = Math.Min(map.Length, MAX_IMAGE_SIZE);
-
-        if(imgHeight * imgWidth > MAX_IMAGE_SIZE * MAX_IMAGE_SIZE)
-            Debug.Print("Image reached max capacity");
-
         Image img = Image.CreateEmpty(imgWidth, imgHeight, false, Image.Format.Rgb8);
-        img.Fill(new(1.0f,0.0f,1.0f));
-        Debug.Print("ImgSize: " + img.GetSize());
-        for(int i = 0; i < map.Length; ++i)
+        img.Fill(new(1.0f, 0.0f, 1.0f));
+
+        for (int i = 0; i < map.Length; ++i)
         {
             int x = i % MAX_IMAGE_SIZE;
             int y = i / MAX_IMAGE_SIZE;
             Color color;
-            switch(map[i].nodeType)
+            switch (map[i].nodeType)
             {
                 case MapNode.NodeType.Land:
-                {
-                    if(map[i].stateID == -1)
-                        color = Colors.Green;
-                    else
                     {
-                        color = Parameters.colors[map[i].colorID];
-
-                        float tintAmount = 0.0f;
-                        if(map[i].isContinentBorder) // make continent borders even darker/brighter for even nicer display
-                            tintAmount = 0.95f;
-                        else if(map[i].isBorder() || map[i].waterBorder) // make border darker/brighter for nice display
-                            tintAmount = 0.6f;
-
-                        if(tintAmount > 0.1f)
+                        if (map[i].stateID == -1)
+                            color = Colors.Green;
+                        else
                         {
-                            float sumValues = color.R + color.G + color.B;
-                            Color targetColor = sumValues > 0.6f ? Colors.Black : Colors.White; // Make bright color darker, and dark color brighter
-                            color = color.Lerp(targetColor, tintAmount);
+                            color = Parameters.colors[map[i].colorID];
+
+                            float tintAmount = 0.0f;
+                            if (map[i].isContinentBorder) // make continent borders even darker/brighter for even nicer display
+                                tintAmount = 0.95f;
+                            else if (map[i].isBorder() || map[i].waterBorder) // make border darker/brighter for nice display
+                                tintAmount = 0.6f;
+
+                            if (tintAmount > 0.1f)
+                            {
+                                float sumValues = color.R + color.G + color.B;
+                                Color targetColor = sumValues > 0.6f ? Colors.Black : Colors.White; // Make bright color darker, and dark color brighter
+                                color = color.Lerp(targetColor, tintAmount);
+                            }
                         }
+                        break;
                     }
-                    break;
-                }
                 case MapNode.NodeType.RogueIsland: color = Parameters.rogueIslandColor; break;
                 case MapNode.NodeType.Water:
                 default: color = shallowSeaColor; break;
             }
-            img.SetPixel(x,y, color);
+            img.SetPixel(x, y, color);
         }
-        tex = ImageTexture.CreateFromImage(img);
+
+        planet.setPlanetTexture(ImageTexture.CreateFromImage(img));
     }
 
     private void _buildStatesTextures()
@@ -130,8 +132,10 @@ public class MapManager
         _buildTinyStates();
         _computeStatesBoundaries();
         _computeLandMassesStates();
+        _buildAndApplyTexture();
         // Then merge most of them until a good amount is reached
         _mergeUntilEnoughStates();
+        _buildAndApplyTexture();
     }
 
     private void _mergeUntilEnoughStates()
@@ -440,7 +444,7 @@ public class MapManager
                 states.Add(state);
             }
         }
-        Debug.Print("Created " + states.Count + " states");
+        CustomLogger.print("Created " + states.Count + " states");
     }
 
     private List<int> _spreadState(int starter, int maxSpread = 150)
@@ -482,6 +486,7 @@ public class MapManager
         _smallIslandConnect();
         continents = new();
         _createContinents();
+        _buildAndApplyTexture();
         _computeContinentsNeighbors();
         _connectContinents();
         _finalConnectivityCheck();
@@ -923,7 +928,7 @@ public class MapManager
 
         if(components.Count == 1)
         {
-            GD.Print("All continents are already connected"); // Perfect, will happen most of the time with current brides rules
+            CustomLogger.print("All continents are already connected"); // Perfect, will happen most of the time with current brides rules
             return;
         }
 
@@ -1208,7 +1213,6 @@ public class MapManager
     // This will ignore all land direct and indirect neighbors, and blacklisted
     private ClosestSeaNeigbhorData _findClosestSeaNeighbor(State _state, in List<int> _preBlackListedStateIDs = null)
     {
-        //float usecStart = Time.GetTicksUsec();
         // First try to find a bridge without caring for land crossing. Only check final one.
         ClosestSeaNeigbhorData data = _findClosestSeaNeighbor(false, _state, _preBlackListedStateIDs);
         if(!data)
@@ -1216,13 +1220,10 @@ public class MapManager
             // Did not find any neigbhors, maybe state has no shores or too many states are excluded
             return data;
         }
-        //GD.Print("Bridge finding NO LAND CHECK took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
         if(planet.fastBridges || _doesPathOnlyCrossWater(data.points[0], data.points[1])) // If final bridge is ok, perfect we saved a hell lot of time
             return data;
         // If not, too bad we'll have to REDO it all AND do pathfinding for EACH try, this little maneuver is gonna cost us 51 years (roughly 1 second instead of 0.005)
-        //usecStart = Time.GetTicksUsec();
         data = _findClosestSeaNeighbor(true, _state, _preBlackListedStateIDs);
-        //GD.Print("Bridge finding FULL LAND CHECK took " + ((Time.GetTicksUsec() - usecStart) * 0.000001) + " secs.");
         return data;
     }
 

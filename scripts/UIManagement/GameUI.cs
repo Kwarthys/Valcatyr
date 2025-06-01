@@ -19,7 +19,7 @@ public partial class GameUI : Control
         Instance = this;
         // Initialize states
         setPhaseButtonVisibility(false);
-        setGameButtonVisibility(true);
+        setGameButtonVisibility(false);
         setPrimary("");
         setSecondary("");
     }

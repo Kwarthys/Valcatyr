@@ -2,17 +2,19 @@
 
 [ext_resource type="Shader" path="res://materials/PlanetShader.gdshader" id="1_8fp2e"]
 
-[sub_resource type="Gradient" id="Gradient_t75fb"]
+[sub_resource type="Gradient" id="Gradient_jg1te"]
 
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_woupq"]
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_vyob1"]
+noise_type = 0
 
-[sub_resource type="NoiseTexture3D" id="NoiseTexture3D_rcdwe"]
-width = 400
-height = 400
-depth = 400
+[sub_resource type="NoiseTexture3D" id="NoiseTexture3D_2x3ob"]
+width = 100
+height = 100
+depth = 100
 seamless = true
-color_ramp = SubResource("Gradient_t75fb")
-noise = SubResource("FastNoiseLite_woupq")
+seamless_blend_skirt = 0.5
+color_ramp = SubResource("Gradient_jg1te")
+noise = SubResource("FastNoiseLite_vyob1")
 
 [resource]
 render_priority = 0
@@ -21,4 +23,4 @@ shader_parameter/shallowWaterColor = Color(0.4, 0.6, 0.9, 1)
 shader_parameter/deepWaterColor = Color(0, 0, 0.392157, 1)
 shader_parameter/waveWaterColor = Color(0.652941, 0.774857, 0.958164, 1)
 shader_parameter/STRIPES_SCROLL_SPEED = 20.0
-shader_parameter/waterNoise = SubResource("NoiseTexture3D_rcdwe")
+shader_parameter/waterNoise = SubResource("NoiseTexture3D_2x3ob")

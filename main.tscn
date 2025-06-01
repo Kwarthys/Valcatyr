@@ -124,12 +124,10 @@ default_font_size = 25
 
 [node name="SceneRoot" type="Node3D"]
 
-[node name="Planet" type="MeshInstance3D" parent="." node_paths=PackedStringArray("mainController", "bridgeBuilder")]
+[node name="Planet" type="MeshInstance3D" parent="." node_paths=PackedStringArray("bridgeBuilder")]
 material_override = ExtResource("2_4fh88")
 script = ExtResource("2_hkox7")
-mainController = NodePath("../Managers/MainController")
 bridgeBuilder = NodePath("BridgeBuilder")
-fastBridges = true
 
 [node name="BridgeBuilder" type="Node3D" parent="Planet"]
 script = ExtResource("4_yu05o")
