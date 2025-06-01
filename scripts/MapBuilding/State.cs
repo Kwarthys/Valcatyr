@@ -37,25 +37,34 @@ public class State
             return 0;
     }
 
-    public void setContinentID(int _continentID)
+    public void setContinent(Continent _continent)
     {
-        continentID = _continentID;
+        continentID = _continent.id;
         foreach(MapNode n in land)
         {
-            n.continentID = _continentID;
+            n.continentID = _continent.id;
+            n.colorID = _continent.colorID;
+        }
+    }
+
+    public void setColorID(int _id)
+    {
+        foreach(MapNode n in land)
+        {
+            n.colorID = _id;
         }
     }
 
     public void absordState(State _giver)
     {
-        if(!verifyBoundaryIntegrity())
+        if (!verifyBoundaryIntegrity())
             GD.Print("Error on receiver State_" + id + " at the start of _mergeStates");
-        if(!_giver.verifyBoundaryIntegrity())
+        if (!_giver.verifyBoundaryIntegrity())
             GD.Print("Error on giver State_" + _giver.id + " at the start of _mergeStates");
 
         int borderOffset = land.Count;
 
-        foreach(MapNode node in _giver.land)
+        foreach (MapNode node in _giver.land)
         {
             node.stateID = id;
             land.Add(node);
@@ -63,38 +72,38 @@ public class State
 
         // Offset giver references to its own land by the amounf of land previously in receiver,
         // as giver's land will be shifted by that amount -> this counts for shores and boundaries
-        foreach(int shoreID in _giver.shores)
+        foreach (int shoreID in _giver.shores)
         {
             shores.Add(shoreID + borderOffset);
         }
 
         removeBoundaryToState(_giver.id); // Receiver state removes all reference to giver state in its neighboring data
 
-        foreach(int borderIndex in _giver.boundaries)
+        foreach (int borderIndex in _giver.boundaries)
         {
-            if(_giver.land[borderIndex].borderingStateIds.Count == 0)
+            if (_giver.land[borderIndex].borderingStateIds.Count == 0)
             {
                 GD.PrintErr("State_" + _giver.id + " boundary has no borders");
                 continue;
             }
 
-            if(_giver.land[borderIndex].borderingStateIds.Contains(id))
+            if (_giver.land[borderIndex].borderingStateIds.Contains(id))
             {
                 _giver.land[borderIndex].borderingStateIds.Remove(id);
             }
-            if(_giver.land[borderIndex].borderingStateIds.Count > 0)
+            if (_giver.land[borderIndex].borderingStateIds.Count > 0)
             {
                 boundaries.Add(borderIndex + borderOffset); // Only add border if it still have neighbors after removing receiving state
             }
         }
 
-        foreach(int neighborID in _giver.neighbors)
+        foreach (int neighborID in _giver.neighbors)
         {
-            if(neighborID != id && neighbors.Contains(neighborID) == false)
+            if (neighborID != id && neighbors.Contains(neighborID) == false)
                 neighbors.Add(neighborID);
         }
 
-        if(!verifyBoundaryIntegrity())
+        if (!verifyBoundaryIntegrity())
             GD.Print("Error on State_" + id + " after absorbing State_" + _giver.id);
     }
 
@@ -142,7 +151,7 @@ public class State
     public void makeRogueIsland()
     {
         // Too bad, state is told to disapear, mark all MapNode as RogueIsland
-        foreach(MapNode n in land)
+        foreach (MapNode n in land)
         {
             n.stateID = -1;
             n.nodeType = MapNode.NodeType.RogueIsland;

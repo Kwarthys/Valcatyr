@@ -31,8 +31,6 @@ public class MapManager
     private const int CONTINENT_MIN_SIZE = 4;
     private const int CONTINENT_MAX_SIZE = 12;
 
-    public static List<Color> statesColor = _generateStatesColors(); // new(){ new(0.0f, 1.0f, 0.0f), new(1.0f,1.0f,0.0f), new(1.0f, 0.5f, 0.5f) };
-
     public List<State> states;
     public List<Continent> continents;
     public List<List<int>> landMassesStatesIndices = new(); // will store lists of stateIDs. Each list will represent a landmass of states connected by land. This will later be used to define continents.
@@ -93,22 +91,30 @@ public class MapManager
                         color = Colors.Green;
                     else
                     {
-                        color = statesColor[map[i].continentID%statesColor.Count];
-                        if(map[i].isContinentBorder)
-                            color = color.Lerp(Colors.Black, 0.95f); // make continent borders even darker for even nicer display
-                        else if(map[i].isBorder() || map[i].waterBorder)
-                            color = color.Lerp(Colors.Black, 0.6f); // make border darker for nice display
+                        color = Parameters.colors[map[i].colorID];
+
+                        float tintAmount = 0.0f;
+                        if(map[i].isContinentBorder) // make continent borders even darker/brighter for even nicer display
+                            tintAmount = 0.95f;
+                        else if(map[i].isBorder() || map[i].waterBorder) // make border darker/brighter for nice display
+                            tintAmount = 0.6f;
+
+                        if(tintAmount > 0.1f)
+                        {
+                            float sumValues = color.R + color.G + color.B;
+                            Color targetColor = sumValues > 0.6f ? Colors.Black : Colors.White; // Make bright color darker, and dark color brighter
+                            color = color.Lerp(targetColor, tintAmount);
+                        }
                     }
                     break;
                 }
-                case MapNode.NodeType.RogueIsland: color = new(0.8f, 0.4f, 0.0f); break;
+                case MapNode.NodeType.RogueIsland: color = Parameters.rogueIslandColor; break;
                 case MapNode.NodeType.Water:
                 default: color = shallowSeaColor; break;
             }
             img.SetPixel(x,y, color);
         }
         tex = ImageTexture.CreateFromImage(img);
-        //img.SavePng("img.png"); // funny to look at it "flat"
     }
 
     private void _buildStatesTextures()
@@ -424,10 +430,12 @@ public class MapManager
                 State state = new();
                 state.id = stateIndex++;
                 List<int> lands = _spreadState(i);
+                int colorID = Parameters.getRandomColorID(); // Random color for now
                 foreach(int landIndex in lands)
                 {
                     map[landIndex].stateID = state.id;
                     state.land.Add(map[landIndex]);
+                    map[landIndex].colorID = colorID;
                 }
                 states.Add(state);
             }
@@ -458,7 +466,7 @@ public class MapManager
                     if(!indicesToCheck.Contains(neighbor) && !result.Contains(neighbor))
                     {
                         if(GD.Randf() > 0.3f)
-                            indicesToCheck.Add(neighbor);   // Wide search: Square states
+                            indicesToCheck.Add(neighbor);       // Wide search: Square states
                         else
                             indicesToCheck.Insert(0, neighbor); // Depth search: spaghetti states
                     }
@@ -469,11 +477,6 @@ public class MapManager
         return result;
     }
 
-    private int _compareStatesNeighbors(int _a, int _b)
-    {
-        return State.compareStateNeighborsNumber(getStateByStateID(_a), getStateByStateID(_b));
-    }
-
     private void _buildContinents()
     {
         _smallIslandConnect();
@@ -482,6 +485,7 @@ public class MapManager
         _computeContinentsNeighbors();
         _connectContinents();
         _finalConnectivityCheck();
+        _assignNonCollidingColors();
         _computeMapNodesContinentBorders();
         _computeContinentsGameScore();
     }
@@ -536,9 +540,10 @@ public class MapManager
     {
         // All connected states can join the same continent
         continents.Add(new(continents.Count));
-        foreach(State state in _group)
+        continents.Last().colorID = Parameters.getRandomColorID();
+        foreach (State state in _group)
         {
-            state.setContinentID(continents.Last().id);
+            state.setContinent(continents.Last());
             continents.Last().addState(state.id);
         }
     }
@@ -962,27 +967,101 @@ public class MapManager
     }
 
     /// <summary>
+    /// Assign colors to continents, making sure we use the most possible colors without having two neighbors continent sharing the same color
+    /// </summary>
+    private void _assignNonCollidingColors()
+    {
+        // Resets all colors except for the first continent (we'll start with it)
+        for (int i = 1; i < continents.Count; ++i)
+            continents[i].colorID = -1;
+
+        // Build the list with all colors, to make sure we prioritize not yet picked colors
+        Dictionary<int, int> colorUsageByColorID = new();
+        for (int i = 0; i < Parameters.colors.Length; ++i)
+            colorUsageByColorID.Add(i, 0);
+        colorUsageByColorID[continents[0].colorID] = 1;
+
+        bool forceRandom = false; // This is used to bypass the free color priority, when coming back from an impossible configuration
+        List<int> colors = new(); // List that will be used for a lot of different stuff
+        List<int> availableColors = new();
+        for (int i = 1; i < continents.Count; ++i)
+        {
+            colors.Clear();
+            if (forceRandom == false)
+            {
+                // Retreive colors that have zero usage
+                foreach (int colorID in colorUsageByColorID.Keys)
+                {
+                    if (colorUsageByColorID[colorID] == 0)
+                        colors.Add(colorID);
+                }
+
+                if (colors.Count > 0)
+                {
+                    // By definition, a non assigned color will not collide with any neigbhors (but may lead to imposible configuration)
+                    int colorID = colors[(int)((colors.Count - 1) * GD.Randf())]; // take random new color
+                    colorUsageByColorID[colorID] += 1; // Update color usage
+                    continents[i].setColorID(colorID, getStateByStateID);
+                    continue; // Proceed to next continent
+                }
+            }
+
+            // Take a random color that's not shared with our neighbors
+            // First, build the list of all the color we can't take
+            foreach (int continentID in continents[i].neighborsContinentIDs)
+            {
+                int colorID = getContinentByID(continentID).colorID;
+                if (colorID != -1 && colors.Contains(colorID) == false) // Prevent duplicates
+                    colors.Add(colorID);
+            }
+
+            // If all colors are forbidden, manage impossible configuration
+            if (colors.Count == Parameters.colors.Length)
+            {
+                // We reach an impossible configuration, go back to previous continent and reset its color that led us here
+                colorUsageByColorID[continents[i - 1].colorID] -= 1; // decrement previous continent's color usage
+                continents[i - 1].colorID = -1; // Reset previous continent's color
+                i -= 2; // Remove two, so that +1 makes us right on the previous continent
+                forceRandom = true;
+                continue;
+            }
+
+            // If we reach here, we have at least an available color, pick it
+            availableColors.Clear();
+            for (int ci = 0; ci < Parameters.colors.Length; ++ci)
+            {
+                if (colors.Contains(ci) == false)
+                    availableColors.Add(ci);
+            }
+            int chosenColorID = availableColors[(int)((availableColors.Count - 1) * GD.Randf())]; // take random available color
+            colorUsageByColorID[chosenColorID] += 1;
+            continents[i].setColorID(chosenColorID, getStateByStateID);
+            forceRandom = false; // reset impossible configuration panic button
+        }
+    }
+
+    /// <summary>
     /// Go throught each MapNode of borders to set their ContinentBorder bool if suited
     /// </summary>
     private void _computeMapNodesContinentBorders()
     {
-        foreach(Continent c in continents)
+        foreach (Continent c in continents)
         {
-            foreach(int stateID in c.stateIDs)
+            foreach (int stateID in c.stateIDs)
             {
                 State s = getStateByStateID(stateID);
-                foreach(int landID in s.boundaries)
+                foreach (int landID in s.boundaries)
                 {
                     bool isBorder = false;
-                    foreach(int otherStateID in s.land[landID].borderingStateIds)
+                    foreach (int otherStateID in s.land[landID].borderingStateIds)
                     {
-                        if(getStateByStateID(otherStateID).continentID != c.id)
+                        if (getStateByStateID(otherStateID).continentID != c.id)
                         {
                             isBorder = true;
                             break;
                         }
                     }
-                    if(isBorder)
+                    if (isBorder)
                         s.land[landID].isContinentBorder = true;
                 }
             }
@@ -1273,6 +1352,7 @@ public class MapNode // this is not a struct only because i could not bother cre
     public NodeType nodeType = NodeType.Land;
     public int stateID = INVALID_ID;
     public int continentID = INVALID_ID;
+    public int colorID = INVALID_ID;
     public float height = 0.0f;
     public int fullMapIndex = INVALID_ID;
 }

@@ -8,8 +8,9 @@ public class Continent
     public List<int> stateIDs { get; private set;} = new();
     public List<int> neighborsContinentIDs {get; private set;} = new();
     public int id {get; private set;}
+    public int colorID = -1;
 
-    public int score {get; private set;} = 0;
+    public int score { get; private set; } = 0;
 
     public Continent(int _id) { id = _id; }
 
@@ -44,18 +45,27 @@ public class Continent
         }
     }
 
+    public void setColorID(int _colorID, Func<int, State> _getStateByID)
+    {
+        colorID = _colorID;
+        foreach (int stateID in stateIDs)
+        {
+            _getStateByID(stateID).setColorID(_colorID);
+        }
+    }
+
     public void absorbContinent(Continent toAbsorb, Func<int, State> _getStateByID)
     {
-        foreach(int stateID in toAbsorb.stateIDs)
+        foreach (int stateID in toAbsorb.stateIDs)
         {
             State s = _getStateByID(stateID);
-            s.setContinentID(id);
+            s.setContinent(this);
             addState(stateID);
         }
 
-        foreach(int continentID in toAbsorb.neighborsContinentIDs)
+        foreach (int continentID in toAbsorb.neighborsContinentIDs)
         {
-            if(continentID != id)
+            if (continentID != id)
                 addContinentNeighbor(continentID); // won't allow duplicates
         }
     }

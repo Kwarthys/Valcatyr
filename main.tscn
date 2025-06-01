@@ -130,7 +130,6 @@ script = ExtResource("2_hkox7")
 mainController = NodePath("../Managers/MainController")
 bridgeBuilder = NodePath("BridgeBuilder")
 fastBridges = true
-planetRotationPeriodSec = 300.0
 
 [node name="BridgeBuilder" type="Node3D" parent="Planet"]
 script = ExtResource("4_yu05o")

@@ -25,7 +25,6 @@ public class ComputerAI
     private const double ACTION_COOLDOWN = 0.5f; // Seconds per action
     private const double SLOW_ACTION_COOLDOWN = 1.0f;
     private bool slowDown = false; // Used to track when to apply a longer delay, like when changing attack front
-    private List<CountryThreatPair> threats;
 
     private Queue<GameAction> turnGamePlan;
 
