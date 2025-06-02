@@ -63,10 +63,12 @@ public class State
             GD.Print("Error on giver State_" + _giver.id + " at the start of _mergeStates");
 
         int borderOffset = land.Count;
+        int colorID = land[0].colorID;
 
         foreach (MapNode node in _giver.land)
         {
             node.stateID = id;
+            node.colorID = colorID;
             land.Add(node);
         }
 

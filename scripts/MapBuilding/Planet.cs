@@ -63,6 +63,8 @@ public partial class Planet : MeshInstance3D
     private volatile List<Vector2I> bridgeCreationRequests = new();
     private readonly object bridgeQueueLock = new();
 
+    private Vector3 seed_offset;
+
     public override void _Ready()
     {
         surfaceArrays.Resize((int)Mesh.ArrayType.Max);
@@ -171,6 +173,7 @@ public partial class Planet : MeshInstance3D
 
         float usecStart = Time.GetTicksUsec();
 
+        seed_offset = new(GD.Randf(), GD.Randf(), GD.Randf());
         for (int sideIndex = 0; sideIndex < SIDE_COUNT; ++sideIndex)
         {
             _appendSurface(ups[sideIndex], forwards[sideIndex], sideIndex);
@@ -716,8 +719,6 @@ public partial class Planet : MeshInstance3D
                 normals.Add(trianglesNormalsPerVertex[i].Normalized());
         }
     }
-
-    Vector3 seed_offset = new(GD.Randf(), GD.Randf(), GD.Randf());
 
     private float sampleNoise(Vector3 _pos)
     {

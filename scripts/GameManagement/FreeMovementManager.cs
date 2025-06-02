@@ -38,18 +38,30 @@ public partial class FreeMovementManager : Node
         slider.TickCount = _from.troops;
         uiContainer.Visible = true;
         onSliderUpdate(0.0f);
+
+        GameManager.Instance.waitingForMovement = true; // Freezing human interactions
     }
 
     public void onMovementValidation()
     {
-        if(originCountry == null || destinationCountry == null)
-        {
-            GD.PrintErr("FreeMovementManager: Origin and/or Destination countries are not selected, the interaction should not have been possible.");
-            return;
-        }
-        int amount = (int)slider.Value;
-        if(amount != 0)
-            GameManager.Instance.askMovement(originCountry, destinationCountry, amount);
+        _executeMove((int)slider.Value);
+    }
+
+    public void onMoveAll()
+    {
+        _executeMove((int)slider.MaxValue);
+    }
+
+    public void onMoveNone()
+    {
+        _executeMove(0);
+    }
+
+    private void _executeMove(int _amount)
+    {
+        if(_amount != 0)
+            GameManager.Instance.askMovement(originCountry, destinationCountry, _amount);
+        GameManager.Instance.waitingForMovement = false;
         originCountry = null;
         destinationCountry = null;
         uiContainer.Visible = false;

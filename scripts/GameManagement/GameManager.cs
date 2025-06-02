@@ -33,15 +33,17 @@ public partial class GameManager : Node
 
     public int reinforcementLeft {get; private set;} = 0;
     public int movementLeft {get; private set;} = 0;
+
+    public bool waitingForMovement = false;
     
     public struct SelectionData
     {
-        public SelectionData(){enemies = new(); allies = new(); selected = null;}
+        public SelectionData() { enemies = new(); allies = new(); selected = null; }
         public void removeDuplicateSelected()
         {
-            if(allies.Contains(selected))
+            if (allies.Contains(selected))
                 allies.Remove(selected);
-            if(enemies.Contains(selected))
+            if (enemies.Contains(selected))
                 enemies.Remove(selected);
         }
         public List<Country> enemies;
@@ -389,8 +391,8 @@ public partial class GameManager : Node
     public enum PlanetInteraction { Primary, Secondary }
     public void onPlanetInteraction(PlanetInteraction _type, int _vertexClicked)
     {
-        if(gamePhase == GamePhase.Init || gamePhase == GamePhase.End || players[activePlayerIndex].isHuman == false)
-            return; // Don't do anything here while game has not started, or in AI's turn
+        if(gamePhase == GamePhase.Init || gamePhase == GamePhase.End || players[activePlayerIndex].isHuman == false || waitingForMovement)
+            return; // Don't do anything here while game has not started, or in AI's turn, or Human is moving troops
 
         State s = planet.mapManager.getStateOfVertex(_vertexClicked);
         if(s == null)
