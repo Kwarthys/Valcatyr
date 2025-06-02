@@ -47,7 +47,7 @@ public static class HumanPlayerManager
         if(troopsMovement != 0) // Manage the troops movement and ownership transfer
         {
             GameManager.Instance.countryConquest(attacker, _interactedCountry, troopsMovement);
-            if(attacker.troops > 1) // If more troops can move
+            if(attacker.troops > 1 && GameManager.Instance.gamePhase != GameManager.GamePhase.End) // If more troops can move and it was not the last move
                 FreeMovementManager.Instance.startMovementInteraction(attacker, _interactedCountry); // let player decide what troops to move to new country
             processSelection(_interactedCountry, _player); // Select newly acquired country
         }

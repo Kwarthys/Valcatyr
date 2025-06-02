@@ -23,13 +23,25 @@ public partial class TroopDisplayManager : Node3D
 
     private List<PawnsMovement> pawnsMovements = new();
 
+    public void reset()
+    {
+        // Destroy all pawns
+        foreach (TroopsData data in troopsPerState.Values)
+        {
+            _destroyPawnsIn(data.level1Pawns.Count, data.level1Pawns, GD.Randf() > 0.95f);
+            _destroyPawnsIn(data.level2Pawns.Count, data.level2Pawns, GD.Randf() > 0.8f); // Play some FX for extra fun
+        }
+        troopsPerState.Clear();
+        pawnsMovements.Clear();
+    }
+
     public void movePawns(Country _origin, Country _destination, int _amount)
     {
-        if(troopsPerState.ContainsKey(_origin.state.id) == false)
+        if (troopsPerState.ContainsKey(_origin.state.id) == false)
             throw new Exception("Cannot move troops from an uknown state");
-        if(troopsPerState.ContainsKey(_destination.state.id) == false)
+        if (troopsPerState.ContainsKey(_destination.state.id) == false)
             throw new Exception("Cannot move troops to an uknown state");
-        if(troopsPerState[_origin.state.id].troops <= _amount)
+        if (troopsPerState[_origin.state.id].troops <= _amount)
             throw new Exception("Origin country has not enough armies to move");
 
         TroopsData originData = troopsPerState[_origin.state.id];
@@ -37,7 +49,7 @@ public partial class TroopDisplayManager : Node3D
         int l1Moving = _amount % PAWN_FACTORISATION_COUNT;
         int l2Moving = _amount / PAWN_FACTORISATION_COUNT;
         // We may have to despawn level2 pawns to create more level 1. If i have 10 and i want to move 5, i'll have to break this one 10 token
-        if(l1Moving > originData.level1Pawns.Count)
+        if (l1Moving > originData.level1Pawns.Count)
         {
             // Break a level 2 pawn into multiple level 1 -> It will take more referencepoint than available, so allow doubles
             _destroyPawnsIn(1, originData.level2Pawns, false);
@@ -45,12 +57,13 @@ public partial class TroopDisplayManager : Node3D
         }
 
         // Create Movement data
-        pawnsMovements.Add(new(){
+        pawnsMovements.Add(new()
+        {
             destination = _destination,
             troopsValue = _amount,
             pawns = new()
         });
-        
+
         // Get destination points, preferably not overlapping, but it is allowed as a merge will can occur at arrival
         List<ReferencePoint> l1Targets = _getReferencePoints(l1Moving, _destination, troopsPerState[_destination.state.id].level1Pawns, false);
         List<ReferencePoint> l2Targets = _getReferencePoints(l2Moving, _destination, troopsPerState[_destination.state.id].level2Pawns, false);
@@ -58,21 +71,21 @@ public partial class TroopDisplayManager : Node3D
         TroopsData destinationData = troopsPerState[_destination.state.id];
 
         // Retreive pawns that will move, remove them from origin country (and troopsData)
-        for(int i = 0; i < l1Moving; ++i)
+        for (int i = 0; i < l1Moving; ++i)
         {
             // Start from the end, most likely to find overlapping panws there
             int index = originData.level1Pawns.Count - 1;
-            pawnsMovements.Last().pawns.Add(new(){ pawn = originData.level1Pawns[index], destination = l1Targets[i] });
+            pawnsMovements.Last().pawns.Add(new() { pawn = originData.level1Pawns[index], destination = l1Targets[i] });
             // Remove from origin country
             originData.level1Pawns.RemoveAt(index);
             // Add to destination data
             destinationData.level1Pawns.Add(pawnsMovements.Last().pawns.Last().pawn);
         }
-        for(int i = 0; i < l2Moving; ++i)
+        for (int i = 0; i < l2Moving; ++i)
         {
             // Start from the end, most likely to find overlapping panws there
             int index = originData.level2Pawns.Count - 1;
-            pawnsMovements.Last().pawns.Add(new(){ pawn = originData.level2Pawns[index], destination = l2Targets[i] });
+            pawnsMovements.Last().pawns.Add(new() { pawn = originData.level2Pawns[index], destination = l2Targets[i] });
             // Remove from origin country
             originData.level2Pawns.RemoveAt(index);
             // Add to destination data

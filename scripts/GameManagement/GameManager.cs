@@ -81,13 +81,33 @@ public partial class GameManager : Node
         _updatePhaseDisplay();
     }
 
+    private void _reset()
+    {
+        // Making sure a new call to initialize would put us in a good start state
+        gamePhase = GamePhase.Init;
+        players.Clear();
+        aiPerPlayer.Clear();
+        planet = null;
+        troopManager.reset();
+        countries.Clear();
+
+        _updatePhaseDisplay();
+    }
+
+    public void startANewGame()
+    {
+        Planet p = planet; // Saving the planet as our reset will clear our reference to it
+        _reset();
+        p.generate(); // Start new generation
+    }
+
 
     public override void _Process(double _dt)
     {
-        if(gamePhase == GamePhase.Init)
+        if (gamePhase == GamePhase.Init)
             return; // Game has not started yet
         // only treat IA here, as humans play with mouse
-        if(players[activePlayerIndex].isHuman == false)
+        if (players[activePlayerIndex].isHuman == false)
         {
             ComputerAI ai = aiPerPlayer[players[activePlayerIndex]];
             ai.processTurn(_dt);
@@ -112,7 +132,7 @@ public partial class GameManager : Node
                 _amount = Mathf.Min(_amount, reinforcementLeft);
                 reinforcementLeft -= _amount;
                 if (reinforcementLeft == 0)
-                    _startAttackPhase();
+                        _startAttackPhase();
                 else
                     _setSecondaryDisplay();
             } break;
@@ -314,9 +334,15 @@ public partial class GameManager : Node
             _setSecondaryDisplay();
             _applySelection(HumanPlayerManager.processSelection(null, players[activePlayerIndex]));
         }
+        else
+        {
+            GameUI.setPrimary("");
+            GameUI.setSecondary("");
+        }
 
-        GameUI.Instance.setPhaseButtonVisibility(_shouldDisplayEndPhaseButton());
-        GameUI.Instance.setGameButtonVisibility(_shouldDisplayStartGameButton());
+        GameUI.setPhaseButtonVisibility(_shouldDisplayEndPhaseButton());
+        GameUI.setGameButtonVisibility(_shouldDisplayStartGameButton());
+        GameUI.setNewGameButtonVisibility(_shouldDisplayNewGameButton());
     }
 
     private bool _shouldDisplayEndPhaseButton()
@@ -331,9 +357,14 @@ public partial class GameManager : Node
         return planet != null && gamePhase == GamePhase.Init;
     }
 
+    private bool _shouldDisplayNewGameButton()
+    {
+        return gamePhase == GamePhase.End;
+    }
+
     private void _setPhaseDisplay()
     {
-        GameUI.Instance?.setPrimary(GameUI.makeBold(getActivePlayerAsString()) + ": " + getGameStateAsString());
+        GameUI.setPrimary(GameUI.makeBold(getActivePlayerAsString()) + ": " + getGameStateAsString());
     }
 
     private void _setSecondaryDisplay()
@@ -347,7 +378,7 @@ public partial class GameManager : Node
             case GamePhase.Reinforce: s = movementLeft + " troop movement left."; break;
             case GamePhase.End: s = "GG"; break;
         }
-        GameUI.Instance?.setSecondary(s);
+        GameUI.setSecondary(s);
     }
 
     public void onEndTurnButtonPressed()

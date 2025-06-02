@@ -3,7 +3,7 @@ using System;
 
 public partial class GameUI : Control
 {
-    public static GameUI Instance { get; private set; }
+    private static GameUI Instance;
 
     [Export]
     RichTextLabel primaryText;
@@ -13,6 +13,8 @@ public partial class GameUI : Control
     Button endTurnButton;
     [Export]
     Button startGameButton;
+    [Export]
+    Button newGameButton;
 
     public override void _Ready()
     {
@@ -20,18 +22,21 @@ public partial class GameUI : Control
         // Initialize states
         setPhaseButtonVisibility(false);
         setGameButtonVisibility(false);
+        setNewGameButtonVisibility(false);
         setPrimary("");
         setSecondary("");
     }
 
-    public void setPrimary(string _text)
+    public static void setPrimary(string _text)
     {
-        primaryText.Text = _text;
+        if(Instance != null)
+            Instance.primaryText.Text = _text;
     }
 
-    public void setSecondary(string _text)
+    public static void setSecondary(string _text)
     {
-        secondaryText.Text = _text;
+        if(Instance != null)
+            Instance.secondaryText.Text = _text;
     }
 
     public static string makeBold(string _text)
@@ -39,13 +44,21 @@ public partial class GameUI : Control
         return "[b]" + _text + "[/b]";
     }
 
-    public void setPhaseButtonVisibility(bool _status)
+    public static void setPhaseButtonVisibility(bool _status)
     {
-        endTurnButton.Visible = _status;
+        if(Instance != null)
+            Instance.endTurnButton.Visible = _status;
     }
 
-    public void setGameButtonVisibility(bool _status)
+    public static void setGameButtonVisibility(bool _status)
     {
-        startGameButton.Visible = _status;
+        if(Instance != null)
+            Instance.startGameButton.Visible = _status;
+    }
+
+    public static void setNewGameButtonVisibility(bool _status)
+    {
+        if(Instance != null)
+            Instance.newGameButton.Visible = _status;
     }
 }

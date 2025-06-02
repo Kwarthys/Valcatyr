@@ -66,7 +66,7 @@ public partial class Planet : MeshInstance3D
     public override void _Ready()
     {
         surfaceArrays.Resize((int)Mesh.ArrayType.Max);
-        generateMesh();
+        generate();
     }
 
     private bool rotate = false;
@@ -140,7 +140,7 @@ public partial class Planet : MeshInstance3D
         mat.SetShaderParameter("customTexture", _tex);
     }
 
-    public void generateMesh()
+    public void generate()
     {
         vertices.Clear();
         uvs.Clear();
