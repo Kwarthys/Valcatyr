@@ -51,9 +51,10 @@ material = SubResource("StandardMaterial3D_vos7l")
 radius = 0.025
 height = 0.05
 
-[node name="ExplosionFX" type="Node3D" node_paths=PackedStringArray("particleSystem")]
+[node name="ExplosionFX" type="Node3D" node_paths=PackedStringArray("particleSystem", "explosionSoundPlayer")]
 script = ExtResource("1_gjlwv")
 particleSystem = NodePath("GPUParticles3D")
+explosionSoundPlayer = NodePath("ExplosionSoundPlayer")
 
 [node name="GPUParticles3D" type="GPUParticles3D" parent="."]
 emitting = false
@@ -63,4 +64,8 @@ explosiveness = 0.9
 process_material = SubResource("ParticleProcessMaterial_6alpv")
 draw_pass_1 = SubResource("SphereMesh_bn8hw")
 
+[node name="ExplosionSoundPlayer" type="AudioStreamPlayer3D" parent="."]
+panning_strength = 3.0
+
 [connection signal="finished" from="GPUParticles3D" to="." method="onSignalReceive"]
+[connection signal="finished" from="ExplosionSoundPlayer" to="." method="onSignalReceive"]
