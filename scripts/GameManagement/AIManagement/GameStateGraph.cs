@@ -30,7 +30,7 @@ public class GameStateGraph
     public static GameAction generateLastMove(Player _player, List<int> _ignoredContinentsIndices)
     {
         GameStateGraph graph = new(_player);
-        return graph._generateFreeMoveActionFromGameState(graph.rootGameState, _ignoredContinentsIndices);
+        return graph._generateMoveActionFromGameState(graph.rootGameState, _ignoredContinentsIndices);
     }
 
     /// <summary>
@@ -226,14 +226,14 @@ public class GameStateGraph
             Country movementDestinationCountry = attackGameState.getEquivalentCountry(neighboringCountry);
             if (movementOriginCountry.troops > 1)
             {
-                GameState moveAllState = _generateReinforceGameState(attackGameState, movementOriginCountry, movementDestinationCountry, movementOriginCountry.troops - 1);
+                GameState moveAllState = _generateMoveAllGameState(attackGameState, movementOriginCountry, movementDestinationCountry, movementOriginCountry.troops - 1);
                 _generateCountryAttackActionFromState(moveAllState, moveAllState.getEquivalentCountry(movementDestinationCountry), maxDepth);
                 if (movementOriginCountry.troops > 3) // Below 3, half would make us move nothing
                 {
                     // We want to move troops to have approximately the same number of troops in both states. (so not technically "move half")
                     // So the number to move is actually half the difference between the two
                     int troopsToMove = (movementOriginCountry.troops - movementDestinationCountry.troops) / 2;
-                    GameState moveHalfState = _generateReinforceGameState(attackGameState, movementOriginCountry, movementDestinationCountry, troopsToMove);
+                    GameState moveHalfState = _generateEqualizeGameState(attackGameState, movementOriginCountry, movementDestinationCountry, troopsToMove);
                     _generateCountryAttackActionFromState(moveHalfState, moveHalfState.getEquivalentCountry(movementOriginCountry), maxDepth);
                     _generateCountryAttackActionFromState(moveHalfState, moveHalfState.getEquivalentCountry(movementDestinationCountry), maxDepth);
                 }
@@ -273,7 +273,7 @@ public class GameStateGraph
         return attackGameState;
     }
 
-    private GameState _generateReinforceGameState(GameState _parent, Country _from, Country _to, int _amount)
+    private GameState _generateFreeMoveGameState(GameState _parent, Country _from, Country _to, int _amount, GameAction.GameActionType _action)
     {
         int troopsMoved = Mathf.Min(_from.troops - 1, _amount);
         GameState reinforceState = _createCopyOfParentAsChild(_parent);
@@ -281,7 +281,7 @@ public class GameStateGraph
         {
             from = _from,
             to = _to,
-            type = GameAction.GameActionType.Move,
+            type = _action,
             parameter = troopsMoved
         };
         Country fromCopy = reinforceState.getEquivalentCountry(_from);
@@ -298,7 +298,16 @@ public class GameStateGraph
         return reinforceState;
     }
 
-    private GameAction _generateFreeMoveActionFromGameState(GameState _state, List<int> _ignoredContinents)
+    private GameState _generateEqualizeGameState(GameState _parent, Country _from, Country _to, int _amount)
+    {
+        return _generateFreeMoveGameState(_parent, _from, _to, _amount, GameAction.GameActionType.Equalize);
+    }
+    private GameState _generateMoveAllGameState(GameState _parent, Country _from, Country _to, int _amount)
+    {
+        return _generateFreeMoveGameState(_parent, _from, _to, _amount, GameAction.GameActionType.MoveAll);
+    }
+
+    private GameAction _generateMoveActionFromGameState(GameState _state, List<int> _ignoredContinents)
     {
         List<CountryThreatPair> threats = _state.computeAndSortOwnCountriesThreatLevel();
         for (int i = 0; i < threats.Count; ++i)
@@ -345,7 +354,7 @@ public class GameStateGraph
                 continue; // threat seems already at equilibrium, try to find another one to help
 
             // Get outta here after we found one
-            return new() { type = GameAction.GameActionType.FreeMove, from = reinforcer, to = toReinforce, parameter = troopMovement };
+            return new() { type = GameAction.GameActionType.Move, from = reinforcer, to = toReinforce, parameter = troopMovement };
         }
 
         return new() { type = GameAction.GameActionType.None };

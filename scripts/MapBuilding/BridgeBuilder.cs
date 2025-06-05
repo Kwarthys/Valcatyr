@@ -26,7 +26,7 @@ public partial class BridgeBuilder : Node
         // Build bridge deck
         int bridgeLength = (int)Mathf.Ceil(_posFrom.DistanceSquaredTo(_posTo) * BRIDGE_VERTEX_PER_LENGTH);
         bridgeLength = Math.Max(4, bridgeLength); // looks bad below 4
-        for(int i = 0; i < bridgeLength + 1; ++i) // +1 as we want the last loop where i = length
+        for (int i = 0; i < bridgeLength + 1; ++i) // +1 as we want the last loop where i = length
         {
             float percent = i * 1.0f / bridgeLength;
             Vector3 centerPos = _posFrom.Lerp(_posTo, percent);
@@ -43,7 +43,7 @@ public partial class BridgeBuilder : Node
             vertices.Add(rightVertex);
             normals.Add(rightVertex.Normalized());
 
-            if(i > 0)
+            if (i > 0)
             {
                 // Don't add first triangle
                 // LEFT      - RIGHT
@@ -83,5 +83,13 @@ public partial class BridgeBuilder : Node
         arrayMesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, surfaceArrays);
         MeshInstance3D bridge = new() { Mesh = arrayMesh };
         AddChild(bridge);
+    }
+
+    public void destroyAllBridges()
+    {
+        foreach (Node n in GetChildren())
+        {
+            n.QueueFree();
+        }
     }
 }

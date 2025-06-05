@@ -367,7 +367,7 @@ public struct GameAction
 {
     public GameAction() { type = GameActionType.None; from = null; to = null; parameter = 0; }
 
-    public enum GameActionType { Deploy, Attack, Move, FreeMove, None };
+    public enum GameActionType { Deploy, Attack, MoveAll, Equalize, Move, None };
     public GameActionType type;
     public Country from;
     public Country to;
@@ -378,7 +378,8 @@ public struct GameAction
         switch (type)
         {
             case GameActionType.Attack: actionString = "Attacks"; break;
-            case GameActionType.FreeMove:
+            case GameActionType.MoveAll: actionString = "MoveAll to"; break;
+            case GameActionType.Equalize: actionString = "MoveAll to"; break;
             case GameActionType.Move: actionString = "Moves+" + parameter + " to"; break;
             case GameActionType.Deploy: actionString = parameter + " deploy in"; break;
             case GameActionType.None: actionString = "None"; break;

@@ -202,13 +202,13 @@ public partial class TroopDisplayManager : Node3D
     private void _spawnLevelOnes(int _n, Country _c)
     {
         List<PawnData> pawns = troopsPerState[_c.state.id].level1Pawns;
-        _spawnPawn(_n, level1PawnScene, pawns, _c);
+        _spawnPawn(_n, level1PawnScene, pawns, _c, false);
     }
 
     private void _spawnLevelTwos(int _n, Country _c)
     {
         List<PawnData> pawns = troopsPerState[_c.state.id].level2Pawns;
-        _spawnPawn(_n, level2PawnScene, pawns, _c);
+        _spawnPawn(_n, level2PawnScene, pawns, _c, false);
     }
 
     private List<ReferencePoint> _getReferencePoints(int _n, Country _c, List<PawnData> _spawnedPawns, bool _enforceAvailablePoint = true)

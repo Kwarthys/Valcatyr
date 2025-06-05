@@ -110,6 +110,12 @@ public class ComputerAI
             // execute pooled GameAction
             _executePooledAction();
             slowDown = false;
+
+            if (turnGamePlan != null && pooledAction.type == GameAction.GameActionType.None && turnGamePlan.Count == 0)
+            {
+                // We finished the execution of the last action of our gameplan, generate a new one next frame by reseting it
+                _resetGamePlan();
+            }
         }
         else if (pooledAction.type == GameAction.GameActionType.None) // Action has been reset
         {
@@ -134,9 +140,9 @@ public class ComputerAI
             }
             else
                 nextAction = turnGamePlan.Dequeue();
-            GameManager.Instance.askSelection(new() { selected = nextAction.to }); // display selection for human understanding
-            AIVisualMarkerManager.Instance.moveTo(nextAction.to.state.barycenter); // move marker to guide human to the right place (if he wants to follow)
             pooledAction = nextAction;
+            _updateSelectionForPooledAction(); // display selection for human understanding
+            AIVisualMarkerManager.Instance.moveTo(nextAction.to.state.barycenter); // move marker to guide human to the right place (if he wants to follow)
             slowDown = true;
         }
         else
@@ -168,8 +174,11 @@ public class ComputerAI
         switch (GameManager.Instance.gamePhase)
         {
             case GameManager.GamePhase.Deploy: return _type == GameAction.GameActionType.Deploy;
-            case GameManager.GamePhase.Attack: return _type == GameAction.GameActionType.Attack || _type == GameAction.GameActionType.Move;
-            case GameManager.GamePhase.Reinforce: return _type == GameAction.GameActionType.FreeMove;
+            case GameManager.GamePhase.Attack:
+                return _type == GameAction.GameActionType.Attack
+                    || _type == GameAction.GameActionType.Equalize
+                    || _type == GameAction.GameActionType.MoveAll;
+            case GameManager.GamePhase.Reinforce: return _type == GameAction.GameActionType.Move;
             default:
                 return false;
         }
@@ -181,8 +190,9 @@ public class ComputerAI
         {
             case GameAction.GameActionType.Deploy: _executePooledDeployGameAction(); return;
             case GameAction.GameActionType.Attack: _executeAttackGameAction(); return;
-            case GameAction.GameActionType.Move: _executeMoveGameAction(); return;
-            case GameAction.GameActionType.FreeMove: _executeFreeMoveGameAction(); return;
+            case GameAction.GameActionType.Move:
+            case GameAction.GameActionType.MoveAll:
+            case GameAction.GameActionType.Equalize: _executeMovementGameAction(); return;
             default:
                 return;
         }
@@ -240,6 +250,34 @@ public class ComputerAI
         return threat;
     }
 
+    private void _updateSelectionForPooledAction()
+    {
+        Country from = null;
+        if(pooledAction.from != null) // Won't need it if null
+            from = GameState.getRealCountryFromAlternativeState(player.countries, pooledAction.from);
+
+        Country to = null;
+        if (pooledAction.to != null && pooledAction.type != GameAction.GameActionType.Attack) // Won't need it if null (and Attack use the real country as a target)
+            to = GameState.getRealCountryFromAlternativeState(player.countries, pooledAction.to);
+
+        switch (pooledAction.type)
+        {
+            case GameAction.GameActionType.Deploy:
+                GameManager.Instance.askSelection(new() { selected = to });
+                break;
+            case GameAction.GameActionType.Attack:
+                GameManager.Instance.askSelection(new() { selected = from, enemies = new() { pooledAction.to } });
+                break;
+            case GameAction.GameActionType.Move:
+            case GameAction.GameActionType.MoveAll:
+            case GameAction.GameActionType.Equalize:
+                GameManager.Instance.askSelection(new() { selected = from, allies = new() { to } });
+                break;
+            default:
+                throw new Exception("Wrong pooled action type in Update Selection");
+        }
+    }
+
     private void _executePooledDeployGameAction()
     {
         if (pooledAction.type != GameAction.GameActionType.Deploy)
@@ -251,9 +289,15 @@ public class ComputerAI
             pooledAction.to = GameState.getRealCountryFromAlternativeState(player.countries, pooledAction.to);
         }
 
-        GameManager.Instance.askReinforce(pooledAction.to);
-        if (--pooledAction.parameter <= 0)
+        int amount = 1;
+        if (pooledAction.parameter >= 10)
+            amount = 10; // Reinforce by 10 when dropping a lot of troops to save a HELL LOT OF TIME
+
+        pooledAction.parameter -= amount;
+        if (pooledAction.parameter <= 0)
             pooledAction.reset(); // We finished this Deploy action
+
+        GameManager.Instance.askReinforce(pooledAction.to, amount);
     }
 
     private void _executeAttackGameAction()
@@ -290,20 +334,36 @@ public class ComputerAI
         return;
     }
 
-    private void _executeMoveGameAction()
+    private void _executeMovementGameAction()
     {
-        if (pooledAction.type != GameAction.GameActionType.Move && pooledAction.type != GameAction.GameActionType.FreeMove)
+        if (pooledAction.type != GameAction.GameActionType.MoveAll
+        && pooledAction.type != GameAction.GameActionType.Equalize
+        && pooledAction.type != GameAction.GameActionType.Move)
             throw new Exception("Wrong type of action to execute in ExecuteMove");
         Country actualOrigin = GameState.getRealCountryFromAlternativeState(player.countries, pooledAction.from);
         Country actualDestination = GameState.getRealCountryFromAlternativeState(player.countries, pooledAction.to);
-        GameManager.Instance.askMovement(actualOrigin, actualDestination, pooledAction.parameter);
-        pooledAction.reset();
-    }
 
-    private void _executeFreeMoveGameAction()
-    {
-        _executeMoveGameAction();
-        _resetGamePlan(); // Clearing gameplan for this turn, to compute a new one on next turn
+        int amount = 0;
+        switch (pooledAction.type)
+        {
+            case GameAction.GameActionType.Equalize:
+                {
+                    // Equalize number of troops by moving half the difference
+                    int troopDelta = actualOrigin.troops - actualDestination.troops;
+                    if (troopDelta < 1)
+                    {
+                        // Can't move anything, we already have less or only one more troop than destination
+                        pooledAction.reset();
+                        return;
+                    }
+                    amount = troopDelta / 2;
+                }
+                break;
+            case GameAction.GameActionType.MoveAll: amount = actualOrigin.troops - 1; break;
+            case GameAction.GameActionType.Move: amount = pooledAction.parameter; _resetGamePlan(); break; // reset game plan for next turn
+        }
+        GameManager.Instance.askMovement(actualOrigin, actualDestination, amount);
+        pooledAction.reset();
     }
 
     private void _resetGamePlan()

@@ -150,6 +150,8 @@ public partial class Planet : MeshInstance3D
         indices.Clear();
         colors.Clear();
 
+        bridgeBuilder.destroyAllBridges();
+
         Vector3[] ups = new Vector3[SIDE_COUNT];
         Vector3[] forwards = new Vector3[SIDE_COUNT];
 
