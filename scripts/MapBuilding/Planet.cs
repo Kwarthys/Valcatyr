@@ -71,7 +71,7 @@ public partial class Planet : MeshInstance3D
         generate();
     }
 
-    private bool rotate = false;
+    private bool debugRotate = false;
     private bool notifyGameManagerGenerationComplete = false;
     private bool scanForBridgesRequests = true;
     public void notifyGenerationComplete() { notifyGameManagerGenerationComplete = true; }
@@ -79,11 +79,11 @@ public partial class Planet : MeshInstance3D
     public override void _Process(double delta)
     {
         if (Input.IsActionJustPressed("Rotate"))
-            rotate = !rotate;
-        float period = planetRotationPeriodSec;
-        if (rotate)
-            period = 7.0f;
-        Rotate(Vector3.Up, (float)(delta * Math.Tau / period));
+            debugRotate = !debugRotate;
+        float speed = TweakableParametersManager.getPlanetRotationFactor() / planetRotationPeriodSec;
+        if (debugRotate)
+            speed = 1.0f / 7.0f;
+        Rotate(Vector3.Up, (float)(delta * Math.Tau * speed));
 
         if (notifyGameManagerGenerationComplete && GameManager.Instance != null)
         {

@@ -21,9 +21,9 @@ public partial class CameraShaker : Node3D
     private LerpHelper verticalLerp;
     private LerpHelper horizontalLerp;
 
-    private const float SHAKE_FALLOFF = 0.95f;
+    private const float SHAKE_FALLOFF = 0.93f;
     private const float MINIMAL_INTENSITY = 0.01f;
-    private static float INTENSITY_INCREMENT = 0.1f;
+    private static float INTENSITY_INCREMENT = 0.08f;
 
     public override void _Ready()
     {
@@ -86,7 +86,7 @@ public partial class CameraShaker : Node3D
             {
                 from = to;
                 dtAccumulator = 0.0f;
-                float frameMax = _intensity * amplitude;
+                float frameMax = _intensity * amplitude * TweakableParametersManager.getCameraShakeFactor();
                 to = (to < 0.0f ? 1.0f : -1.0f) * frameMax;
                 if (lerping == false)
                     to *= GD.Randf() > 0.5f ? 1.0f : -1.0f; // Randomize first movement

@@ -14,7 +14,16 @@ public partial class OptionSlider : Node
     [Export]
     private int valueMin = 0;
 
-    public float value { get; private set; } = 0.0f;
+    [Signal]
+    public delegate void choiceChangedEventHandler(float _newValue);
+
+    public float value { get; private set; } = 100.0f;
+
+    private void _setValue(float _newValue)
+    {
+        value = _newValue;
+        EmitSignal(SignalName.choiceChanged, _newValue);
+    }
 
     public override void _Ready()
     {
@@ -30,12 +39,14 @@ public partial class OptionSlider : Node
     public void onSliderChange(float _newValue)
     {
         text.SetValueNoSignal(_newValue);
-        value = _newValue;
+        _setValue(_newValue);
     }
 
     public void onTextChange(float _newValue)
     {
         slider.SetValueNoSignal(_newValue);
-        value = _newValue;
+        _setValue(_newValue);
     }
+
+    public float getFactor() { return value * 0.01f; }
 }
