@@ -1,0 +1,35 @@
+[gd_scene load_steps=2 format=3 uid="uid://dare37ynf6xvx"]
+
+[ext_resource type="Script" path="res://scripts/UIManagement/OptionSlider.cs" id="1_y1wm3"]
+
+[node name="OptionSlider" type="HBoxContainer" node_paths=PackedStringArray("slider", "text")]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+script = ExtResource("1_y1wm3")
+slider = NodePath("HSlider")
+text = NodePath("SpinBox")
+
+[node name="HSlider" type="HSlider" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 200.0
+value = 100.0
+scrollable = false
+tick_count = 3
+ticks_on_borders = true
+
+[node name="SpinBox" type="SpinBox" parent="."]
+layout_mode = 2
+max_value = 200.0
+value = 100.0
+update_on_text_changed = true
+suffix = "%"
+select_all_on_focus = true
+
+[connection signal="value_changed" from="HSlider" to="." method="onSliderChange"]
+[connection signal="value_changed" from="SpinBox" to="." method="onTextChange"]

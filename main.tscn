@@ -1,4 +1,4 @@
-[gd_scene load_steps=43 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=44 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
@@ -23,6 +23,7 @@
 [ext_resource type="PackedScene" uid="uid://ce27jvse606x8" path="res://prefabs/StateDataMenu.tscn" id="18_12su4"]
 [ext_resource type="Script" path="res://scripts/UIManagement/AICookingWidgetManager.cs" id="20_uq872"]
 [ext_resource type="Texture2D" uid="uid://bviorge2u5ei" path="res://assets/TieKPOW_SHEET.png" id="21_ed6oq"]
+[ext_resource type="PackedScene" uid="uid://dare37ynf6xvx" path="res://prefabs/optionSlider.tscn" id="24_ylvgt"]
 
 [sub_resource type="Curve" id="Curve_0lgr4"]
 _data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 0.5), 3.0, 3.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
@@ -411,6 +412,86 @@ offset_left = 49.0
 offset_top = -353.0
 offset_right = 223.0
 offset_bottom = -46.0
+
+[node name="OptionsHolder" type="Control" parent="GameUI"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -127.0
+offset_bottom = 70.0
+grow_horizontal = 0
+
+[node name="Button" type="Button" parent="GameUI/OptionsHolder"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -35.0
+offset_top = -15.5
+offset_right = 35.0
+offset_bottom = 15.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "Options"
+
+[node name="OptionsPanel" type="Control" parent="GameUI/OptionsHolder"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -380.0
+offset_top = 61.0
+offset_right = -26.0
+offset_bottom = 556.0
+grow_horizontal = 0
+
+[node name="GridContainer" type="GridContainer" parent="GameUI/OptionsHolder/OptionsPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -1.0
+offset_top = 22.0
+offset_right = -1.0
+offset_bottom = 22.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 2
+
+[node name="VolumeLabel" type="RichTextLabel" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer"]
+clip_contents = false
+layout_mode = 2
+size_flags_vertical = 0
+text = "FX Volume"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="OptionSlider2" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer" instance=ExtResource("24_ylvgt")]
+layout_mode = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer"]
+layout_mode = 2
+text = "Planet Rotation"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="OptionSlider" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer" instance=ExtResource("24_ylvgt")]
+layout_mode = 2
+
+[node name="RichTextLabel2" type="RichTextLabel" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer"]
+layout_mode = 2
+text = "Camera Shake"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="OptionSlider3" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer" instance=ExtResource("24_ylvgt")]
+layout_mode = 2
 
 [connection signal="pressed" from="GameUI/StartGameButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
 [connection signal="pressed" from="GameUI/EndPhaseButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
