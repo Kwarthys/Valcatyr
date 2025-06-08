@@ -1,4 +1,4 @@
-[gd_scene load_steps=54 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=55 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
@@ -137,6 +137,10 @@ Button/font_sizes/font_size = 30
 [sub_resource type="Curve" id="Curve_gsjg8"]
 _data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 0.5), 4.34009, 4.34009, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
 point_count = 3
+
+[sub_resource type="Theme" id="Theme_103vo"]
+RichTextLabel/font_sizes/bold_font_size = 14
+RichTextLabel/font_sizes/normal_font_size = 14
 
 [node name="SceneRoot" type="Node3D"]
 
@@ -483,10 +487,10 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -380.0
+offset_left = -407.0
 offset_top = 61.0
-offset_right = -26.0
-offset_bottom = 556.0
+offset_right = -23.0
+offset_bottom = 575.0
 grow_horizontal = 0
 
 [node name="GridContainer" type="GridContainer" parent="GameUI/OptionsHolder/OptionsPanel" node_paths=PackedStringArray("fxVolumeOption", "cameraShakeOption", "planelRotationOption")]
@@ -535,6 +539,27 @@ autowrap_mode = 0
 
 [node name="CameraShakeChoice" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer" instance=ExtResource("24_ylvgt")]
 layout_mode = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="GameUI/OptionsHolder/OptionsPanel"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+theme = SubResource("Theme_103vo")
+bbcode_enabled = true
+text = "- Use arrows/WASD to move the camera around
+- Left clic a Country to select it and display information about it
+
+[b]Game Phases[/b]:
+- [b]Initial Deployment[/b]: Right clic one of your country to deploy an army, each player deploys one army at a time.
+- [b]Deployment[/b]: Spread your reinforcements as you wish amongst your countries by right clicking them. (Hold Ctrl to deploy 5 at a time, hold Shift to deploy everything)
+- [b]Attack[/b]: Select one of your countries, and attack an enemy neighbor by right clicking it. If you conquer a country, the attacking troops will transfer there, and you get the choice to transfer more. End Attack phase whenever you want, even without attacking.
+- [b]Reinforcement[/b]: Move troops between two of your connected countries, if you want."
+fit_content = true
+scroll_active = false
 
 [connection signal="pressed" from="GameUI/StartGameButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
 [connection signal="pressed" from="GameUI/EndPhaseButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]

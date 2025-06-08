@@ -10,7 +10,7 @@ public partial class OptionsDisplayManager : Control
     private Curve movementCurve;
 
     private const float foldedXValue = 150;
-    private const float displayedXValue = -250;
+    private float displayedXValue;
 
     private const float duration = 0.5f;
 
@@ -20,6 +20,7 @@ public partial class OptionsDisplayManager : Control
 
     public override void _Ready()
     {
+        displayedXValue = optionsUIHolder.Position.X;
         lerper = new(duration, (from, to, time) => Mathf.Lerp(from, to, movementCurve.Sample((float)time)));
         _setPos(foldedXValue);
     }
@@ -29,6 +30,9 @@ public partial class OptionsDisplayManager : Control
         if (lerper.moving == false)
             return;
         _setPos(lerper.lerp(_dt));
+
+        if (lerper.moving == false && shown == false)
+            optionsUIHolder.Visible = false;
     }
 
     public void onToggleShow()
@@ -37,6 +41,7 @@ public partial class OptionsDisplayManager : Control
         float to = shown ? foldedXValue : displayedXValue;
         lerper.startLerp(from, to);
         shown = !shown;
+        optionsUIHolder.Visible = true;
     }
 
     private void _setPos(float _x)

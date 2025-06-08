@@ -287,7 +287,7 @@ public partial class GameManager : Node
     {
         activePlayerIndex = 0; // First player go !
         gamePhase = GamePhase.FirstDeploy;
-        reinforcementLeft = 2; // this can take quite the time, board game setup eh
+        reinforcementLeft = 40 / players.Count; // this can take quite the time, board game setup eh :: This could be a game setup parameter
         _updatePhaseDisplay();
     }
 
@@ -561,7 +561,7 @@ public partial class GameManager : Node
                 continentScore += c.score; // HUUUUGE bonus
         }
         // Combine state count and continent
-        return (int)Mathf.Ceil(_player.countries.Count / 3.0f) + continentScore;
+        return Mathf.Max(3, (int)Mathf.Ceil(_player.countries.Count / 3.0f) + continentScore);
     }
 
     private void _initializeCountries()
