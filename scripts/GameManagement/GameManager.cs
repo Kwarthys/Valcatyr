@@ -155,6 +155,7 @@ public partial class GameManager : Node
         _c.troops += _amount;
         troopManager.updateDisplay(_c);
         _notifyCountryTroopUpdate(_c);
+        ReinforcementSoundManager.play(_c.state.barycenter);
     }
 
     public void askMovement(Country _from, Country _to, int _amount)
@@ -474,6 +475,8 @@ public partial class GameManager : Node
             stateDisplayer.setVisible(false);
 
         planet.setMesh(); // Apply selection visuals
+
+        SelectorSoundManager.play();
     }
 
     private void _doCountriesRandomAttributions()

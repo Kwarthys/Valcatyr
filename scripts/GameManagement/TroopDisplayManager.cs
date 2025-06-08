@@ -13,6 +13,8 @@ public partial class TroopDisplayManager : Node3D
     [Export]
     private PackedScene explosionFX;
     [Export]
+    private PackedScene movementSoundFX;
+    [Export]
     private Curve pawnMovementSpeedCurve;
 
     private Dictionary<int, TroopsData> troopsPerState = new();
@@ -94,6 +96,13 @@ public partial class TroopDisplayManager : Node3D
         // Instantly update troops, don't wait for movement end
         originData.troops -= _amount;
         troopsPerState[_destination.state.id].troops += _amount;
+
+        // Create sound effect for this movement
+        PawnSlideSoundManager slideFX = movementSoundFX.Instantiate<PawnSlideSoundManager>();
+        // Retreive a pawn to attach the sound FX to
+        Node3D pawn = pawnsMovements.Last().pawns[0].pawn.instance;
+        slideFX.follow(pawn);
+        AddChild(slideFX);
     }
 
     public void updateDisplay(Country _c)

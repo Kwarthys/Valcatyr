@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://dydvj77wsdj6m"]
+
+[ext_resource type="AudioStream" uid="uid://b6vhpqdndvmcp" path="res://assets/soundsFX/WoodSlide.mp3" id="1_ogvou"]
+[ext_resource type="Script" path="res://scripts/SoundManagement/PawnSlideSoundManager.cs" id="2_u58oe"]
+
+[node name="PawnSlideSoundPlayer" type="AudioStreamPlayer3D"]
+stream = ExtResource("1_ogvou")
+volume_db = -20.0
+panning_strength = 5.0
+bus = &"VFX"
+script = ExtResource("2_u58oe")
