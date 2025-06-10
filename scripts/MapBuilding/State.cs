@@ -162,6 +162,7 @@ public class State
 
     public bool verifyBoundaryIntegrity() // unit test like function to help debugging
     {
+#if DEBUG
         foreach(int i in boundaries)
         {
             if(i < 0 || i >= land.Count)
@@ -184,7 +185,7 @@ public class State
                 return false;
             }
         }
-
+#endif
         return true; // Everything is fine
     }
 

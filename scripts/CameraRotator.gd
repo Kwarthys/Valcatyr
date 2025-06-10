@@ -11,7 +11,7 @@ var vertical_helper_angle: float = 0.0
 var autoRotate = false;
 
 func _process(delta: float) -> void:
-	if Input.is_action_pressed("AutoRotate"):
+	if OS.has_feature("debug") and Input.is_action_just_pressed("AutoRotate"):
 		autoRotate = !autoRotate
 	handle_horizontal(delta)
 	handle_vertical(delta)
