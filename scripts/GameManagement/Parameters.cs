@@ -14,6 +14,16 @@ public class Parameters
         new(0.94f, 0.89f, 0.26f), // Yellow
     };
 
+    public static string[] colorNames =
+    {
+        "Gold",
+        "Cyan",
+        "Green",
+        "Pink",
+        "Cream",
+        "Yellow"
+    };
+
     public static Color rogueIslandColor = new(0.89f, 0.90f, 0.66f);
 
     public static int getRandomColorID()
