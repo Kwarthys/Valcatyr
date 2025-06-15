@@ -608,10 +608,12 @@ text = "Add AI"
 layout_mode = 2
 text = "Add Player"
 
-[node name="GridContainer" type="GridContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer"]
+[node name="GridContainer" type="GridContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer" node_paths=PackedStringArray("addAiButton", "addPlayerButton")]
 layout_mode = 2
-columns = 5
+columns = 6
 script = ExtResource("34_xnweg")
+addAiButton = NodePath("../HBoxContainer/AddAIButton")
+addPlayerButton = NodePath("../HBoxContainer/AddPlayerButton")
 
 [connection signal="pressed" from="GameUI/StartGameButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
 [connection signal="pressed" from="GameUI/EndPhaseButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
