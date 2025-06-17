@@ -563,6 +563,7 @@ fit_content = true
 scroll_active = false
 
 [node name="GameSetupHolder" type="Control" parent="GameUI"]
+visible = false
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 1
 anchors_preset = 15
