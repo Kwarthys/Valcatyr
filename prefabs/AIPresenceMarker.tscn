@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://ltuob0u7ymlp"]
+[gd_scene load_steps=5 format=3 uid="uid://ltuob0u7ymlp"]
 
 [ext_resource type="PackedScene" uid="uid://d3gv5gbwafa7b" path="res://assets/BlenderProjects/Satellite/Satellite.dae" id="1_5a3hi"]
+[ext_resource type="Script" path="res://scripts/GameManagement/PawnColorManager.cs" id="1_q6cao"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_rlbek"]
 size = Vector3(0.1, 0.1, 0.1)
@@ -8,7 +9,9 @@ size = Vector3(0.1, 0.1, 0.1)
 [sub_resource type="BoxMesh" id="BoxMesh_3bc88"]
 size = Vector3(0.6, 0.1, 0.01)
 
-[node name="AIPresenceMarker" type="Node3D"]
+[node name="AIPresenceMarker" type="Node3D" node_paths=PackedStringArray("meshInstances")]
+script = ExtResource("1_q6cao")
+meshInstances = [NodePath("Model/ModelRotator/ModelScaler/Satellite/Cube")]
 
 [node name="Model" type="Node3D" parent="."]
 
@@ -31,3 +34,5 @@ transform = Transform3D(1, 0, 0, 0, 0.595748, 0.803171, 0, -0.803171, 0.595748, 
 visible = false
 mesh = SubResource("BoxMesh_3bc88")
 skeleton = NodePath("../Model")
+
+[editable path="Model/ModelRotator/ModelScaler/Satellite"]

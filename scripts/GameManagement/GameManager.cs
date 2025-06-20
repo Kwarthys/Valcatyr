@@ -148,6 +148,7 @@ public partial class GameManager : Node
                         _startDeploymentPhase(); // End of phase
                 }
                 AIVisualMarkerManager.Instance.setMarkerVisibility(players[activePlayerIndex].isHuman == false); // Display AI Marker if next player is AI
+                AIVisualMarkerManager.Instance.setMarkerColor(Parameters.colors[activePlayerIndex]);
                 _updatePhaseDisplay();
                 _amount = 1; // Cannot deploy more in FirstDeploy
             }break;
@@ -276,11 +277,12 @@ public partial class GameManager : Node
         do
         {
             activePlayerIndex = (activePlayerIndex + 1) % players.Count;
-        }while(players[activePlayerIndex].hasLostTheGame);
+        } while (players[activePlayerIndex].hasLostTheGame);
 
         _startDeploymentPhase();
         // Only show marker when AIs are playing
         AIVisualMarkerManager.Instance.setMarkerVisibility(players[activePlayerIndex].isHuman == false);
+        AIVisualMarkerManager.Instance.setMarkerColor(Parameters.colors[activePlayerIndex]);
     }
 
     private void _startFirstDeployment()
