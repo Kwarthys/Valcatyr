@@ -9,9 +9,8 @@ size = Vector3(0.1, 0.1, 0.1)
 [sub_resource type="BoxMesh" id="BoxMesh_3bc88"]
 size = Vector3(0.6, 0.1, 0.01)
 
-[node name="AIPresenceMarker" type="Node3D" node_paths=PackedStringArray("meshInstances")]
+[node name="AIPresenceMarker" type="Node3D"]
 script = ExtResource("1_q6cao")
-meshInstances = [NodePath("Model/ModelRotator/ModelScaler/Satellite/Cube")]
 
 [node name="Model" type="Node3D" parent="."]
 

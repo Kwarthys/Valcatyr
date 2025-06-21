@@ -12,9 +12,8 @@ top_radius = 0.05
 bottom_radius = 0.05
 height = 0.005
 
-[node name="Level2Pawn" type="Node3D" node_paths=PackedStringArray("meshInstances")]
+[node name="Level2Pawn" type="Node3D"]
 script = ExtResource("1_26d2x")
-meshInstances = [NodePath("Holder/MeshInstance3D"), NodePath("Holder/MeshInstance3D2")]
 
 [node name="Holder" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.168641, 0)

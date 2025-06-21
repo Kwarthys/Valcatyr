@@ -1,31 +1,42 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public partial class PawnColorManager : Node3D
 {
-    [Export]
-    private MeshInstance3D[] meshInstances;
+
+    private List<StandardMaterial3D> materials = new();
     [Export]
     private int materialID = 0;
 
     public override void _Ready()
     {
-        foreach (MeshInstance3D mesh in meshInstances)
+        Queue<Node> toScan = new();
+        toScan.Enqueue(this);
+        while (toScan.Count > 0)
         {
-            StandardMaterial3D material = (StandardMaterial3D)mesh.GetActiveMaterial(materialID);
-            StandardMaterial3D materialCopy = (StandardMaterial3D)material.Duplicate(); // Make unique to color each one individually
-            mesh.SetSurfaceOverrideMaterial(0, materialCopy);
+            Node scanning = toScan.Dequeue();
+            if (scanning is MeshInstance3D mesh)
+            {
+                // Node3D really is a meshInstance
+                StandardMaterial3D material = (StandardMaterial3D)mesh.GetActiveMaterial(materialID);
+                if (material != null)
+                {
+                    materials.Add((StandardMaterial3D)material.Duplicate());
+                    mesh.SetSurfaceOverrideMaterial(materialID, materials.Last()); // Make unique to color each one individually                    
+                }
+            }
+
+            foreach (Node child in scanning.GetChildren())
+            {
+                toScan.Enqueue(child);
+            }
         }
     }
 
-
     public void setColor(Color _c)
     {
-        foreach (MeshInstance3D mesh in meshInstances)
-        {
-            StandardMaterial3D material = (StandardMaterial3D)mesh.GetActiveMaterial(materialID);
-            material.AlbedoColor = _c;
-        }
+        materials.ForEach((m) => m.AlbedoColor = _c);
     }
 }

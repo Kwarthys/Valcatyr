@@ -6,9 +6,8 @@
 [sub_resource type="PrismMesh" id="PrismMesh_r0xb1"]
 size = Vector3(0.05, 0.05, 0.05)
 
-[node name="Level1Pawn" type="Node3D" node_paths=PackedStringArray("meshInstances")]
+[node name="Level1Pawn" type="Node3D"]
 script = ExtResource("1_so153")
-meshInstances = [NodePath("MeshInstance3D")]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.025, 0)
