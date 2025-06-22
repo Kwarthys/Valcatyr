@@ -77,7 +77,7 @@ public partial class GameManager : Node
             if (p.isHuman) continue;
             aiPerPlayer[p].initializeStrategy();
         }
-        countries.ForEach((c) => { c.troops = 30; troopManager.updateDisplay(c); });
+        countries.ForEach((c) => { c.troops = 1; troopManager.updateDisplay(c); });
         CustomLogger.print("GameManager initialized");
 
         _updatePhaseDisplay();

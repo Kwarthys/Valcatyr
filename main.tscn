@@ -4,10 +4,10 @@
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
 [ext_resource type="Script" path="res://scripts/CameraRotator.gd" id="4_1mtfn"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/BridgeBuilder.cs" id="4_yu05o"]
+[ext_resource type="PackedScene" uid="uid://k1r1qgmsbt5u" path="res://prefabs/Pawns/TankPawn.tscn" id="5_0bbg1"]
 [ext_resource type="Material" uid="uid://y5bil6ynkqr7" path="res://materials/AtmosphereMaterial.tres" id="5_3hgdn"]
 [ext_resource type="Script" path="res://scripts/GameManagement/TroopDisplayManager.cs" id="5_aytuo"]
 [ext_resource type="Script" path="res://scripts/GameManagement/PlanetInputManager.cs" id="5_qons3"]
-[ext_resource type="PackedScene" uid="uid://dnry3u2p0r6da" path="res://prefabs/level1Pawn.tscn" id="6_6k61a"]
 [ext_resource type="Material" uid="uid://cypmok4bg16vl" path="res://materials/SkyBoxMaterial.tres" id="6_73edm"]
 [ext_resource type="PackedScene" uid="uid://ct8nl1iy3sb8c" path="res://prefabs/Pawns/helicopterPawn.tscn" id="6_rr1vy"]
 [ext_resource type="PackedScene" uid="uid://ckgk4ej1kuana" path="res://prefabs/explosionFx.tscn" id="7_n7v4k"]
@@ -155,7 +155,7 @@ script = ExtResource("4_yu05o")
 
 [node name="TroopDisplayManager" type="Node3D" parent="Planet"]
 script = ExtResource("5_aytuo")
-level1PawnScene = ExtResource("6_6k61a")
+level1PawnScene = ExtResource("5_0bbg1")
 level2PawnScene = ExtResource("6_rr1vy")
 explosionFX = ExtResource("7_n7v4k")
 movementSoundFX = ExtResource("8_qc8h7")
