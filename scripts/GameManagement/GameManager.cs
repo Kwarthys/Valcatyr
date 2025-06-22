@@ -29,6 +29,7 @@ public partial class GameManager : Node
 
     private int activePlayerIndex = -1;
     private List<Player> players = new();
+    private List<PlayerData> playersConfigData;
     private Dictionary<Player, ComputerAI> aiPerPlayer = new();
 
     public int reinforcementLeft {get; private set;} = 0;
@@ -53,21 +54,40 @@ public partial class GameManager : Node
 
     public SelectionData currentSelection {get; private set;} = new();
 
-    public void initialize(Planet _planet)
+    private int readyReceived = 0;
+
+    public void onGameSetupReady(List<PlayerData> _playersData)
+    {
+        playersConfigData = _playersData;
+        playersConfigData.ForEach((data) =>
+        {
+            // Sanitizing if player forgot to enter a name
+            if (data.isHuman && data.playerName == "")
+                data.playerName = "Player " + (playersConfigData.IndexOf(data) + 1);
+        });
+        if (++readyReceived == 2)
+            initialize();
+    }
+
+    public void onPlanetGenerationReady(Planet _planet)
+    {
+        planet = _planet;
+        if (++readyReceived == 2)
+            initialize();
+    }
+
+    public void initialize()
     {
         CustomLogger.print("Starting GameManager initialization");
-        planet = _planet;
         _initializeCountries();
 
-        List<int> hoomanIndices = new() { 0 }; // only one human for now, TODO: need game setup menu for local turn based versus
-
-        for (int i = 0; i < 4; ++i) // TODO Adjust number of player 3-6
+        foreach (PlayerData playerData in playersConfigData)
         {
-            players.Add(new(i));
-            if (hoomanIndices.Contains(i))
-                players[i].isHuman = true; // set player as human
+            players.Add(new(players.Count, playerData.colorID, 0));
+            if (playerData.isHuman)
+                players.Last().isHuman = true;
             else
-                aiPerPlayer.Add(players[i], new(players[i])); // instantiate AI
+                aiPerPlayer.Add(players.Last(), new(players.Last())); // instantiate AI
         }
 
         _doCountriesRandomAttributions();
@@ -81,6 +101,8 @@ public partial class GameManager : Node
         CustomLogger.print("GameManager initialized");
 
         _updatePhaseDisplay();
+
+        triggerNextPhase();
     }
 
     private void _reset()
@@ -92,6 +114,7 @@ public partial class GameManager : Node
         planet = null;
         troopManager.reset();
         countries.Clear();
+        readyReceived = 1; // Not possible to change game setup yet
 
         _updatePhaseDisplay();
     }
@@ -218,6 +241,11 @@ public partial class GameManager : Node
             stateDisplayer.setCountryToDisplay(currentSelection.selected); // Refresh display with new troops
     }
 
+    public int getColorIDOfPlayer(int _playerID)
+    {
+        return players[_playerID].colorID;
+    }
+
     public AICharacteristicsData getAIPersonalityByPlayerID(int _id)
     {
         if (_id < 0 || _id >= players.Count)
@@ -326,9 +354,7 @@ public partial class GameManager : Node
 
     public string getActivePlayerAsString()
     {
-        Player active = players[activePlayerIndex];
-        string s = active.isHuman ? "Player " : "Bot ";
-        return s + (activePlayerIndex+1);
+        return players[activePlayerIndex].isHuman ? playersConfigData[activePlayerIndex].playerName : "Bot " + (activePlayerIndex+1);
     }
 
     private void _updatePhaseDisplay()
@@ -346,7 +372,6 @@ public partial class GameManager : Node
         }
 
         GameUI.setPhaseButtonVisibility(_shouldDisplayEndPhaseButton());
-        GameUI.setGameButtonVisibility(_shouldDisplayStartGameButton());
         GameUI.setNewGameButtonVisibility(_shouldDisplayNewGameButton());
     }
 

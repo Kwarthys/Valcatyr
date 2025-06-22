@@ -12,8 +12,6 @@ public partial class GameUI : Control
     [Export]
     Button endTurnButton;
     [Export]
-    Button startGameButton;
-    [Export]
     Button newGameButton;
 
     public override void _Ready()
@@ -21,7 +19,6 @@ public partial class GameUI : Control
         Instance = this;
         // Initialize states
         setPhaseButtonVisibility(false);
-        setGameButtonVisibility(false);
         setNewGameButtonVisibility(false);
         setPrimary("");
         setSecondary("");
@@ -48,12 +45,6 @@ public partial class GameUI : Control
     {
         if(Instance != null)
             Instance.endTurnButton.Visible = _status;
-    }
-
-    public static void setGameButtonVisibility(bool _status)
-    {
-        if(Instance != null)
-            Instance.startGameButton.Visible = _status;
     }
 
     public static void setNewGameButtonVisibility(bool _status)

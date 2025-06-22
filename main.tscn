@@ -1,4 +1,4 @@
-[gd_scene load_steps=56 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=55 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
@@ -125,9 +125,6 @@ default_font_size = 50
 
 [sub_resource type="Theme" id="Theme_bsgaf"]
 default_font_size = 25
-
-[sub_resource type="Theme" id="Theme_6fxdb"]
-Button/font_sizes/font_size = 30
 
 [sub_resource type="Theme" id="Theme_5n5qb"]
 default_font_size = 25
@@ -265,7 +262,7 @@ sprite_frames = SubResource("SpriteFrames_kwpd3")
 autoplay = "default"
 frame_progress = 0.861227
 
-[node name="GameUI" type="Control" parent="." node_paths=PackedStringArray("primaryText", "secondaryText", "endTurnButton", "startGameButton", "newGameButton")]
+[node name="GameUI" type="Control" parent="." node_paths=PackedStringArray("primaryText", "secondaryText", "endTurnButton", "newGameButton")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -277,7 +274,6 @@ script = ExtResource("14_bob1v")
 primaryText = NodePath("MainLabel")
 secondaryText = NodePath("SecondaryLabel")
 endTurnButton = NodePath("EndPhaseButton")
-startGameButton = NodePath("StartGameButton")
 newGameButton = NodePath("NewGameButton")
 
 [node name="MainLabel" type="RichTextLabel" parent="GameUI"]
@@ -311,22 +307,6 @@ bbcode_enabled = true
 fit_content = true
 scroll_active = false
 autowrap_mode = 0
-
-[node name="StartGameButton" type="Button" parent="GameUI"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -4.0
-offset_top = -4.0
-offset_right = 4.0
-offset_bottom = 4.0
-grow_horizontal = 2
-grow_vertical = 2
-theme = SubResource("Theme_6fxdb")
-text = "Start Game"
 
 [node name="EndPhaseButton" type="Button" parent="GameUI"]
 layout_mode = 1
@@ -563,7 +543,6 @@ fit_content = true
 scroll_active = false
 
 [node name="GameSetupHolder" type="Control" parent="GameUI"]
-visible = false
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 1
 anchors_preset = 15
@@ -609,14 +588,20 @@ text = "Add AI"
 layout_mode = 2
 text = "Add Player"
 
-[node name="GridContainer" type="GridContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer" node_paths=PackedStringArray("addAiButton", "addPlayerButton")]
+[node name="GridContainer" type="GridContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer" node_paths=PackedStringArray("addAiButton", "addPlayerButton", "startGameButton", "setupMenuHolder")]
 layout_mode = 2
 columns = 6
 script = ExtResource("34_xnweg")
 addAiButton = NodePath("../HBoxContainer/AddAIButton")
 addPlayerButton = NodePath("../HBoxContainer/AddPlayerButton")
+startGameButton = NodePath("../StartGameButton")
+setupMenuHolder = NodePath("../../../..")
 
-[connection signal="pressed" from="GameUI/StartGameButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
+[node name="StartGameButton" type="Button" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 10
+text = "Start Game"
+
 [connection signal="pressed" from="GameUI/EndPhaseButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
 [connection signal="pressed" from="GameUI/NewGameButton" to="Managers/GameManager" method="startANewGame"]
 [connection signal="value_changed" from="GameUI/MovementUIHolder/HSlider" to="Managers/FreeMovementManager" method="onSliderUpdate"]
@@ -626,3 +611,4 @@ addPlayerButton = NodePath("../HBoxContainer/AddPlayerButton")
 [connection signal="pressed" from="GameUI/OptionsHolder/Button" to="GameUI/OptionsHolder" method="onToggleShow"]
 [connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer/AddAIButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onAddAIPressed"]
 [connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer/AddPlayerButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onAddPlayerPressed"]
+[connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/StartGameButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onStartGamePressed"]

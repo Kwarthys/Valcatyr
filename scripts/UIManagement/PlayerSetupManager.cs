@@ -11,18 +11,21 @@ public partial class PlayerSetupManager : GridContainer
     private Button addAiButton;
     [Export]
     private Button addPlayerButton;
-    private bool setupConflict = false;
+    [Export]
+    private Button startGameButton;
+    [Export]
+    private Control setupMenuHolder;
 
     public void checkForConflicts()
     {
-        setupConflict = false;
+        bool setupConflict = false;
         Dictionary<int, List<PlayerFields>> fieldsPerColorID = new();
         foreach (PlayerFields setup in setupFields)
         {
             setup.errorDisplay.Text = "";
-            if (fieldsPerColorID.ContainsKey(setup.colorID) == false)
-                fieldsPerColorID.Add(setup.colorID, new());
-            fieldsPerColorID[setup.colorID].Add(setup);
+            if (fieldsPerColorID.ContainsKey(setup.data.colorID) == false)
+                fieldsPerColorID.Add(setup.data.colorID, new());
+            fieldsPerColorID[setup.data.colorID].Add(setup);
         }
 
         foreach (int colorID in fieldsPerColorID.Keys)
@@ -34,6 +37,18 @@ public partial class PlayerSetupManager : GridContainer
                 fieldsPerColorID[colorID].ForEach((setup) => setup.errorDisplay.Text = "Conflicting Color choice");
             }
         }
+
+        // Preventing game start if conflicting setup or not enough / too much player
+        startGameButton.Disabled = setupConflict || setupFields.Count < 3 || setupFields.Count > 6;
+    }
+
+    public override void _Ready()
+    {
+        // Default layout
+        _addFields(true);
+        _addFields(false);
+        _addFields(false);
+        _addFields(false);
     }
 
     public void onAddPlayerPressed()
@@ -46,6 +61,15 @@ public partial class PlayerSetupManager : GridContainer
         _addFields(false);
     }
 
+    public void onStartGamePressed()
+    {
+        List<PlayerData> data = new();
+        setupFields.ForEach((fields) => data.Add(fields.data));
+        GameManager.Instance.onGameSetupReady(data);
+
+        setupMenuHolder.Visible = false;
+    }
+
     private void _addFields(bool _isHuman)
     {
         if (setupFields.Count >= 6)
@@ -56,6 +80,8 @@ public partial class PlayerSetupManager : GridContainer
 
         if (setupFields.Count >= 6)
             setButtonDisabled(true);
+
+        checkForConflicts();
     }
 
     public void deleteFields(PlayerFields _playerFields)
@@ -63,20 +89,21 @@ public partial class PlayerSetupManager : GridContainer
         _playerFields.fields.ForEach((item) => item.QueueFree());
         setupFields.Remove(_playerFields);
 
+        checkForConflicts();
         setButtonDisabled(setupFields.Count >= 6);
     }
 
     public int getFirstFreeColorID()
     {
         List<int> colorsTaken = new();
-        setupFields.ForEach((setup) => colorsTaken.Add(setup.colorID));
+        setupFields.ForEach((setup) => colorsTaken.Add(setup.data.colorID));
         return _getFirstFree(colorsTaken);
     }
 
     public int getFirstFreeFactionID()
     {
         List<int> factionsTaken = new();
-        setupFields.ForEach((setup) => factionsTaken.Add(setup.factionID));
+        setupFields.ForEach((setup) => factionsTaken.Add(setup.data.factionID));
         return _getFirstFree(factionsTaken);
     }
 
@@ -97,21 +124,28 @@ public partial class PlayerSetupManager : GridContainer
     }
 }
 
-public class PlayerFields
+public class PlayerData
 {
-    public List<Control> fields = new();
+    public PlayerData(bool _isHuman) { isHuman = _isHuman; }
     public bool isHuman;
     public int colorID = 0;
     public int factionID = 0;
     public int styleID = 0;
+    public string playerName = "";
+}
 
+public class PlayerFields
+{
+    public List<Control> fields = new();
+
+    public PlayerData data;
     public RichTextLabel errorDisplay = null;
 
     private PlayerSetupManager manager;
 
     public PlayerFields(bool _isHuman, PlayerSetupManager _manager)
     {
-        isHuman = _isHuman;
+        data = new(_isHuman);
         manager = _manager;
 
         fields.Add(_buildNewDeleteButton());
@@ -150,8 +184,8 @@ public class PlayerFields
         }
 
         button.Selected = manager.getFirstFreeColorID();
-        colorID = button.Selected;
-        button.ItemSelected += (index) => { colorID = (int)index; manager.checkForConflicts(); };
+        data.colorID = button.Selected;
+        button.ItemSelected += (index) => { data.colorID = (int)index; manager.checkForConflicts(); };
         return button;
     }
 
@@ -161,8 +195,8 @@ public class PlayerFields
         for (int i = 0; i < 6; ++i)
             button.AddItem("WIP_" + i);
         button.Selected = manager.getFirstFreeFactionID();
-        factionID = button.Selected;
-        button.ItemSelected += (index) => factionID = (int)index;
+        data.factionID = button.Selected;
+        button.ItemSelected += (index) => data.factionID = (int)index;
         return button;
     }
 
@@ -172,7 +206,7 @@ public class PlayerFields
         button.AddItem("WIP Balanced");
         button.AddItem("WIP Aggressive");
         button.AddItem("WIP Defensive");
-        button.ItemSelected += (index) => styleID = (int)index;
+        button.ItemSelected += (index) => data.styleID = (int)index;
         return button;
     }
 
@@ -182,6 +216,7 @@ public class PlayerFields
         edit.PlaceholderText = "PlayerName";
         edit.ExpandToTextLength = true;
         edit.MaxLength = 20;
+        edit.TextChanged += (text) => data.playerName = text;
         return edit;
     }
 
@@ -189,6 +224,9 @@ public class PlayerFields
     {
         RichTextLabel label = new();
         label.Text = "Bot";
+        label.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        label.FitContent = true;
+        label.AutowrapMode = TextServer.AutowrapMode.Off;
         return label;
     }
 
@@ -199,6 +237,7 @@ public class PlayerFields
         errorDisplay.FitContent = true;
         errorDisplay.AutowrapMode = TextServer.AutowrapMode.Off;
         errorDisplay.AddThemeColorOverride("default_color", Colors.Red);
+        errorDisplay.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
         return errorDisplay;
     }
 
