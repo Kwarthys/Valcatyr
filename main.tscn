@@ -244,6 +244,7 @@ marker = NodePath("../../Planet/AIPresenceMarker")
 [node name="PreloadManager" type="Node" parent="Managers"]
 script = ExtResource("19_g6tlq")
 explosionSoundPaths = PackedStringArray("res://assets/bomb-explosion-sfx-352274.mp3", "res://assets/medium-explosion-40472.mp3")
+gameDataPath = "res://configFiles/GameData.json"
 
 [node name="AudioVolumeManager" type="Node" parent="Managers" node_paths=PackedStringArray("fxVolumeOption")]
 script = ExtResource("20_1xxrl")

@@ -1,0 +1,15 @@
+{
+    "Factions":
+    [
+        {
+            "name": "FactionA",
+            "Level1Pawn": "A1",
+            "Level2Pawn": "A2"
+        },
+        {
+            "name": "FactionB",
+            "Level1Pawn": "B1",
+            "Level2Pawn": "B2"
+        }
+    ]
+}

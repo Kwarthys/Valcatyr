@@ -7,6 +7,8 @@ public partial class PreloadManager : Node
 {
     [Export]
     private string[] explosionSoundPaths;
+    [Export]
+    private string gameDataPath;
     private AudioStreamMP3[] explosionsSoundsStreams;
 
     public static PreloadManager Instance;
@@ -18,6 +20,12 @@ public partial class PreloadManager : Node
         foreach (string path in explosionSoundPaths)
         {
             ResourceLoader.LoadThreadedRequest(path, "", false, ResourceLoader.CacheMode.Ignore);
+        }
+
+        JSONFormats.GameData data = JSONManager.Read<JSONFormats.GameData>(gameDataPath);
+        foreach(JSONFormats.Faction f in data.factions)
+        {
+            GD.Print(f.name + ": 1-" + f.level1PawnPath + " 2-" + f.level2PawnPath);
         }
     }
 
