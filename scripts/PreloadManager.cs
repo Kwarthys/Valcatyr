@@ -23,9 +23,9 @@ public partial class PreloadManager : Node
         }
 
         JSONFormats.GameData data = JSONManager.Read<JSONFormats.GameData>(gameDataPath);
-        foreach(JSONFormats.Faction f in data.factions)
+        foreach (JSONFormats.Faction f in data.Factions)
         {
-            GD.Print(f.name + ": 1-" + f.level1PawnPath + " 2-" + f.level2PawnPath);
+            GD.Print(f.Name + ": 1-" + f.Level1Pawn + " 2-" + f.Level2Pawn);
         }
     }
 

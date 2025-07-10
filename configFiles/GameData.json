@@ -2,12 +2,12 @@
     "Factions":
     [
         {
-            "name": "FactionA",
+            "Name": "FactionA",
             "Level1Pawn": "A1",
             "Level2Pawn": "A2"
         },
         {
-            "name": "FactionB",
+            "Name": "FactionB",
             "Level1Pawn": "B1",
             "Level2Pawn": "B2"
         }

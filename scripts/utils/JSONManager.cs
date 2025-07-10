@@ -3,58 +3,29 @@ using Godot.Collections;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Text.Json;
 
 public class JSONManager
 {
-    public static T Read<T>(string filePath) where T : ILoadableJSON, new()
+    public static T Read<T>(string filePath)
     {
-        GD.Print(filePath);
         filePath = ProjectSettings.GlobalizePath(filePath);
-        GD.Print(filePath);
         string text = File.ReadAllText(filePath);
-        Json loader = new();
-        loader.Parse(text);
-        GD.Print(loader.Data);
-        Godot.Collections.Dictionary data = (Godot.Collections.Dictionary)loader.Data;
-        GD.Print(data);
-        T dataHolder = new();
-        dataHolder.tryFill(data);
-        return dataHolder;
+        return JsonSerializer.Deserialize<T>(text);
     }
-}
-
-public abstract class ILoadableJSON
-{
-    public abstract void tryFill(Godot.Collections.Dictionary _data);
 }
 
 namespace JSONFormats
 {
-    public class GameData : ILoadableJSON
+    public class GameData
     {
-        public List<Faction> factions = new();
-
-        public override void tryFill(Godot.Collections.Dictionary _data)
-        {
-            if (_data.ContainsKey("Factions"))
-            {
-                Godot.Collections.Array factionArray = (Godot.Collections.Array)_data["Factions"];
-                foreach (Godot.Collections.Dictionary faction in factionArray)
-                {
-                    factions.Add(new());
-                    factions.Last().name = (string)faction["name"];
-                    factions.Last().level1PawnPath = (string)faction["Level1Pawn"];
-                    factions.Last().level2PawnPath = (string)faction["Level2Pawn"];
-                }
-            }
-        }
+        public IList<Faction> Factions { get; set; }
     }
 
     public class Faction
     {
-        public string name;
-        public string level1PawnPath;
-        public string level2PawnPath;
+        public string Name { get; set; }
+        public string Level1Pawn { get; set; }
+        public string Level2Pawn { get; set; }
     }
 }
