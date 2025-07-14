@@ -1,4 +1,4 @@
-[gd_scene load_steps=55 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=53 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
@@ -7,9 +7,7 @@
 [ext_resource type="Material" uid="uid://y5bil6ynkqr7" path="res://materials/AtmosphereMaterial.tres" id="5_3hgdn"]
 [ext_resource type="Script" path="res://scripts/GameManagement/TroopDisplayManager.cs" id="5_aytuo"]
 [ext_resource type="Script" path="res://scripts/GameManagement/PlanetInputManager.cs" id="5_qons3"]
-[ext_resource type="PackedScene" uid="uid://pgfvyawl370k" path="res://prefabs/Pawns/bazook.tscn" id="5_r5bnw"]
 [ext_resource type="Material" uid="uid://cypmok4bg16vl" path="res://materials/SkyBoxMaterial.tres" id="6_73edm"]
-[ext_resource type="PackedScene" uid="uid://mq76tht4p3fi" path="res://prefabs/Pawns/zeppelin.tscn" id="6_lwj3v"]
 [ext_resource type="PackedScene" uid="uid://ckgk4ej1kuana" path="res://prefabs/explosionFx.tscn" id="7_n7v4k"]
 [ext_resource type="PackedScene" uid="uid://ltuob0u7ymlp" path="res://prefabs/AIPresenceMarker.tscn" id="8_lhd5y"]
 [ext_resource type="PackedScene" uid="uid://dydvj77wsdj6m" path="res://prefabs/pawnSlideSoundPlayer.tscn" id="8_qc8h7"]
@@ -152,8 +150,6 @@ script = ExtResource("4_yu05o")
 
 [node name="TroopDisplayManager" type="Node3D" parent="Planet"]
 script = ExtResource("5_aytuo")
-level1PawnScene = ExtResource("5_r5bnw")
-level2PawnScene = ExtResource("6_lwj3v")
 explosionFX = ExtResource("7_n7v4k")
 movementSoundFX = ExtResource("8_qc8h7")
 pawnMovementSpeedCurve = SubResource("Curve_0lgr4")
@@ -245,6 +241,7 @@ marker = NodePath("../../Planet/AIPresenceMarker")
 script = ExtResource("19_g6tlq")
 explosionSoundPaths = PackedStringArray("res://assets/bomb-explosion-sfx-352274.mp3", "res://assets/medium-explosion-40472.mp3")
 gameDataPath = "res://configFiles/GameData.json"
+pawnsRootFolder = "res://prefabs/Pawns/"
 
 [node name="AudioVolumeManager" type="Node" parent="Managers" node_paths=PackedStringArray("fxVolumeOption")]
 script = ExtResource("20_1xxrl")

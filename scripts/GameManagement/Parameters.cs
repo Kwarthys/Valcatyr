@@ -30,4 +30,19 @@ public class Parameters
     {
         return (int)(GD.Randf() * (colors.Length - 1));
     }
+
+    public static string[] factionNames { get; private set; }
+
+    public static void setFactionNames(string[] _names)
+    {
+        factionNames = _names;
+        OnFactionNamesReceived();
+    }
+
+    public static event EventHandler factionNamesReceived; // Use an event in case loading takes too much time or happens after others that need it
+
+    protected static void OnFactionNamesReceived()
+    {
+        factionNamesReceived?.Invoke(typeof(Parameters), EventArgs.Empty);
+    }
 }

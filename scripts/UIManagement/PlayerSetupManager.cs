@@ -16,6 +16,8 @@ public partial class PlayerSetupManager : GridContainer
     [Export]
     private Control setupMenuHolder;
 
+    public bool factionNamesLoaded { get; private set;} = false;
+
     public void checkForConflicts()
     {
         bool setupConflict = false;
@@ -44,11 +46,21 @@ public partial class PlayerSetupManager : GridContainer
 
     public override void _Ready()
     {
+        if (Parameters.factionNames == null)
+            Parameters.factionNamesReceived += updateFactionsDisplay;
+        else
+            factionNamesLoaded = true;
         // Default layout
         _addFields(true);
         _addFields(false);
         _addFields(false);
         _addFields(false);
+    }
+
+    private void updateFactionsDisplay(object _o, EventArgs _e) // Both will be null, don't need them
+    {
+        factionNamesLoaded = true;
+        setupFields.ForEach( (fields) => fields.rebuildFactionButton() );
     }
 
     public void onAddPlayerPressed()
@@ -141,6 +153,8 @@ public class PlayerFields
     public PlayerData data;
     public RichTextLabel errorDisplay = null;
 
+    public OptionButton factionsButton = null;
+
     private PlayerSetupManager manager;
 
     public PlayerFields(bool _isHuman, PlayerSetupManager _manager)
@@ -189,15 +203,30 @@ public class PlayerFields
         return button;
     }
 
+    public void rebuildFactionButton()
+    {
+        int buttonIndex = fields.IndexOf(factionsButton);
+        fields[buttonIndex] = _buildNewFactionButton();
+    }
+
     private OptionButton _buildNewFactionButton()
     {
-        OptionButton button = new();
-        for (int i = 0; i < 6; ++i)
-            button.AddItem("WIP_" + i);
-        button.Selected = manager.getFirstFreeFactionID();
-        data.factionID = button.Selected;
-        button.ItemSelected += (index) => data.factionID = (int)index;
-        return button;
+        factionsButton = new();
+
+        if (manager.factionNamesLoaded)
+        {
+            for (int i = 0; i < Parameters.factionNames.Length; ++i)
+                factionsButton.AddItem(Parameters.factionNames[i]);
+        }
+        else
+        {
+            factionsButton.AddItem("Loading");
+        }
+
+        factionsButton.Selected = manager.getFirstFreeFactionID();
+        data.factionID = factionsButton.Selected;
+        factionsButton.ItemSelected += (index) => data.factionID = (int)index;
+        return factionsButton;
     }
 
     private OptionButton _buildNewStyleButton()

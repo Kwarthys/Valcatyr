@@ -8,6 +8,10 @@ public partial class GameManager : Node
     [Export]
     private TroopDisplayManager troopManager;
 
+#if DEBUG
+    [Export]
+    private int startingTroops = 1; // Used for debug
+#endif
     [Export]
     private StateDisplayerManager stateDisplayer;
 
@@ -83,7 +87,7 @@ public partial class GameManager : Node
 
         foreach (PlayerData playerData in playersConfigData)
         {
-            players.Add(new(players.Count, playerData.colorID, 0));
+            players.Add(new(players.Count, playerData.colorID, playerData.factionID));
             if (playerData.isHuman)
                 players.Last().isHuman = true;
             else
@@ -97,11 +101,19 @@ public partial class GameManager : Node
             if (p.isHuman) continue;
             aiPerPlayer[p].initializeStrategy();
         }
-        countries.ForEach((c) => { c.troops = 1; troopManager.updateDisplay(c); });
+
+        countries.ForEach((c) =>
+        {
+#if DEBUG
+            c.troops = Mathf.Clamp(startingTroops, 1, 99); // Arbitrary limits
+#else
+            c.troops = 1;
+#endif
+            troopManager.updateDisplay(c);
+        });
+
         CustomLogger.print("GameManager initialized");
-
         _updatePhaseDisplay();
-
         triggerNextPhase();
     }
 
@@ -244,6 +256,11 @@ public partial class GameManager : Node
     public int getColorIDOfPlayer(int _playerID)
     {
         return players[_playerID].colorID;
+    }
+
+    public int getFactionIDOfPlayer(int _playerID)
+    {
+        return players[_playerID].factionID;
     }
 
     public AICharacteristicsData getAIPersonalityByPlayerID(int _id)

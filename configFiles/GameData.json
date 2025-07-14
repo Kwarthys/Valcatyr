@@ -3,13 +3,13 @@
     [
         {
             "Name": "FactionA",
-            "Level1Pawn": "A1",
-            "Level2Pawn": "A2"
+            "Level1Pawn": "TankPawn.tscn",
+            "Level2Pawn": "helicopterPawn.tscn"
         },
         {
             "Name": "FactionB",
-            "Level1Pawn": "B1",
-            "Level2Pawn": "B2"
+            "Level1Pawn": "bazook.tscn",
+            "Level2Pawn": "zeppelin.tscn"
         }
     ]
 }
