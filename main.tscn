@@ -9,7 +9,7 @@
 [ext_resource type="Script" path="res://scripts/GameManagement/PlanetInputManager.cs" id="5_qons3"]
 [ext_resource type="PackedScene" uid="uid://pgfvyawl370k" path="res://prefabs/Pawns/bazook.tscn" id="5_r5bnw"]
 [ext_resource type="Material" uid="uid://cypmok4bg16vl" path="res://materials/SkyBoxMaterial.tres" id="6_73edm"]
-[ext_resource type="PackedScene" uid="uid://ct8nl1iy3sb8c" path="res://prefabs/Pawns/helicopterPawn.tscn" id="6_rr1vy"]
+[ext_resource type="PackedScene" uid="uid://mq76tht4p3fi" path="res://prefabs/Pawns/zeppelin.tscn" id="6_lwj3v"]
 [ext_resource type="PackedScene" uid="uid://ckgk4ej1kuana" path="res://prefabs/explosionFx.tscn" id="7_n7v4k"]
 [ext_resource type="PackedScene" uid="uid://ltuob0u7ymlp" path="res://prefabs/AIPresenceMarker.tscn" id="8_lhd5y"]
 [ext_resource type="PackedScene" uid="uid://dydvj77wsdj6m" path="res://prefabs/pawnSlideSoundPlayer.tscn" id="8_qc8h7"]
@@ -153,7 +153,7 @@ script = ExtResource("4_yu05o")
 [node name="TroopDisplayManager" type="Node3D" parent="Planet"]
 script = ExtResource("5_aytuo")
 level1PawnScene = ExtResource("5_r5bnw")
-level2PawnScene = ExtResource("6_rr1vy")
+level2PawnScene = ExtResource("6_lwj3v")
 explosionFX = ExtResource("7_n7v4k")
 movementSoundFX = ExtResource("8_qc8h7")
 pawnMovementSpeedCurve = SubResource("Curve_0lgr4")

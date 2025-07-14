@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://mq76tht4p3fi"]
+
+[ext_resource type="Script" path="res://scripts/GameManagement/PawnColorManager.cs" id="1_hi2mq"]
+[ext_resource type="PackedScene" uid="uid://dwpbv0bkclq27" path="res://assets/BlenderProjects/Zeppelin/Zeppelin.dae" id="2_x564g"]
+
+[node name="Zeppelin" type="Node3D"]
+script = ExtResource("1_hi2mq")
+
+[node name="Rotator" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.17, 0)
+
+[node name="Scaler" type="Node3D" parent="Rotator"]
+transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
+
+[node name="Zeppelin" parent="Rotator/Scaler" instance=ExtResource("2_x564g")]
