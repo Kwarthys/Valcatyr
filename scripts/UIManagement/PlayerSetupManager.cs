@@ -16,28 +16,36 @@ public partial class PlayerSetupManager : GridContainer
     [Export]
     private Control setupMenuHolder;
 
-    public bool factionNamesLoaded { get; private set;} = false;
+    public ColorPreviewHelper colorHelper = new();
+
+    public bool factionNamesLoaded { get; private set; } = false;
 
     public void checkForConflicts()
     {
         bool setupConflict = false;
-        Dictionary<int, List<PlayerFields>> fieldsPerColorID = new();
+        Dictionary<PlayerFields, List<int>> colorsTakenByFields = new();
+        setupFields.ForEach((fields) => colorsTakenByFields.Add(fields, new()));
         foreach (PlayerFields setup in setupFields)
         {
-            setup.errorDisplay.Text = "";
-            if (fieldsPerColorID.ContainsKey(setup.data.colorID) == false)
-                fieldsPerColorID.Add(setup.data.colorID, new());
-            fieldsPerColorID[setup.data.colorID].Add(setup);
+            foreach (PlayerFields otherFields in setupFields)
+            {
+                if (otherFields == setup)
+                    continue;
+                colorsTakenByFields[otherFields].Add(setup.data.colorID); // Each setupFields sends its chosen colors to the others, as they aren't allowed to used it
+            }
         }
 
-        foreach (int colorID in fieldsPerColorID.Keys)
+        foreach (PlayerFields setup in setupFields)
         {
-            if (fieldsPerColorID[colorID].Count > 1)
+            setup.updateColorPreviews(colorsTakenByFields[setup]);
+            if (colorsTakenByFields[setup].Contains(setup.data.colorID))
             {
-                // Conflict
+                // Taken colors contains our own, so we're conflicting with another setupfields
                 setupConflict = true;
-                fieldsPerColorID[colorID].ForEach((setup) => setup.errorDisplay.Text = "Conflicting Color choice");
+                setup.errorDisplay.Text = "Conflicting Colors";
             }
+            else
+                setup.errorDisplay.Text = "";
         }
 
         // Preventing game start if conflicting setup or not enough / too much player
@@ -50,6 +58,9 @@ public partial class PlayerSetupManager : GridContainer
             Parameters.factionNamesReceived += updateFactionsDisplay;
         else
             factionNamesLoaded = true;
+
+        colorHelper.setupPreviews(Parameters.colors);
+
         // Default layout
         _addFields(true);
         _addFields(false);
@@ -152,8 +163,8 @@ public class PlayerFields
 
     public PlayerData data;
     public RichTextLabel errorDisplay = null;
-
     public OptionButton factionsButton = null;
+    public OptionButton colorButton = null;
 
     private PlayerSetupManager manager;
 
@@ -179,6 +190,17 @@ public class PlayerFields
         fields.Add(_buildErrorMessageDisplay());
     }
 
+    public void updateColorPreviews(List<int> _takenIDs)
+    {
+        for (int i = 0; i < colorButton.ItemCount; ++i)
+        {
+            if (_takenIDs.Contains(i))
+                colorButton.SetItemIcon(i, manager.colorHelper.getDisabledPreviewTexture(i));
+            else
+                colorButton.SetItemIcon(i, manager.colorHelper.getPreviewTexture(i));
+        }
+    }
+
     private Button _buildNewDeleteButton()
     {
         Button button = new();
@@ -190,17 +212,17 @@ public class PlayerFields
 
     private OptionButton _buildNewColorButton()
     {
-        OptionButton button = new();
+        colorButton = new();
         for (int i = 0; i < Parameters.colors.Length; ++i)
         {
-            button.AddItem(Parameters.colorNames[i]);
-            button.SetItemIcon(i, _buildColorPreview(Parameters.colors[i]));
+            colorButton.AddItem(Parameters.colorNames[i]);
+            colorButton.SetItemIcon(i, manager.colorHelper.getPreviewTexture(i));
         }
 
-        button.Selected = manager.getFirstFreeColorID();
-        data.colorID = button.Selected;
-        button.ItemSelected += (index) => { data.colorID = (int)index; manager.checkForConflicts(); };
-        return button;
+        colorButton.Selected = manager.getFirstFreeColorID();
+        data.colorID = colorButton.Selected;
+        colorButton.ItemSelected += (index) => { data.colorID = (int)index; manager.checkForConflicts(); };
+        return colorButton;
     }
 
     public void rebuildFactionButton()
@@ -274,8 +296,31 @@ public class PlayerFields
     {
         return new();
     }
+}
 
-    private ImageTexture _buildColorPreview(Color _color)
+public class ColorPreviewHelper
+{
+    private List<ImageTexture> previews = new();
+
+    public ImageTexture getPreviewTexture(int _colorIndex)
+    {
+        return previews[_colorIndex * 2];
+    }
+    public ImageTexture getDisabledPreviewTexture(int _colorIndex)
+    {
+        return previews[_colorIndex * 2 + 1];
+    }
+
+    public void setupPreviews(Color[] _colors)
+    {
+        for (int i = 0; i < _colors.Length; ++i)
+        {
+            previews.Add(_createPreviewFromColor(_colors[i]));
+            previews.Add(_createDisabledPreviewFromColor(_colors[i]));
+        }
+    }
+
+    private static ImageTexture _createPreviewFromColor(Color _color)
     {
         Image img = Image.CreateEmpty(20, 20, false, Image.Format.Rgb8);
         img.Fill(_color);
@@ -283,6 +328,25 @@ public class PlayerFields
         img.FillRect(new(0, 2, 2, 18), Colors.Black); // Left border
         img.FillRect(new(18, 2, 2, 18), Colors.Black); // Right Border
         img.FillRect(new(0, 18, 20, 2), Colors.Black); // Bottom border
+        return ImageTexture.CreateFromImage(img);
+    }
+
+    private static ImageTexture _createDisabledPreviewFromColor(Color _color)
+    {
+        Image img = Image.CreateEmpty(20, 20, false, Image.Format.Rgb8);
+        img.Fill(_color);
+        img.FillRect(new(0, 0, 20, 2), Colors.Black); // Top border
+        img.FillRect(new(0, 2, 2, 18), Colors.Black); // Left border
+        img.FillRect(new(18, 2, 2, 18), Colors.Black); // Right Border
+        img.FillRect(new(0, 18, 20, 2), Colors.Black); // Bottom border
+
+        // Diagonals
+        for (int i = 0; i < 20; ++i)
+        {
+            img.SetPixel(i, i, Colors.Black);
+            img.SetPixel(i, 20 - 1 - i, Colors.Black);
+        }
+
         return ImageTexture.CreateFromImage(img);
     }
 }
