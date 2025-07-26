@@ -10,6 +10,11 @@
             "Name": "FactionB",
             "Level1Pawn": "bazook.tscn",
             "Level2Pawn": "zeppelin.tscn"
+        },
+        {
+            "Name": "FactionC",
+            "Level1Pawn": "Mech.tscn",
+            "Level2Pawn":"helicopterPawn.tscn"
         }
     ]
 }
