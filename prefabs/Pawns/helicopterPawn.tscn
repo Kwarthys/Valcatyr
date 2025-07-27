@@ -10,7 +10,7 @@ script = ExtResource("1_mrjq8")
 [node name="ModelRotator" type="Node3D" parent="."]
 transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0.17, 0)
 script = ExtResource("2_gvptd")
-frequency = 0.5
+frequency = 0.6
 amplitude = 0.002
 
 [node name="ModelScaler" type="Node3D" parent="ModelRotator"]

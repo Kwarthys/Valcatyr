@@ -221,7 +221,7 @@ cloudsNoiseToAlpha = SubResource("Curve_3lt5j")
 [node name="GameManager" type="Node" parent="Managers" node_paths=PackedStringArray("troopManager", "stateDisplayer")]
 script = ExtResource("13_37t2g")
 troopManager = NodePath("../../Planet/TroopDisplayManager")
-startingTroops = 9
+startingTroops = 23
 stateDisplayer = NodePath("../../GameUI/StateDisplayAnchor/StateDisplayer")
 
 [node name="CombatManager" type="Node" parent="Managers"]

@@ -14,7 +14,7 @@
         {
             "Name": "FactionC",
             "Level1Pawn": "Mech.tscn",
-            "Level2Pawn":"helicopterPawn.tscn"
+            "Level2Pawn":"Spaceship.tscn"
         }
     ]
 }
