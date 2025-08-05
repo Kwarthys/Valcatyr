@@ -15,6 +15,11 @@
             "Name": "FactionC",
             "Level1Pawn": "Mech.tscn",
             "Level2Pawn":"Spaceship.tscn"
+        },
+        {
+            "Name":"FactionD",
+            "Level1Pawn": "Mech.tscn",
+            "Level2Pawn": "UFO.tscn"
         }
     ]
 }
