@@ -18,7 +18,12 @@
         },
         {
             "Name":"FactionD",
-            "Level1Pawn": "Mech.tscn",
+            "Level1Pawn": "Alien.tscn",
+            "Level2Pawn": "UFO.tscn"
+        },
+        {
+            "Name":"FactionE",
+            "Level1Pawn": "Hydralisk.tscn",
             "Level2Pawn": "UFO.tscn"
         }
     ]
