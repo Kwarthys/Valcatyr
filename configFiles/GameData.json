@@ -12,7 +12,7 @@
             "Level2Pawn": "zeppelin.tscn"
         },
         {
-            "Name": "FactionC",
+            "Name": "Armada",
             "Level1Pawn": "Mech.tscn",
             "Level2Pawn":"Spaceship.tscn"
         },
@@ -24,7 +24,7 @@
         {
             "Name":"FactionE",
             "Level1Pawn": "Hydralisk.tscn",
-            "Level2Pawn": "UFO.tscn"
+            "Level2Pawn": "Dragon.tscn"
         }
     ]
 }

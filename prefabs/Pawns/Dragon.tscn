@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://b4a8ux2e6liyb"]
+
+[ext_resource type="Script" path="res://scripts/GameManagement/PawnColorManager.cs" id="1_j6foc"]
+[ext_resource type="PackedScene" uid="uid://bdcil0y2ywycu" path="res://assets/BlenderProjects/Dragon/Dragon.dae" id="1_ney8e"]
+[ext_resource type="Script" path="res://scripts/utils/AltitudeWobbler.gd" id="2_ali3k"]
+
+[node name="Dragon" type="Node3D"]
+script = ExtResource("1_j6foc")
+
+[node name="PosScaler" type="Node3D" parent="."]
+transform = Transform3D(0.04, 0, 0, 0, 0.04, 0, 0, 0, 0.04, 0, 0.15, 0)
+script = ExtResource("2_ali3k")
+frequency = 0.6
+amplitude = 0.002
+
+[node name="Rotator" type="Node3D" parent="PosScaler"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0, 0)
+
+[node name="Dragon" parent="PosScaler/Rotator" instance=ExtResource("1_ney8e")]
