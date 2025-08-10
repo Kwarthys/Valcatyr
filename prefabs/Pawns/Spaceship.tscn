@@ -8,7 +8,7 @@
 script = ExtResource("1_q6vda")
 
 [node name="Scaler" type="Node3D" parent="."]
-transform = Transform3D(0.014, 0, 0, 0, 0.014, 0, 0, 0, 0.014, 0, 0.15, 0)
+transform = Transform3D(0.014, 0, 0, 0, 0.014, 0, 0, 0, 0.014, 0, 0.00527101, 0)
 script = ExtResource("2_gqde2")
 frequency = 0.3
 amplitude = 0.003

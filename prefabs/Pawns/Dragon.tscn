@@ -8,7 +8,7 @@
 script = ExtResource("1_j6foc")
 
 [node name="PosScaler" type="Node3D" parent="."]
-transform = Transform3D(0.04, 0, 0, 0, 0.04, 0, 0, 0, 0.04, 0, 0.15, 0)
+transform = Transform3D(0.04, 0, 0, 0, 0.04, 0, 0, 0, 0.04, 0, 0, 0)
 script = ExtResource("2_ali3k")
 frequency = 0.6
 amplitude = 0.002

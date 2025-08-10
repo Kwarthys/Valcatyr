@@ -223,6 +223,7 @@ script = ExtResource("13_37t2g")
 troopManager = NodePath("../../Planet/TroopDisplayManager")
 startingTroops = 23
 stateDisplayer = NodePath("../../GameUI/StateDisplayAnchor/StateDisplayer")
+airPawnsHeightRatio = 1.08
 
 [node name="CombatManager" type="Node" parent="Managers"]
 script = ExtResource("14_i4lgw")

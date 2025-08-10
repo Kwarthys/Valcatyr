@@ -63,8 +63,8 @@ public partial class TroopDisplayManager : Node3D
         });
 
         // Get destination points, preferably not overlapping, but it is allowed as a merge will can occur at arrival
-        List<ReferencePoint> l1Targets = _getReferencePoints(l1Moving, _destination, troopsPerState[_destination.state.id].level1Pawns, false);
-        List<ReferencePoint> l2Targets = _getReferencePoints(l2Moving, _destination, troopsPerState[_destination.state.id].level2Pawns, false);
+        List<ReferencePoint> l1Targets = _getGroundReferencePoints(l1Moving, _destination, troopsPerState[_destination.state.id].level1Pawns, false);
+        List<ReferencePoint> l2Targets = _getAirReferencePoints(l2Moving, _destination, troopsPerState[_destination.state.id].level2Pawns, false);
 
         TroopsData destinationData = troopsPerState[_destination.state.id];
 
@@ -209,7 +209,7 @@ public partial class TroopDisplayManager : Node3D
         int factionID = GameManager.Instance.getFactionIDOfPlayer(_c.playerID);
         PackedScene pawnScene = PreloadManager.getPawnScene(factionID, 1);
         if(pawnScene != null)
-            _spawnPawn(_n, pawnScene, pawns, _c, false);
+            _spawnPawn(_n, pawnScene, pawns, false, _c, false);
     }
 
     private void _spawnLevelTwos(int _n, Country _c)
@@ -218,27 +218,37 @@ public partial class TroopDisplayManager : Node3D
         int factionID = GameManager.Instance.getFactionIDOfPlayer(_c.playerID);
         PackedScene pawnScene = PreloadManager.getPawnScene(factionID, 2);
         if(pawnScene != null)
-            _spawnPawn(_n, pawnScene, pawns, _c, false);
+            _spawnPawn(_n, pawnScene, pawns, true, _c, false);
     }
 
-    private List<ReferencePoint> _getReferencePoints(int _n, Country _c, List<PawnData> _spawnedPawns, bool _enforceAvailablePoint = true)
+    private List<ReferencePoint> _getAirReferencePoints(int _n, Country _c, List<PawnData> _spawnedPawns, bool _enforceAvailablePoint = true)
     {
-        List<ReferencePoint> availablePoints = new(_c.referencePoints);
+        return _getReferencePoints(_n, _spawnedPawns, _enforceAvailablePoint, _c.airReferencePoints);
+    }
+
+    private List<ReferencePoint> _getGroundReferencePoints(int _n, Country _c, List<PawnData> _spawnedPawns, bool _enforceAvailablePoint = true)
+    {
+        return _getReferencePoints(_n, _spawnedPawns, _enforceAvailablePoint, _c.referencePoints);
+    }
+
+    private List<ReferencePoint> _getReferencePoints(int _n, List<PawnData> _spawnedPawns, bool _enforceAvailablePoint, List<ReferencePoint> _pointList)
+    {
+        List<ReferencePoint> availablePoints = new(_pointList);
         List<ReferencePoint> selectedPoints = new();
         _spawnedPawns.ForEach((data) => availablePoints.Remove(data.point)); // Remove already taken reference points
 
-        for(int i = 0; i < _n; ++i)
+        for (int i = 0; i < _n; ++i)
         {
-            if(availablePoints.Count == 0)
+            if (availablePoints.Count == 0)
             {
-                if(_enforceAvailablePoint)
+                if (_enforceAvailablePoint)
                 {
                     GD.PrintErr("TroopDisplayManager._spawnPawn Ran out of ReferencePoints");
                     break; // stop right here if we cannot provide available point
                 }
                 else
                 {
-                    availablePoints = new(_c.referencePoints); // We're allowed to use a taken point, add all points to the available list
+                    availablePoints = new(_pointList); // We're allowed to use a taken point, add all points to the available list
                 }
             }
             int index = (int)(GD.Randf() * availablePoints.Count);
@@ -248,10 +258,15 @@ public partial class TroopDisplayManager : Node3D
         return selectedPoints;
     }
 
-    private int _spawnPawn(int _n, PackedScene _pawnScene, List<PawnData> _spawnedPawns, Country _c, bool _enforceAvailablePoint = true)
+    private int _spawnPawn(int _n, PackedScene _pawnScene, List<PawnData> _spawnedPawns, bool _isAir, Country _c, bool _enforceAvailablePoint = true)
     {
-        List<ReferencePoint> availablePoints = _getReferencePoints(_n, _c, _spawnedPawns, _enforceAvailablePoint);
-        foreach(ReferencePoint p in availablePoints)
+        List<ReferencePoint> availablePoints;
+        if(_isAir)
+            availablePoints = _getAirReferencePoints(_n, _c, _spawnedPawns, _enforceAvailablePoint);
+        else
+            availablePoints = _getGroundReferencePoints(_n, _c, _spawnedPawns, _enforceAvailablePoint);
+
+        foreach (ReferencePoint p in availablePoints)
         {
             Node3D pawn = _pawnScene.Instantiate<Node3D>();
             AddChild(pawn);

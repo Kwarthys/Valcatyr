@@ -8,7 +8,7 @@
 script = ExtResource("1_k3710")
 
 [node name="Scaler" type="Node3D" parent="."]
-transform = Transform3D(0.009, 0, 0, 0, 0.009, 0, 0, 0, 0.009, 0, 0.129299, 0)
+transform = Transform3D(0.009, 0, 0, 0, 0.009, 0, 0, 0, 0.009, 0, 0.0132167, 0)
 script = ExtResource("2_0jer0")
 speed = 0.05
 

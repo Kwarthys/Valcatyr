@@ -15,6 +15,9 @@ public partial class GameManager : Node
     [Export]
     private StateDisplayerManager stateDisplayer;
 
+    [Export]
+    private float airPawnsHeightRatio = 1.15f;
+
     // Singleton
     public static GameManager Instance;
     public override void _Ready()
@@ -702,6 +705,7 @@ public partial class GameManager : Node
                 {
                     planet.getVertexAndNormal(index, out Vector3 vertex, out Vector3 normal);
                     c.referencePoints.Add(new(vertex, normal));
+                    c.airReferencePoints.Add(new(vertex * airPawnsHeightRatio, normal));
                 }
             }
         }

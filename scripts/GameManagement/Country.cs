@@ -20,6 +20,7 @@ public class Country
     public State state = null;
     public Continent continent = null;
     public List<ReferencePoint> referencePoints = new();
+    public List<ReferencePoint> airReferencePoints = new();
     public int troops = 0;
 
     public override string ToString()

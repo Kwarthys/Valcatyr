@@ -17,7 +17,7 @@
             "Level2Pawn":"Spaceship.tscn"
         },
         {
-            "Name":"FactionD",
+            "Name":"Travelers",
             "Level1Pawn": "Alien.tscn",
             "Level2Pawn": "UFO.tscn"
         },
