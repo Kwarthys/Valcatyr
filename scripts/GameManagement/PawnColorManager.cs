@@ -5,12 +5,35 @@ using System.Linq;
 
 public partial class PawnColorManager : Node3D
 {
-
-    private List<StandardMaterial3D> materials = new();
     [Export]
     private int materialID = 0;
 
-    public override void _Ready()
+    private List<MeshInstance3D> meshes = new();
+
+    private static List<StandardMaterial3D> materialPerPlayerID = new();
+
+    public static void initialize(List<Color> playerColors)
+    {
+        materialPerPlayerID.Clear();
+        foreach (Color c in playerColors)
+        {
+            StandardMaterial3D playerMaterial = new();
+            playerMaterial.AlbedoColor = c;
+            materialPerPlayerID.Add(playerMaterial);
+        }
+    }
+
+    public void setColor(int playerID)
+    {
+        if (meshes.Count == 0)
+        {
+            _find3DMeshes();
+        }
+
+        meshes.ForEach((mesh) => mesh.SetSurfaceOverrideMaterial(materialID, materialPerPlayerID[playerID]));
+    }
+
+    private void _find3DMeshes()
     {
         Queue<Node> toScan = new();
         toScan.Enqueue(this);
@@ -20,12 +43,7 @@ public partial class PawnColorManager : Node3D
             if (scanning is MeshInstance3D mesh)
             {
                 // Node3D really is a meshInstance
-                StandardMaterial3D material = (StandardMaterial3D)mesh.GetActiveMaterial(materialID);
-                if (material != null)
-                {
-                    materials.Add((StandardMaterial3D)material.Duplicate());
-                    mesh.SetSurfaceOverrideMaterial(materialID, materials.Last()); // Make unique to color each one individually                    
-                }
+                meshes.Add((MeshInstance3D)scanning);
             }
 
             foreach (Node child in scanning.GetChildren())
@@ -33,10 +51,5 @@ public partial class PawnColorManager : Node3D
                 toScan.Enqueue(child);
             }
         }
-    }
-
-    public void setColor(Color _c)
-    {
-        materials.ForEach((m) => m.AlbedoColor = _c);
     }
 }

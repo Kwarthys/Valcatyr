@@ -276,7 +276,7 @@ public partial class TroopDisplayManager : Node3D
             pawn.LookAt(ToGlobal(p.vertex + localForward), ToGlobal(p.normal));
 
             PawnColorManager helper = (PawnColorManager)pawn;   // Getting the script attached to the root of the pawn scene
-            helper.setColor(Parameters.colors[GameManager.Instance.getColorIDOfPlayer(_c.playerID)]);    // Apply player color (player ID for now, maybe player choice later)
+            helper.setColor(_c.playerID);    // Apply player color
 
             PawnData pawnData = new() { instance = pawn, point = p };
             _spawnedPawns.Add(pawnData);

@@ -54,7 +54,7 @@ public partial class AIVisualMarkerManager : Node
         return movementCheckpoints[originIndex].Lerp(movementCheckpoints[originIndex+1], evaluateTime).Normalized() * MARKER_ALTITUDE;
     }
 
-    public void setMarkerColor(Color _c){ markerColorManager.setColor(_c); }
+    public void setMarkerColor(int _playerID){ markerColorManager.setColor(_playerID); }
     public void setMarkerVisibility(bool _status) { marker.Visible = _status; }
     public void hideMarker(){ setMarkerVisibility(false); }
     public void showMarker(){ setMarkerVisibility(true); }
