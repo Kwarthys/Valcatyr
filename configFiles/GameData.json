@@ -25,6 +25,11 @@
             "Name":"FactionE",
             "Level1Pawn": "Hydralisk.tscn",
             "Level2Pawn": "Dragon.tscn"
+        },
+        {
+            "Name":"Wardens",
+            "Level1Pawn": "Tree.tscn",
+            "Level2Pawn": "Dragon.tscn"
         }
     ]
 }

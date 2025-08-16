@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://5s72f5iyf3e6"]
+
+[ext_resource type="PackedScene" uid="uid://l4gm1y8r2cq" path="res://assets/BlenderProjects/Tree/Tree.dae" id="1_i62kq"]
+[ext_resource type="Script" path="res://scripts/GameManagement/PawnColorManager.cs" id="1_la8px"]
+
+[node name="Tree" type="Node3D"]
+script = ExtResource("1_la8px")
+
+[node name="Scaler" type="Node3D" parent="."]
+transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0, 0)
+
+[node name="Rotator" type="Node3D" parent="Scaler"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0, 0)
+
+[node name="Tree" parent="Scaler/Rotator" instance=ExtResource("1_i62kq")]
