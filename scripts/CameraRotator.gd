@@ -5,6 +5,7 @@ extends Node3D
 @export var VERTICAL_SPEED = 1.5
 @export var VERTICAL_MAX_ANGLE = 80
 @export var VERTICAL_MIN_ANGLE = -80
+@export var AUTO_ROTATE_SPEED = 0.9
 
 var vertical_helper_angle: float = 0.0
 
@@ -19,9 +20,11 @@ func _process(delta: float) -> void:
 func handle_horizontal(dt: float) -> void:
 	var movement: float = 0.0
 	if Input.is_action_pressed("Left"):
-		movement = - HORIZONTAL_SPEED * dt
-	if Input.is_action_pressed("Right") || autoRotate:
+		movement -= HORIZONTAL_SPEED * dt
+	if Input.is_action_pressed("Right"):
 		movement += HORIZONTAL_SPEED * dt
+	if autoRotate:
+		movement += AUTO_ROTATE_SPEED * dt
 	rotate(Vector3.UP, movement)
 	
 func handle_vertical(dt: float) -> void:

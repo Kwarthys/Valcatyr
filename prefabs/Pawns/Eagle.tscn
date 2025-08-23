@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://dulniybemvti4"]
+
+[ext_resource type="Script" path="res://scripts/GameManagement/PawnColorManager.cs" id="1_1r25u"]
+[ext_resource type="PackedScene" uid="uid://dktvuyodsjeow" path="res://assets/BlenderProjects/Eagle/Eagle.dae" id="2_d3fxi"]
+
+[node name="Eagle" type="Node3D"]
+script = ExtResource("1_1r25u")
+
+[node name="Scaler" type="Node3D" parent="."]
+transform = Transform3D(0.005, 0, 0, 0, 0.005, 0, 0, 0, 0.005, 0, 0, 0)
+
+[node name="Rotator" type="Node3D" parent="Scaler"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0, 0)
+
+[node name="Eagle" parent="Scaler/Rotator" instance=ExtResource("2_d3fxi")]

@@ -29,7 +29,7 @@
         {
             "Name":"Wardens",
             "Level1Pawn": "Tree.tscn",
-            "Level2Pawn": "Dragon.tscn"
+            "Level2Pawn": "Eagle.tscn"
         }
     ]
 }
