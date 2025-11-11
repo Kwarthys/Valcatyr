@@ -30,7 +30,7 @@
 [ext_resource type="Texture2D" uid="uid://bviorge2u5ei" path="res://assets/TieKPOW_SHEET.png" id="21_ed6oq"]
 [ext_resource type="Script" path="res://scripts/GameManagement/TweakableParametersManager.cs" id="24_nd18h"]
 [ext_resource type="PackedScene" uid="uid://dare37ynf6xvx" path="res://prefabs/optionSlider.tscn" id="24_ylvgt"]
-[ext_resource type="Script" path="res://scripts/UIManagement/OptionsDisplayManager.cs" id="26_hobwf"]
+[ext_resource type="Script" path="res://scripts/UIManagement/TabDisplayManager.cs" id="26_hobwf"]
 [ext_resource type="Script" path="res://scripts/UIManagement/PlayerSetupManager.cs" id="34_xnweg"]
 
 [sub_resource type="Curve" id="Curve_0lgr4"]
@@ -130,13 +130,13 @@ default_font_size = 25
 [sub_resource type="Theme" id="Theme_1pjst"]
 Button/font_sizes/font_size = 30
 
-[sub_resource type="Curve" id="Curve_gsjg8"]
-_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 0.5), 4.34009, 4.34009, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+[sub_resource type="Curve" id="Curve_pydc2"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 0.5), 5.36609, 5.36609, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
 point_count = 3
 
 [sub_resource type="Theme" id="Theme_103vo"]
-RichTextLabel/font_sizes/bold_font_size = 14
-RichTextLabel/font_sizes/normal_font_size = 14
+RichTextLabel/font_sizes/bold_font_size = 15
+RichTextLabel/font_sizes/normal_font_size = 15
 
 [node name="SceneRoot" type="Node3D"]
 
@@ -436,112 +436,6 @@ offset_top = -353.0
 offset_right = 223.0
 offset_bottom = -46.0
 
-[node name="OptionsHolder" type="Control" parent="GameUI" node_paths=PackedStringArray("optionsUIHolder")]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -127.0
-offset_bottom = 70.0
-grow_horizontal = 0
-script = ExtResource("26_hobwf")
-optionsUIHolder = NodePath("OptionsPanel")
-movementCurve = SubResource("Curve_gsjg8")
-
-[node name="Button" type="Button" parent="GameUI/OptionsHolder"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -35.0
-offset_top = -15.5
-offset_right = 35.0
-offset_bottom = 15.5
-grow_horizontal = 2
-grow_vertical = 2
-text = "Options"
-
-[node name="OptionsPanel" type="Control" parent="GameUI/OptionsHolder"]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -407.0
-offset_top = 61.0
-offset_right = -23.0
-offset_bottom = 575.0
-grow_horizontal = 0
-
-[node name="GridContainer" type="GridContainer" parent="GameUI/OptionsHolder/OptionsPanel" node_paths=PackedStringArray("fxVolumeOption", "cameraShakeOption", "planelRotationOption")]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = 22.0
-offset_bottom = 22.0
-grow_horizontal = 2
-grow_vertical = 2
-columns = 2
-script = ExtResource("24_nd18h")
-fxVolumeOption = NodePath("FXVolumeChoice")
-cameraShakeOption = NodePath("CameraShakeChoice")
-planelRotationOption = NodePath("PlanetRotationChoice")
-
-[node name="VolumeLabel" type="RichTextLabel" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer"]
-clip_contents = false
-layout_mode = 2
-size_flags_vertical = 0
-text = "FX Volume"
-fit_content = true
-scroll_active = false
-autowrap_mode = 0
-
-[node name="FXVolumeChoice" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer" instance=ExtResource("24_ylvgt")]
-layout_mode = 2
-
-[node name="RichTextLabel" type="RichTextLabel" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer"]
-layout_mode = 2
-text = "Planet Rotation"
-fit_content = true
-scroll_active = false
-autowrap_mode = 0
-
-[node name="PlanetRotationChoice" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer" instance=ExtResource("24_ylvgt")]
-layout_mode = 2
-
-[node name="RichTextLabel2" type="RichTextLabel" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer"]
-layout_mode = 2
-text = "Camera Shake"
-fit_content = true
-scroll_active = false
-autowrap_mode = 0
-
-[node name="CameraShakeChoice" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer" instance=ExtResource("24_ylvgt")]
-layout_mode = 2
-
-[node name="RichTextLabel" type="RichTextLabel" parent="GameUI/OptionsHolder/OptionsPanel"]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 0
-theme = SubResource("Theme_103vo")
-bbcode_enabled = true
-text = "- Use arrows/WASD to move the camera around
-- Left clic a Country to select it and display information about it
-
-[b]Game Phases[/b]:
-- [b]Initial Deployment[/b]: Right clic one of your country to deploy an army, each player deploys one army at a time.
-- [b]Deployment[/b]: Spread your reinforcements as you wish amongst your countries by right clicking them. (Hold Ctrl to deploy 5 at a time, hold Shift to deploy everything)
-- [b]Attack[/b]: Select one of your countries, and attack an enemy neighbor by right clicking it. If you conquer a country, the attacking troops will transfer there, and you get the choice to transfer more. End Attack phase whenever you want, even without attacking.
-- [b]Reinforcement[/b]: Move troops between two of your connected countries, if you want."
-fit_content = true
-scroll_active = false
-
 [node name="GameSetupHolder" type="Control" parent="GameUI"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 1
@@ -602,13 +496,128 @@ layout_mode = 2
 size_flags_vertical = 10
 text = "Start Game"
 
+[node name="OptionsHolder" type="Control" parent="GameUI"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -127.0
+offset_bottom = 70.0
+grow_horizontal = 0
+
+[node name="TabBar" type="TabBar" parent="GameUI/OptionsHolder" node_paths=PackedStringArray("uiHolders")]
+layout_mode = 0
+offset_left = -12.08
+offset_right = 125.92
+offset_bottom = 40.0
+clip_tabs = false
+scrolling_enabled = false
+scroll_to_selected = false
+deselect_enabled = true
+tab_count = 2
+tab_0/title = "Help"
+tab_1/title = "Options"
+script = ExtResource("26_hobwf")
+uiHolders = [NodePath("../HelpHolder"), NodePath("../OptionsPanel")]
+movementCurve = SubResource("Curve_pydc2")
+duration = 0.25
+
+[node name="OptionsPanel" type="Control" parent="GameUI/OptionsHolder"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -407.0
+offset_top = 61.0
+offset_right = -23.0
+offset_bottom = 575.0
+grow_horizontal = 0
+
+[node name="GridContainer" type="GridContainer" parent="GameUI/OptionsHolder/OptionsPanel" node_paths=PackedStringArray("fxVolumeOption", "cameraShakeOption", "planelRotationOption")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 22.0
+offset_bottom = 22.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 2
+script = ExtResource("24_nd18h")
+fxVolumeOption = NodePath("FXVolumeChoice")
+cameraShakeOption = NodePath("CameraShakeChoice")
+planelRotationOption = NodePath("PlanetRotationChoice")
+
+[node name="VolumeLabel" type="RichTextLabel" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer"]
+clip_contents = false
+layout_mode = 2
+size_flags_vertical = 0
+text = "FX Volume"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="FXVolumeChoice" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer" instance=ExtResource("24_ylvgt")]
+layout_mode = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer"]
+layout_mode = 2
+text = "Planet Rotation"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="PlanetRotationChoice" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer" instance=ExtResource("24_ylvgt")]
+layout_mode = 2
+
+[node name="RichTextLabel2" type="RichTextLabel" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer"]
+layout_mode = 2
+text = "Camera Shake"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="CameraShakeChoice" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer" instance=ExtResource("24_ylvgt")]
+layout_mode = 2
+
+[node name="HelpHolder" type="Control" parent="GameUI/OptionsHolder"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -407.0
+offset_top = 61.0
+offset_right = -23.0
+offset_bottom = 575.0
+grow_horizontal = 0
+
+[node name="RichTextLabel2" type="RichTextLabel" parent="GameUI/OptionsHolder/HelpHolder"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_103vo")
+bbcode_enabled = true
+text = "- Use arrows/WASD to move the camera around
+- Left clic a Country to [b]select it[/b] and display information about it
+
+[b]Game Phases[/b]:
+- [b]Initial Deployment[/b]: Right clic one of your country to deploy an army, each player deploys one army at a time.
+- [b]Deployment[/b]: Spread your reinforcements as you wish amongst your countries by right clicking them. (Hold Ctrl to deploy 5 at a time, hold Shift to deploy everything)
+- [b]Attack[/b]: Select one of your countries, and attack an enemy neighbor by right clicking it. If you conquer a country, the attacking troops will transfer there, and you get the choice to transfer more. End Attack phase whenever you want, even without attacking.
+- [b]Reinforcement[/b]: Move troops between two of your connected countries, if you want."
+fit_content = true
+scroll_active = false
+
 [connection signal="pressed" from="GameUI/EndPhaseButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
 [connection signal="pressed" from="GameUI/NewGameButton" to="Managers/GameManager" method="startANewGame"]
 [connection signal="value_changed" from="GameUI/MovementUIHolder/HSlider" to="Managers/FreeMovementManager" method="onSliderUpdate"]
 [connection signal="pressed" from="GameUI/MovementUIHolder/ButtonsHolder/MoveNoneButton" to="Managers/FreeMovementManager" method="onMoveNone"]
 [connection signal="pressed" from="GameUI/MovementUIHolder/ButtonsHolder/MoveTroopsButton" to="Managers/FreeMovementManager" method="onMovementValidation"]
 [connection signal="pressed" from="GameUI/MovementUIHolder/ButtonsHolder/MoveAllButton" to="Managers/FreeMovementManager" method="onMoveAll"]
-[connection signal="pressed" from="GameUI/OptionsHolder/Button" to="GameUI/OptionsHolder" method="onToggleShow"]
 [connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer/AddAIButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onAddAIPressed"]
 [connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer/AddPlayerButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onAddPlayerPressed"]
 [connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/StartGameButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onStartGamePressed"]
+[connection signal="tab_clicked" from="GameUI/OptionsHolder/TabBar" to="GameUI/OptionsHolder/TabBar" method="onTabClic"]
