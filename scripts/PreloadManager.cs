@@ -67,8 +67,6 @@ public partial class PreloadManager : Node
             ResourceLoader.LoadThreadedRequest(pawnPaths[pawnIndex++], "", false, ResourceLoader.CacheMode.Ignore);
 
             factionNames[factionIndex++] = f.Name;
-
-            GD.Print(f.Name + ": 1-" + f.Level1Pawn + " 2-" + f.Level2Pawn);
         }
 
         Parameters.setFactionNames(factionNames);
