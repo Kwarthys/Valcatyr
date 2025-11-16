@@ -321,6 +321,10 @@ public partial class GameManager : Node
     {
         // triggered when all troops deployed in deploy phase
         gamePhase = GamePhase.Attack;
+
+        if(players[activePlayerIndex].isHuman)
+            ArmySlider.show();
+
         _updatePhaseDisplay();
     }
 
@@ -351,7 +355,11 @@ public partial class GameManager : Node
     {
         activePlayerIndex = 0; // First player go !
         gamePhase = GamePhase.FirstDeploy;
+#if DEBUG
+        reinforcementLeft = 1; // speed things up while debuging
+#else
         reinforcementLeft = 40 / players.Count; // this can take quite the time, board game setup eh :: This could be a game setup parameter
+#endif
         _updatePhaseDisplay();
     }
 
@@ -360,7 +368,7 @@ public partial class GameManager : Node
         switch (gamePhase)
         {
             case GamePhase.Init: _startFirstDeployment(); return;
-            case GamePhase.Attack: _startReinforcePhase(); return;
+            case GamePhase.Attack: _startReinforcePhase(); ArmySlider.hide(); return;
             case GamePhase.Reinforce: _startNextPlayerTurn(); return; // Go Back to Deploy phase
 
             case GamePhase.FirstDeploy:

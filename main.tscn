@@ -1,4 +1,4 @@
-[gd_scene load_steps=56 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=57 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
@@ -34,6 +34,7 @@
 [ext_resource type="Script" path="res://scripts/UIManagement/TextWidgetAnimator.cs" id="33_4ahd2"]
 [ext_resource type="Script" path="res://scripts/UIManagement/WorldBuildingWidgetManager.cs" id="33_4gdmt"]
 [ext_resource type="Script" path="res://scripts/UIManagement/PlayerSetupManager.cs" id="34_xnweg"]
+[ext_resource type="Script" path="res://scripts/UIManagement/ArmySlider.cs" id="35_ggg4p"]
 
 [sub_resource type="Curve" id="Curve_0lgr4"]
 _data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 0.5), 3.0, 3.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
@@ -655,6 +656,42 @@ script = ExtResource("33_4ahd2")
 timePerPoint = 0.7
 maxPoints = 5
 
+[node name="ArmySliderHolder" type="Control" parent="GameUI"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 315.0
+offset_top = -49.0
+offset_right = 355.0
+offset_bottom = 101.0
+grow_vertical = 2
+
+[node name="ArmySlider" type="VSlider" parent="GameUI/ArmySliderHolder" node_paths=PackedStringArray("subtitle")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 3.0
+value = 1.0
+tick_count = 4
+ticks_on_borders = true
+script = ExtResource("35_ggg4p")
+subtitle = NodePath("../RichTextLabel")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="GameUI/ArmySliderHolder"]
+layout_mode = 0
+offset_left = -27.0
+offset_top = 158.0
+offset_right = 68.0
+offset_bottom = 204.0
+text = "Attack with x troops"
+fit_content = true
+scroll_active = false
+autowrap_mode = 2
+
 [connection signal="pressed" from="GameUI/EndPhaseButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
 [connection signal="pressed" from="GameUI/NewGameButton" to="Managers/GameManager" method="startANewGame"]
 [connection signal="value_changed" from="GameUI/MovementUIHolder/HSlider" to="Managers/FreeMovementManager" method="onSliderUpdate"]
@@ -665,3 +702,4 @@ maxPoints = 5
 [connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer/AddPlayerButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onAddPlayerPressed"]
 [connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/StartGameButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onStartGamePressed"]
 [connection signal="tab_clicked" from="GameUI/OptionsHolder/TabBar" to="GameUI/OptionsHolder/TabBar" method="onTabClic"]
+[connection signal="value_changed" from="GameUI/ArmySliderHolder/ArmySlider" to="GameUI/ArmySliderHolder/ArmySlider" method="onValueChanged"]

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
 
 /// <summary>
-/// Combat manager will be responsible for managing combat troops selection, fight outcome and player feedback
+/// Combat manager is responsible for managing combat troops selection, fight outcome and player feedback
 /// </summary>
 public partial class CombatManager : Node
 {
@@ -26,8 +26,19 @@ public partial class CombatManager : Node
             return 0;
         }
 
-        int attackers = Mathf.Min(3, _attacker.troops - 1); // TODO Player selection
-        int defenders = Mathf.Min(2, _defender.troops);     // TODO Player selection (IA will always defend with max) (MAYBE setting to always play with max to speed up combat ?)
+        int attackers = 3; // Attack with max by default
+
+        double attackSelection = ArmySlider.getValue();
+        if(attackSelection > 0.0) // Negative means slider is hidden, which means we're in an IA's turn
+        {
+            // Player selection
+            attackers = Mathf.RoundToInt(attackSelection);
+        }
+
+        int maxAttackers = Mathf.Min(3, _attacker.troops - 1);
+        attackers = Mathf.Clamp(attackers, 1, maxAttackers);
+
+        int defenders = Mathf.Min(2, _defender.troops);
         CombatOutcome combatOutcome = _resolveCombat(attackers, defenders);
         _attacker.troops -= combatOutcome.attackerLosses;
         _defender.troops -= combatOutcome.defenderLosses;
