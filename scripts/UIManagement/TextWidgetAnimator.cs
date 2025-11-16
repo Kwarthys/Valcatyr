@@ -3,7 +3,7 @@ using System;
 
 public partial class TextWidgetAnimator : RichTextLabel
 {
-    [Export] private float timePerPoint;
+    [Export] private float timePerPoint = 0.5f;
 
     [Export] private int maxPoints = 4;
 

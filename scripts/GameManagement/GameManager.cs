@@ -84,7 +84,7 @@ public partial class GameManager : Node
         if (++readyReceived == 2)
             initialize();
         else
-            WorldBuildingWidgetManager.show(); // warn user(s) that they're waiting for world building to complete
+            WidgetsManager.show("WorldBuilding"); // warn user(s) that they're waiting for world building to complete
     }
 
     public void onPlanetGenerationReady(Planet _planet)
@@ -93,7 +93,7 @@ public partial class GameManager : Node
         if (++readyReceived == 2)
         {
             initialize();
-            WorldBuildingWidgetManager.hide();
+            WidgetsManager.hide("WorldBuilding");
         }
     }
 

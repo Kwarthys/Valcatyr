@@ -83,7 +83,7 @@ public class ComputerAI
             {
                 _generateNewGamePlan();
                 // Display cooking widget
-                AICookingWidgetManager.showWidget();
+                WidgetsManager.show("AIThinking");
             }
 
             if (gamePlanGenerationDone) // Thread finished cooking us the game plan
@@ -96,7 +96,7 @@ public class ComputerAI
                 generatingGamePlan = false;
                 gamePlanGenerationDone = false;
                 // Reset cooking widget
-                AICookingWidgetManager.hideWidget();
+                WidgetsManager.hide("AIThinking");
             }
         }
 
