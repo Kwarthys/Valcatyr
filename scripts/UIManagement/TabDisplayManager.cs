@@ -5,13 +5,10 @@ using System.Reflection.Metadata.Ecma335;
 
 public partial class TabDisplayManager : TabBar
 {
-    [Export]
-    private Godot.Collections.Array<Control> uiHolders;
-    [Export]
-    private Curve movementCurve;
-
-    private const float foldedXValue = 150;
-    private float displayedXValue;
+    [Export] private Godot.Collections.Array<Control> uiHolders;
+    [Export] private Curve movementCurve;
+    [Export] private float foldedXValue = 500.0f;
+    private Dictionary<Control, float> displayedXValuePerControl = new();
 
     [Export]
     private float duration = 0.5f;
@@ -25,7 +22,7 @@ public partial class TabDisplayManager : TabBar
     {
         foreach (Control holder in uiHolders)
         {
-            displayedXValue = holder.Position.X;
+            displayedXValuePerControl.Add(holder, holder.Position.X);
             _setPos(holder, foldedXValue);
         }
         lerper = new(duration, (from, to, time) => Mathf.Lerp(from, to, movementCurve.Sample((float)time)));
@@ -73,7 +70,7 @@ public partial class TabDisplayManager : TabBar
     {
         movingIndex = index;
         float from = uiHolders[index].Position.X;
-        float to = CurrentTab == index ? displayedXValue : foldedXValue;
+        float to = CurrentTab == index ? displayedXValuePerControl[uiHolders[index]] : foldedXValue;
         lerper.startLerp(from, to);
         uiHolders[index].Visible = true;
         shownIndex = CurrentTab;
