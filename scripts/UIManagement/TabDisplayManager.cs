@@ -1,10 +1,12 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Reflection.Metadata.Ecma335;
 
 public partial class TabDisplayManager : TabBar
 {
+    public static TabDisplayManager Instance;
     [Export] private Godot.Collections.Array<Control> uiHolders;
     [Export] private Curve movementCurve;
     [Export] private float foldedXValue = 500.0f;
@@ -20,6 +22,8 @@ public partial class TabDisplayManager : TabBar
 
     public override void _Ready()
     {
+        Instance = this;
+
         foreach (Control holder in uiHolders)
         {
             displayedXValuePerControl.Add(holder, holder.Position.X);
@@ -48,6 +52,30 @@ public partial class TabDisplayManager : TabBar
                 shownIndex = CurrentTab;
             }
         }
+    }
+
+    public static void closeAllTabs()
+    {
+        if(Instance == null) return;
+
+        Instance.CurrentTab = -1;
+        Instance.manageTabChange();
+    }
+
+    public enum Tab { Help, Options, Game};
+
+    public static void selectTab(Tab _tab)
+    {
+        if(Instance == null) return;
+        int tabIndex = -1;
+        switch(_tab)
+        {
+            case Tab.Help: tabIndex = 0; break;
+            case Tab.Options: tabIndex = 1; break;
+            case Tab.Game: tabIndex = 2; break;
+        }
+        Instance.CurrentTab = tabIndex;
+        Instance.manageTabChange();
     }
 
     public void onTabClic(int clicedIndex)

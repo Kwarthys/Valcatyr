@@ -6,6 +6,7 @@ using System.Threading;
 
 public partial class PlayerSetupManager : GridContainer
 {
+    public static PlayerSetupManager Instance;
     private List<PlayerFields> setupFields = new();
     [Export]
     private Button addAiButton;
@@ -19,6 +20,11 @@ public partial class PlayerSetupManager : GridContainer
     public ColorPreviewHelper colorHelper = new();
 
     public bool factionNamesLoaded { get; private set; } = false;
+
+    public static void show()
+    {
+        Instance?.setupMenuHolder.Show();
+    }
 
     public void checkForConflicts()
     {
@@ -54,6 +60,8 @@ public partial class PlayerSetupManager : GridContainer
 
     public override void _Ready()
     {
+        Instance = this;
+
         if (Parameters.factionNames == null)
             Parameters.factionNamesReceived += updateFactionsDisplay;
         else
@@ -88,7 +96,7 @@ public partial class PlayerSetupManager : GridContainer
     {
         List<PlayerData> data = new();
         setupFields.ForEach((fields) => data.Add(fields.data));
-        GameManager.Instance.onGameSetupReady(data);
+        GameManager.Instance.onPlayersSetupReady(data);
 
         setupMenuHolder.Visible = false;
     }

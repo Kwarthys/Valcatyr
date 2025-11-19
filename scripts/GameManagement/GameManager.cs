@@ -63,7 +63,7 @@ public partial class GameManager : Node
 
     private int readyReceived = 0;
 
-    public void onGameSetupReady(List<PlayerData> _playersData)
+    public void onPlayersSetupReady(List<PlayerData> _playersData)
     {
         playersConfigData = _playersData;
         playersConfigData.ForEach((data) =>
@@ -132,29 +132,50 @@ public partial class GameManager : Node
         CustomLogger.print("GameManager initialized");
         _updatePhaseDisplay();
         triggerNextPhase();
+
+        NewGameInterfacer.enable();
     }
 
-    private void _reset()
+    public static void startANewGame(bool _newMap, bool _newPlayers)
     {
-        // Making sure a new call to initialize would put us in a good start state
+        Instance?.doStartNewGame(_newMap, _newPlayers);
+    }
+
+    public void doStartNewGame(bool _newMap, bool _newPlayers)
+    {
+        // Parameters always reset
         gamePhase = GamePhase.Init;
+        _updatePhaseDisplay();
         players.Clear();
         aiPerPlayer.Clear();
-        planet = null;
         troopManager.reset();
         countries.Clear();
-        readyReceived = 1; // Not possible to change game setup yet
+        countryIndexPerState.Clear();
+        AIVisualMarkerManager.Instance.setMarkerVisibility(false);
+        stateDisplayer.setVisible(false);
 
-        _updatePhaseDisplay();
+        if(_newMap)
+        {
+            planet.generate(); // Start new generation only if needed
+            readyReceived--;
+
+            if(!_newPlayers)
+                WidgetsManager.show("WorldBuilding");
+        }
+
+        if(_newPlayers)
+        {
+            PlayerSetupManager.show(); // Show player setup menu only if needed
+            readyReceived--;
+        }
+
+        if(readyReceived == 2)
+        {
+            // Quick restart, same map, same players
+            initialize();
+        }
+        // Else we will initialize on callbacks
     }
-
-    public void startANewGame()
-    {
-        Planet p = planet; // Saving the planet as our reset will clear our reference to it
-        _reset();
-        p.generate(); // Start new generation
-    }
-
 
     public override void _Process(double _dt)
     {
@@ -308,6 +329,8 @@ public partial class GameManager : Node
         activePlayerIndex = players.IndexOf(alivePlayerMemory);
         resetSelection();
         _updatePhaseDisplay();
+
+        TabDisplayManager.selectTab(TabDisplayManager.Tab.Game);
     }
 
     private void _startDeploymentPhase()

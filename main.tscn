@@ -1,4 +1,4 @@
-[gd_scene load_steps=51 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=52 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
@@ -30,6 +30,7 @@
 [ext_resource type="PackedScene" uid="uid://dare37ynf6xvx" path="res://prefabs/optionSlider.tscn" id="24_ylvgt"]
 [ext_resource type="Script" path="res://scripts/UIManagement/TabDisplayManager.cs" id="26_hobwf"]
 [ext_resource type="Theme" uid="uid://devhp3bn3w0sx" path="res://UI/GameMenuButton.tres" id="31_mrrg8"]
+[ext_resource type="Script" path="res://scripts/GameManagement/NewGameInterfacer.cs" id="31_ogxsw"]
 [ext_resource type="Script" path="res://scripts/UIManagement/TextWidgetAnimator.cs" id="33_4ahd2"]
 [ext_resource type="Script" path="res://scripts/UIManagement/WidgetsManager.cs" id="33_4gdmt"]
 [ext_resource type="Script" path="res://scripts/UIManagement/PlayerSetupManager.cs" id="34_xnweg"]
@@ -558,8 +559,7 @@ Left clic a Country to [b]select it[/b] and display information about it
 fit_content = true
 scroll_active = false
 
-[node name="GameControlsPanel" type="Control" parent="GameUI/OptionsHolder"]
-visible = false
+[node name="GameControlsPanel" type="Control" parent="GameUI/OptionsHolder" node_paths=PackedStringArray("regenMap", "editPlayers", "newGameButton")]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -569,6 +569,10 @@ offset_top = 90.0
 offset_right = -30.0
 offset_bottom = 151.0
 grow_horizontal = 0
+script = ExtResource("31_ogxsw")
+regenMap = NodePath("VBoxContainer/NewMap")
+editPlayers = NodePath("VBoxContainer/NewFactions")
+newGameButton = NodePath("VBoxContainer/NewGameButton")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="GameUI/OptionsHolder/GameControlsPanel"]
 layout_direction = 3
@@ -689,4 +693,5 @@ autowrap_mode = 2
 [connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer/AddPlayerButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onAddPlayerPressed"]
 [connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/StartGameButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onStartGamePressed"]
 [connection signal="tab_clicked" from="GameUI/OptionsHolder/TabBar" to="GameUI/OptionsHolder/TabBar" method="onTabClic"]
+[connection signal="button_up" from="GameUI/OptionsHolder/GameControlsPanel/VBoxContainer/NewGameButton" to="GameUI/OptionsHolder/GameControlsPanel" method="onNewGameClic"]
 [connection signal="value_changed" from="GameUI/ArmySliderHolder/ArmySlider" to="GameUI/ArmySliderHolder/ArmySlider" method="onValueChanged"]
