@@ -437,7 +437,6 @@ public partial class GameManager : Node
         }
 
         GameUI.setPhaseButtonVisibility(_shouldDisplayEndPhaseButton());
-        GameUI.setNewGameButtonVisibility(_shouldDisplayNewGameButton());
     }
 
     private bool _shouldDisplayEndPhaseButton()

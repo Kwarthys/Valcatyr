@@ -14,6 +14,8 @@ public class State
     public int id = -1;
     public int continentID {get; private set;} = -1;
     public int landMassID = -1; // Continents may contain multiple islands, land mass only cares about direct land neighbors
+
+    public string name = "";
     
     public Vector3 barycenter = new();
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=52 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=51 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
@@ -77,9 +77,6 @@ default_font_size = 25
 
 [sub_resource type="Theme" id="Theme_5n5qb"]
 default_font_size = 25
-
-[sub_resource type="Theme" id="Theme_1pjst"]
-Button/font_sizes/font_size = 30
 
 [sub_resource type="Theme" id="Theme_ro45o"]
 RichTextLabel/font_sizes/bold_font_size = 20
@@ -206,7 +203,7 @@ pawnsRootFolder = "res://prefabs/Pawns/"
 script = ExtResource("20_1xxrl")
 fxVolumeOption = NodePath("../../GameUI/OptionsHolder/OptionsPanel/GridContainer/FXVolumeChoice")
 
-[node name="GameUI" type="Control" parent="." node_paths=PackedStringArray("primaryText", "secondaryText", "endTurnButton", "newGameButton")]
+[node name="GameUI" type="Control" parent="." node_paths=PackedStringArray("primaryText", "secondaryText", "endTurnButton")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -218,7 +215,6 @@ script = ExtResource("14_bob1v")
 primaryText = NodePath("MainLabel")
 secondaryText = NodePath("SecondaryLabel")
 endTurnButton = NodePath("EndPhaseButton")
-newGameButton = NodePath("NewGameButton")
 
 [node name="MainLabel" type="RichTextLabel" parent="GameUI"]
 layout_mode = 1
@@ -264,22 +260,6 @@ grow_horizontal = 0
 grow_vertical = 0
 theme = SubResource("Theme_5n5qb")
 text = "End Phase"
-
-[node name="NewGameButton" type="Button" parent="GameUI"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -4.0
-offset_top = -4.0
-offset_right = 4.0
-offset_bottom = 4.0
-grow_horizontal = 2
-grow_vertical = 2
-theme = SubResource("Theme_1pjst")
-text = "New Game"
 
 [node name="MovementUIHolder" type="Control" parent="GameUI"]
 layout_mode = 1
@@ -443,8 +423,8 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -419.0
-offset_bottom = 494.0
+offset_left = -202.0
+offset_bottom = 40.0
 grow_horizontal = 0
 
 [node name="TabBar" type="TabBar" parent="GameUI/OptionsHolder" node_paths=PackedStringArray("uiHolders")]
@@ -528,7 +508,6 @@ autowrap_mode = 0
 layout_mode = 2
 
 [node name="HelpHolder" type="Control" parent="GameUI/OptionsHolder"]
-visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -684,7 +663,6 @@ scroll_active = false
 autowrap_mode = 2
 
 [connection signal="pressed" from="GameUI/EndPhaseButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
-[connection signal="pressed" from="GameUI/NewGameButton" to="Managers/GameManager" method="startANewGame"]
 [connection signal="value_changed" from="GameUI/MovementUIHolder/HSlider" to="Managers/FreeMovementManager" method="onSliderUpdate"]
 [connection signal="pressed" from="GameUI/MovementUIHolder/ButtonsHolder/MoveNoneButton" to="Managers/FreeMovementManager" method="onMoveNone"]
 [connection signal="pressed" from="GameUI/MovementUIHolder/ButtonsHolder/MoveTroopsButton" to="Managers/FreeMovementManager" method="onMovementValidation"]

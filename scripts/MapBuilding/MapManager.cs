@@ -493,6 +493,7 @@ public class MapManager
         _assignNonCollidingColors();
         _computeMapNodesContinentBorders();
         _computeContinentsGameScore();
+        _createStatesNames();
     }
 
     /// <summary>
@@ -1076,6 +1077,26 @@ public class MapManager
     private void _computeContinentsGameScore()
     {
         continents.ForEach((c) => c.computeScore(getStateByStateID));
+    }
+
+    private void _createStatesNames()
+    {
+        List<string> allNames = new();
+        continents.ForEach((c) =>
+        {
+            LangageRules langage = NameGenerator.getNewLangage();
+            c.stateIDs.ForEach((id) =>
+            {
+                string nameCandidate;
+                do
+                {
+                    nameCandidate = NameGenerator.generateStateName(langage);
+                }while(allNames.Contains(nameCandidate));
+
+                allNames.Add(nameCandidate);
+                getStateByStateID(id).name = nameCandidate;
+            });
+        });
     }
 
     /// <summary>

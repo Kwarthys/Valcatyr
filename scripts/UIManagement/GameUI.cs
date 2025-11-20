@@ -11,15 +11,12 @@ public partial class GameUI : Control
     RichTextLabel secondaryText;
     [Export]
     Button endTurnButton;
-    [Export]
-    Button newGameButton;
 
     public override void _Ready()
     {
         Instance = this;
         // Initialize states
         setPhaseButtonVisibility(false);
-        setNewGameButtonVisibility(false);
         setPrimary("");
         setSecondary("");
     }
@@ -45,11 +42,5 @@ public partial class GameUI : Control
     {
         if(Instance != null)
             Instance.endTurnButton.Visible = _status;
-    }
-
-    public static void setNewGameButtonVisibility(bool _status)
-    {
-        if(Instance != null)
-            Instance.newGameButton.Visible = _status;
     }
 }
