@@ -2,12 +2,12 @@
     "Factions":
     [
         {
-            "Name": "FactionA",
+            "Name": "Valcateers",
             "Level1Pawn": "TankPawn.tscn",
             "Level2Pawn": "helicopterPawn.tscn"
         },
         {
-            "Name": "FactionB",
+            "Name": "Strikers",
             "Level1Pawn": "bazook.tscn",
             "Level2Pawn": "zeppelin.tscn"
         },
@@ -22,7 +22,7 @@
             "Level2Pawn": "UFO.tscn"
         },
         {
-            "Name":"FactionE",
+            "Name":"Wanderers",
             "Level1Pawn": "Hydralisk.tscn",
             "Level2Pawn": "Dragon.tscn"
         },
