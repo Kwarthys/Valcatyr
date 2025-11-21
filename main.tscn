@@ -1,4 +1,4 @@
-[gd_scene load_steps=51 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=52 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
@@ -64,6 +64,10 @@ offsets = PackedFloat32Array(0, 0.5, 1)
 colors = PackedColorArray(2.31028e-06, 0, 0.70509, 1, 0.284417, 0.639377, 0.54516, 1, 1, 0.580392, 0.313726, 1)
 metadata/_snap_enabled = true
 metadata/_snap_count = 12
+
+[sub_resource type="Gradient" id="Gradient_6wq70"]
+interpolation_mode = 2
+colors = PackedColorArray(0, 0, 0, 1, 0.235294, 0.235294, 0.392157, 1)
 
 [sub_resource type="Curve" id="Curve_3lt5j"]
 _data = [Vector2(0.1, 0), 0.0, 0.0, 0, 0, Vector2(0.4, 1), 0.775511, 0.0, 0, 1, Vector2(1, 1), 0.0, 0.0, 1, 0]
@@ -168,6 +172,7 @@ script = ExtResource("9_gnn7f")
 shader = ExtResource("6_73edm")
 starColors = SubResource("Gradient_hdbyp")
 cloudColors = SubResource("Gradient_stbvo")
+galaxyBackgroundColors = SubResource("Gradient_6wq70")
 cloudsNoiseToAlpha = SubResource("Curve_3lt5j")
 
 [node name="Managers" type="Node" parent="."]

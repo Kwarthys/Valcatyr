@@ -16,10 +16,9 @@ public partial class SkyBoxBuilder : Node
     private const float GALAXY_WIDTH = 0.5f;
     private const float GALAXY_HEIGHT = 0.2f;
 
-    [Export]
-    private Gradient starColors;
-    [Export]
-    private Gradient cloudColors;
+    [Export] private Gradient starColors;
+    [Export] private Gradient cloudColors;
+    [Export] private Gradient galaxyBackgroundColors;
 
     public override void _Ready()
     {
@@ -34,6 +33,16 @@ public partial class SkyBoxBuilder : Node
     {
         Image img = Image.CreateEmpty(WIDTH, HEIGHT, false, Image.Format.Rgb8);
         img.Fill(Colors.Black);
+
+        for(int y = 0; y < HEIGHT; ++y)
+        {
+            for(int x = 0; x < WIDTH; ++x)
+            {
+                float density = 0.4f - _galaxyCenterRatio(x,y);
+                if(density > 0.0f)
+                    img.SetPixel(x,y, galaxyBackgroundColors.Sample(density));
+            }
+        }
         
         // Generating clouds takes 10 times more time than stars, due to many perlin noise sampling and not ignoring top and bottom part, where many points overlap
         float usecStart = Time.GetTicksUsec();
@@ -97,6 +106,13 @@ public partial class SkyBoxBuilder : Node
                     _editPixel(x,y, new(cloudColor, alpha), _img);
             }
         }
+    }
+    
+    private float _galaxyCenterRatio(int _x, int _y)
+    {
+        float normalizedDistToStart = (_x < WIDTH * 0.5f ? _x : WIDTH - _x) / (WIDTH * 0.5f); // Dist to x = 0%
+        float normalizedDistToEquator = Mathf.Abs((_y - (HEIGHT*0.5f)) / (HEIGHT*0.5f)); // Dist to y = 50%
+        return Mathf.Sqrt(normalizedDistToEquator * normalizedDistToEquator + normalizedDistToStart * normalizedDistToStart);
     }
 
     private void _starPass(Image _img, float _procCoef = 1.0f)
