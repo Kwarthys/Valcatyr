@@ -306,7 +306,7 @@ public class State
                 Vector2 otherPoint = projectedPositionsPerIndex[otherIndex];
                 Vector2I from = new((int)point.X, (int)point.Y);
                 Vector2I to = new((int)otherPoint.X, (int)otherPoint.Y);
-                _drawLine(img, from, to, Colors.Black);
+                _drawLine(img, from, to, Colors.LightGray);
             }
             drawnIndices.Add(index);
         }
@@ -341,6 +341,7 @@ public class State
         }
 
         // Color all transparent pixels not reached by flood fill
+        Color fillColor = new(0.0f, 0.0f, 0.2f, 0.8f);
         for(int j = 0; j < imgSize.Y; ++j)
         {
             for(int i = 0; i < imgSize.X; ++i)
@@ -350,7 +351,7 @@ public class State
                 int index = j * imgSize.X + i;
                 if(exteriorPixels.Contains(index))
                     continue;
-                img.SetPixel(i,j, Colors.White);
+                img.SetPixel(i,j, fillColor);
             }
         }
 

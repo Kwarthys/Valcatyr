@@ -222,6 +222,7 @@ offset_left = 20.0
 offset_right = 602.0
 offset_bottom = 69.0
 localize_numeral_system = false
+mouse_filter = 2
 theme = SubResource("Theme_e8o0g")
 theme_override_constants/outline_size = 10
 bbcode_enabled = true
@@ -236,6 +237,7 @@ offset_left = 20.0
 offset_top = 70.0
 offset_right = 248.0
 offset_bottom = 110.0
+mouse_filter = 2
 theme = SubResource("Theme_bsgaf")
 theme_override_constants/outline_size = 10
 bbcode_enabled = true
@@ -245,7 +247,6 @@ scroll_active = false
 autowrap_mode = 0
 
 [node name="EndPhaseButton" type="Button" parent="GameUI"]
-visible = false
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -351,6 +352,7 @@ offset_right = 40.0
 grow_vertical = 0
 
 [node name="StateDisplayer" parent="GameUI/StateDisplayAnchor" instance=ExtResource("18_12su4")]
+clip_contents = true
 layout_mode = 1
 offset_left = 49.0
 offset_top = -353.0
@@ -358,6 +360,7 @@ offset_right = 223.0
 offset_bottom = -46.0
 
 [node name="GameSetupHolder" type="Control" parent="GameUI"]
+visible = false
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 1
 anchors_preset = 15
@@ -449,7 +452,6 @@ movementCurve = SubResource("Curve_pydc2")
 duration = 0.25
 
 [node name="OptionsPanel" type="Control" parent="GameUI/OptionsHolder"]
-visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -636,8 +638,9 @@ offset_top = -49.0
 offset_right = 355.0
 offset_bottom = 101.0
 grow_vertical = 2
+script = ExtResource("35_ggg4p")
 
-[node name="ArmySlider" type="VSlider" parent="GameUI/ArmySliderHolder" node_paths=PackedStringArray("subtitle")]
+[node name="ArmySlider" type="VSlider" parent="GameUI/ArmySliderHolder"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -648,8 +651,6 @@ max_value = 3.0
 value = 1.0
 tick_count = 4
 ticks_on_borders = true
-script = ExtResource("35_ggg4p")
-subtitle = NodePath("../RichTextLabel")
 
 [node name="RichTextLabel" type="RichTextLabel" parent="GameUI/ArmySliderHolder"]
 layout_mode = 0
@@ -657,6 +658,7 @@ offset_left = -27.0
 offset_top = 158.0
 offset_right = 68.0
 offset_bottom = 204.0
+mouse_filter = 1
 text = "Attack with x troops"
 fit_content = true
 scroll_active = false
@@ -672,4 +674,4 @@ autowrap_mode = 2
 [connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/StartGameButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onStartGamePressed"]
 [connection signal="tab_clicked" from="GameUI/OptionsHolder/TabBar" to="GameUI/OptionsHolder/TabBar" method="onTabClic"]
 [connection signal="button_up" from="GameUI/OptionsHolder/GameControlsPanel/VBoxContainer/NewGameButton" to="GameUI/OptionsHolder/GameControlsPanel" method="onNewGameClic"]
-[connection signal="value_changed" from="GameUI/ArmySliderHolder/ArmySlider" to="GameUI/ArmySliderHolder/ArmySlider" method="onValueChanged"]
+[connection signal="value_changed" from="GameUI/ArmySliderHolder/ArmySlider" to="GameUI/ArmySliderHolder" method="onValueChanged"]

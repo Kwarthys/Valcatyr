@@ -16,7 +16,7 @@ public static class NameGenerator
         
         foreach(char vowel in vowels)
         {
-            float w = GD.Randf();
+            float w = GD.Randf() * GD.Randf();
             l.vowels.Add(vowel, w);
             totalWeight += w;
         }
@@ -25,7 +25,7 @@ public static class NameGenerator
         totalWeight = 0.0f;
         foreach(char consonant in consonants)
         {
-            float w = GD.Randf();
+            float w = GD.Randf() * GD.Randf();
             l.consonants.Add(consonant, w);
             totalWeight += w;
         }

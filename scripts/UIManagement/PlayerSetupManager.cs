@@ -8,14 +8,12 @@ public partial class PlayerSetupManager : GridContainer
 {
     public static PlayerSetupManager Instance;
     private List<PlayerFields> setupFields = new();
-    [Export]
-    private Button addAiButton;
-    [Export]
-    private Button addPlayerButton;
-    [Export]
-    private Button startGameButton;
-    [Export]
-    private Control setupMenuHolder;
+    [Export] private Button addAiButton;
+    [Export] private Button addPlayerButton;
+    [Export] private Button startGameButton;
+    [Export] private Control setupMenuHolder;
+    private Vector2 restPos = new(10000.0f, 10000.0f);
+    private Vector2 activePos;
 
     public ColorPreviewHelper colorHelper = new();
 
@@ -23,7 +21,7 @@ public partial class PlayerSetupManager : GridContainer
 
     public static void show()
     {
-        Instance?.setupMenuHolder.Show();
+        Instance?.setVisibility(true);
     }
 
     public void checkForConflicts()
@@ -62,6 +60,8 @@ public partial class PlayerSetupManager : GridContainer
     {
         Instance = this;
 
+        activePos = setupMenuHolder.Position;
+
         if (Parameters.factionNames == null)
             Parameters.factionNamesReceived += updateFactionsDisplay;
         else
@@ -74,6 +74,8 @@ public partial class PlayerSetupManager : GridContainer
         _addFields(false);
         _addFields(false);
         _addFields(false);
+
+        setVisibility(true);
     }
 
     private void updateFactionsDisplay(object _o, EventArgs _e) // Both will be null, don't need them
@@ -98,7 +100,7 @@ public partial class PlayerSetupManager : GridContainer
         setupFields.ForEach((fields) => data.Add(fields.data));
         GameManager.Instance.onPlayersSetupReady(data);
 
-        setupMenuHolder.Visible = false;
+        setVisibility(false);
     }
 
     private void _addFields(bool _isHuman)
@@ -152,6 +154,12 @@ public partial class PlayerSetupManager : GridContainer
     {
         addAiButton.Disabled = _status;
         addPlayerButton.Disabled = _status;
+    }
+
+    private void setVisibility(bool _status)
+    {
+        setupMenuHolder.Position = _status ? activePos : restPos;
+        setupMenuHolder.Visible = _status;
     }
 }
 
