@@ -599,6 +599,7 @@ grow_vertical = 0
 script = ExtResource("33_4gdmt")
 labels = Array[String](["WorldBuilding", "AIThinking"])
 widgets = [NodePath("WorldBuildingWidget"), NodePath("AiThinkingWidget")]
+aiWidgetDelayBeforeShow = 2.0
 
 [node name="WorldBuildingWidget" type="RichTextLabel" parent="GameUI/WidgetsHolder"]
 layout_mode = 1
@@ -633,7 +634,7 @@ script = ExtResource("33_4ahd2")
 timePerPoint = 0.7
 maxPoints = 5
 
-[node name="ArmySliderHolder" type="Control" parent="GameUI"]
+[node name="ArmySliderHolder" type="Control" parent="GameUI" node_paths=PackedStringArray("subtitle", "slider")]
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
@@ -644,6 +645,8 @@ offset_right = 355.0
 offset_bottom = 101.0
 grow_vertical = 2
 script = ExtResource("35_ggg4p")
+subtitle = NodePath("RichTextLabel")
+slider = NodePath("ArmySlider")
 
 [node name="ArmySlider" type="VSlider" parent="GameUI/ArmySliderHolder"]
 layout_mode = 1
