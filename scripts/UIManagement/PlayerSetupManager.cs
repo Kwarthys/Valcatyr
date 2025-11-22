@@ -198,10 +198,11 @@ public class PlayerFields
         fields.Add(_buildNewColorButton());
         fields.Add(_buildNewFactionButton());
 
-        if (_isHuman == false)
-            fields.Add(_buildNewStyleButton());
-        else
-            fields.Add(_buildNewSpacer());
+        // AI Style's been cut
+        //if (_isHuman == false)
+        //    fields.Add(_buildNewStyleButton());
+        //else
+        //    fields.Add(_buildNewSpacer());
 
         fields.Add(_buildErrorMessageDisplay());
     }
