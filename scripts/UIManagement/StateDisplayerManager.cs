@@ -72,7 +72,7 @@ public partial class StateDisplayerManager : Control
     public void setCountryToDisplay(Country _c, bool _show = true)
     {
         stateNameLabel.Text = _c.state.name;
-        playerLabel.Text = "Player " + (_c.playerID+1);
+        playerLabel.Text = GameManager.Instance.getPlayerAsString(_c.playerID);
         troopsLabel.Text = _c.troops + " troop" + (_c.troops > 1 ? "s" : "") + ".";
         stateShapeDisplay.Texture = _c.state.stateShapeTexture;
 

@@ -69,8 +69,13 @@ public partial class GameManager : Node
         playersConfigData.ForEach((data) =>
         {
             // Sanitizing if player forgot to enter a name
-            if (data.isHuman && data.playerName == "")
-                data.playerName = "Player " + (playersConfigData.IndexOf(data) + 1);
+            if (data.playerName == "")
+            {
+                if(data.isHuman)
+                    data.playerName = "Player " + (playersConfigData.IndexOf(data) + 1);
+                else
+                    data.playerName = "Bot " + (playersConfigData.IndexOf(data) + 1);
+            }
         });
 
         // Initialize Pawn colors
@@ -419,7 +424,15 @@ public partial class GameManager : Node
 
     public string getActivePlayerAsString()
     {
-        return players[activePlayerIndex].isHuman ? playersConfigData[activePlayerIndex].playerName : "Bot " + (activePlayerIndex+1);
+        return getPlayerAsString(activePlayerIndex);
+    }
+
+    public string getPlayerAsString(int _playerID)
+    {
+        if(_playerID < 0 || _playerID > playersConfigData.Count)
+            return "invalidPlayerID";
+
+        return playersConfigData[_playerID].playerName;
     }
 
     private void _updatePhaseDisplay()
