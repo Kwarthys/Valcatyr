@@ -1,4 +1,4 @@
-[gd_scene load_steps=52 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=53 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
@@ -29,6 +29,7 @@
 [ext_resource type="Script" path="res://scripts/GameManagement/TweakableParametersManager.cs" id="24_nd18h"]
 [ext_resource type="PackedScene" uid="uid://dare37ynf6xvx" path="res://prefabs/optionSlider.tscn" id="24_ylvgt"]
 [ext_resource type="Script" path="res://scripts/UIManagement/TabDisplayManager.cs" id="26_hobwf"]
+[ext_resource type="Texture2D" uid="uid://bftlny3c3yq02" path="res://Banners/Valcateers.png" id="28_fvo3e"]
 [ext_resource type="Theme" uid="uid://devhp3bn3w0sx" path="res://UI/GameMenuButton.tres" id="31_mrrg8"]
 [ext_resource type="Script" path="res://scripts/GameManagement/NewGameInterfacer.cs" id="31_ogxsw"]
 [ext_resource type="Script" path="res://scripts/UIManagement/TextWidgetAnimator.cs" id="33_4ahd2"]
@@ -365,7 +366,6 @@ offset_right = 223.0
 offset_bottom = -46.0
 
 [node name="GameSetupHolder" type="Control" parent="GameUI"]
-visible = false
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 1
 anchors_preset = 15
@@ -389,7 +389,7 @@ theme_override_constants/margin_bottom = 100
 
 [node name="ColorRect" type="ColorRect" parent="GameUI/GameSetupHolder/MarginContainer"]
 layout_mode = 2
-color = Color(0, 0, 0, 0.733333)
+color = Color(0, 0, 0.0196078, 0.733333)
 
 [node name="MarginContainer" type="MarginContainer" parent="GameUI/GameSetupHolder/MarginContainer"]
 layout_mode = 2
@@ -403,6 +403,7 @@ layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
+size_flags_vertical = 0
 
 [node name="AddAIButton" type="Button" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
@@ -412,18 +413,84 @@ text = "Add AI"
 layout_mode = 2
 text = "Add Player"
 
-[node name="GridContainer" type="GridContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer" node_paths=PackedStringArray("addAiButton", "addPlayerButton", "startGameButton", "setupMenuHolder")]
+[node name="HBoxContainer2" type="HBoxContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GridContainer" type="GridContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2" node_paths=PackedStringArray("addAiButton", "addPlayerButton", "startGameButton", "setupMenuHolder")]
+layout_mode = 2
+size_flags_horizontal = 3
 columns = 5
 script = ExtResource("34_xnweg")
-addAiButton = NodePath("../HBoxContainer/AddAIButton")
-addPlayerButton = NodePath("../HBoxContainer/AddPlayerButton")
-startGameButton = NodePath("../StartGameButton")
-setupMenuHolder = NodePath("../../../..")
+addAiButton = NodePath("../../HBoxContainer/AddAIButton")
+addPlayerButton = NodePath("../../HBoxContainer/AddPlayerButton")
+startGameButton = NodePath("../../StartGameButton")
+setupMenuHolder = NodePath("../../../../..")
+
+[node name="VBoxContainer" type="GridContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 3
+
+[node name="TextureRect8" type="TextureRect" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/VBoxContainer"]
+custom_minimum_size = Vector2(108, 192)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("28_fvo3e")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="TextureRect9" type="TextureRect" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/VBoxContainer"]
+custom_minimum_size = Vector2(108, 192)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("28_fvo3e")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="TextureRect10" type="TextureRect" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/VBoxContainer"]
+custom_minimum_size = Vector2(108, 192)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("28_fvo3e")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="TextureRect11" type="TextureRect" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/VBoxContainer"]
+custom_minimum_size = Vector2(108, 192)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("28_fvo3e")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="TextureRect12" type="TextureRect" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/VBoxContainer"]
+custom_minimum_size = Vector2(108, 192)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("28_fvo3e")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="TextureRect13" type="TextureRect" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/VBoxContainer"]
+custom_minimum_size = Vector2(108, 192)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("28_fvo3e")
+expand_mode = 1
+stretch_mode = 4
 
 [node name="StartGameButton" type="Button" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
-size_flags_vertical = 10
+size_flags_vertical = 8
 text = "Start Game"
 
 [node name="OptionsHolder" type="Control" parent="GameUI"]
@@ -677,9 +744,9 @@ autowrap_mode = 2
 [connection signal="pressed" from="GameUI/MovementUIHolder/ButtonsHolder/MoveNoneButton" to="Managers/FreeMovementManager" method="onMoveNone"]
 [connection signal="pressed" from="GameUI/MovementUIHolder/ButtonsHolder/MoveTroopsButton" to="Managers/FreeMovementManager" method="onMovementValidation"]
 [connection signal="pressed" from="GameUI/MovementUIHolder/ButtonsHolder/MoveAllButton" to="Managers/FreeMovementManager" method="onMoveAll"]
-[connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer/AddAIButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onAddAIPressed"]
-[connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer/AddPlayerButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onAddPlayerPressed"]
-[connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/StartGameButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/GridContainer" method="onStartGamePressed"]
+[connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer/AddAIButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/GridContainer" method="onAddAIPressed"]
+[connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer/AddPlayerButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/GridContainer" method="onAddPlayerPressed"]
+[connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/StartGameButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/GridContainer" method="onStartGamePressed"]
 [connection signal="tab_clicked" from="GameUI/OptionsHolder/TabBar" to="GameUI/OptionsHolder/TabBar" method="onTabClic"]
 [connection signal="button_up" from="GameUI/OptionsHolder/GameControlsPanel/VBoxContainer/NewGameButton" to="GameUI/OptionsHolder/GameControlsPanel" method="onNewGameClic"]
 [connection signal="value_changed" from="GameUI/ArmySliderHolder/ArmySlider" to="GameUI/ArmySliderHolder" method="onValueChanged"]

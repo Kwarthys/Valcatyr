@@ -16,5 +16,6 @@ mono_crash.*.json
 
 # Custom Ignores
 Builds/
+Banners/
 *.blend*
 !*.blend
