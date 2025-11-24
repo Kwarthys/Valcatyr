@@ -1,4 +1,4 @@
-[gd_scene load_steps=53 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=58 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
@@ -30,10 +30,15 @@
 [ext_resource type="PackedScene" uid="uid://dare37ynf6xvx" path="res://prefabs/optionSlider.tscn" id="24_ylvgt"]
 [ext_resource type="Script" path="res://scripts/UIManagement/TabDisplayManager.cs" id="26_hobwf"]
 [ext_resource type="Texture2D" uid="uid://bftlny3c3yq02" path="res://Banners/Valcateers.png" id="28_fvo3e"]
+[ext_resource type="Texture2D" uid="uid://bgh4hm6chixv" path="res://Banners/Strikers.png" id="29_jpppu"]
+[ext_resource type="Texture2D" uid="uid://dxvse3prdfw8h" path="res://Banners/Armada.png" id="30_vfdjq"]
+[ext_resource type="Texture2D" uid="uid://cqmmblhy8ffjg" path="res://Banners/Travelers.png" id="31_jrib3"]
 [ext_resource type="Theme" uid="uid://devhp3bn3w0sx" path="res://UI/GameMenuButton.tres" id="31_mrrg8"]
 [ext_resource type="Script" path="res://scripts/GameManagement/NewGameInterfacer.cs" id="31_ogxsw"]
+[ext_resource type="Texture2D" uid="uid://nuyglqsswjda" path="res://Banners/Wanderers.png" id="32_kvdul"]
 [ext_resource type="Script" path="res://scripts/UIManagement/TextWidgetAnimator.cs" id="33_4ahd2"]
 [ext_resource type="Script" path="res://scripts/UIManagement/WidgetsManager.cs" id="33_4gdmt"]
+[ext_resource type="Texture2D" uid="uid://c7tnexr3fc4hl" path="res://Banners/Wardens.png" id="33_x6hfn"]
 [ext_resource type="Script" path="res://scripts/UIManagement/PlayerSetupManager.cs" id="34_xnweg"]
 [ext_resource type="Script" path="res://scripts/UIManagement/ArmySlider.cs" id="35_ggg4p"]
 
@@ -448,7 +453,7 @@ custom_minimum_size = Vector2(108, 192)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-texture = ExtResource("28_fvo3e")
+texture = ExtResource("29_jpppu")
 expand_mode = 1
 stretch_mode = 4
 
@@ -457,7 +462,7 @@ custom_minimum_size = Vector2(108, 192)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-texture = ExtResource("28_fvo3e")
+texture = ExtResource("30_vfdjq")
 expand_mode = 1
 stretch_mode = 4
 
@@ -466,7 +471,7 @@ custom_minimum_size = Vector2(108, 192)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-texture = ExtResource("28_fvo3e")
+texture = ExtResource("31_jrib3")
 expand_mode = 1
 stretch_mode = 4
 
@@ -475,7 +480,7 @@ custom_minimum_size = Vector2(108, 192)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-texture = ExtResource("28_fvo3e")
+texture = ExtResource("32_kvdul")
 expand_mode = 1
 stretch_mode = 4
 
@@ -484,7 +489,7 @@ custom_minimum_size = Vector2(108, 192)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-texture = ExtResource("28_fvo3e")
+texture = ExtResource("33_x6hfn")
 expand_mode = 1
 stretch_mode = 4
 
