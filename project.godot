@@ -12,8 +12,10 @@ config_version=5
 
 config/name="Valcatyr"
 run/main_scene="res://main.tscn"
+config/quit_on_go_back=false
 config/features=PackedStringArray("4.3", "C#", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="res://Banners/Icon_256.png"
+config/windows_native_icon="res://Banners/Icon_256.ico"
 
 [dotnet]
 
