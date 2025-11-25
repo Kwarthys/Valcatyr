@@ -275,17 +275,17 @@ text = "End Phase"
 
 [node name="MovementUIHolder" type="Control" parent="GameUI"]
 layout_mode = 1
-anchors_preset = 8
+anchors_preset = 7
 anchor_left = 0.5
-anchor_top = 0.5
+anchor_top = 1.0
 anchor_right = 0.5
-anchor_bottom = 0.5
+anchor_bottom = 1.0
 offset_left = -150.0
-offset_top = -38.0
+offset_top = -273.595
 offset_right = 150.0
-offset_bottom = 59.0
+offset_bottom = -176.595
 grow_horizontal = 2
-grow_vertical = 2
+grow_vertical = 0
 
 [node name="HSlider" type="HSlider" parent="GameUI/MovementUIHolder"]
 layout_mode = 1
@@ -708,36 +708,41 @@ maxPoints = 5
 
 [node name="ArmySliderHolder" type="Control" parent="GameUI" node_paths=PackedStringArray("subtitle", "slider")]
 layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_left = 315.0
-offset_top = -49.0
-offset_right = 355.0
-offset_bottom = 101.0
-grow_vertical = 2
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -241.0
+offset_right = 91.0
+grow_vertical = 0
 script = ExtResource("35_ggg4p")
-subtitle = NodePath("RichTextLabel")
-slider = NodePath("ArmySlider")
+subtitle = NodePath("VBoxContainer/RichTextLabel")
+slider = NodePath("VBoxContainer/ArmySlider")
 
-[node name="ArmySlider" type="VSlider" parent="GameUI/ArmySliderHolder"]
+[node name="VBoxContainer" type="VBoxContainer" parent="GameUI/ArmySliderHolder"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 300.255
+offset_top = -80.52
+offset_right = 300.255
+offset_bottom = -80.52
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="ArmySlider" type="VSlider" parent="GameUI/ArmySliderHolder/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 1
+size_flags_vertical = 3
 max_value = 3.0
 value = 1.0
 tick_count = 4
 ticks_on_borders = true
 
-[node name="RichTextLabel" type="RichTextLabel" parent="GameUI/ArmySliderHolder"]
-layout_mode = 0
-offset_left = -27.0
-offset_top = 158.0
-offset_right = 68.0
-offset_bottom = 204.0
+[node name="RichTextLabel" type="RichTextLabel" parent="GameUI/ArmySliderHolder/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.2
 mouse_filter = 1
 text = "Attack with x troops"
 fit_content = true
@@ -754,4 +759,4 @@ autowrap_mode = 2
 [connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/StartGameButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/GridContainer" method="onStartGamePressed"]
 [connection signal="tab_clicked" from="GameUI/OptionsHolder/TabBar" to="GameUI/OptionsHolder/TabBar" method="onTabClic"]
 [connection signal="button_up" from="GameUI/OptionsHolder/GameControlsPanel/VBoxContainer/NewGameButton" to="GameUI/OptionsHolder/GameControlsPanel" method="onNewGameClic"]
-[connection signal="value_changed" from="GameUI/ArmySliderHolder/ArmySlider" to="GameUI/ArmySliderHolder" method="onValueChanged"]
+[connection signal="value_changed" from="GameUI/ArmySliderHolder/VBoxContainer/ArmySlider" to="GameUI/ArmySliderHolder" method="onValueChanged"]
