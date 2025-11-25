@@ -9,13 +9,9 @@ public partial class ArmySlider : Control
     public static ArmySlider Instance;
     private int maxArmy = 3;
 
-    private Vector2 restPos = new(10000.0f, 10000.0f);
-    private Vector2 activePos;
-
     public override void _Ready()
     {
         Instance = this;
-        activePos = Position;
         hide();
     }
 
@@ -25,7 +21,6 @@ public partial class ArmySlider : Control
     private void updateShow(bool _status)
     {
         Visible = _status;
-        Position = _status ? activePos : restPos;
 
         if(_status)
             onValueChanged((float)slider.Value);

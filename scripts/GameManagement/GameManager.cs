@@ -11,6 +11,8 @@ public partial class GameManager : Node
 #if DEBUG
     [Export]
     private int startingTroops = 1; // Used for debug
+    [Export]
+    private bool fastFirstDeploy = false;
 #endif
     [Export]
     private StateDisplayerManager stateDisplayer;
@@ -284,7 +286,7 @@ public partial class GameManager : Node
 
         _notifyCountryTroopUpdate(_attacker,_defender);
 
-        if(gamePhase == GamePhase.Attack) // Don't apply selection is game is over with this conquest
+        if(gamePhase == GamePhase.Attack) // Don't apply selection if game is over with this conquest
             _applySelection(HumanPlayerManager.processSelection(_attacker, players[activePlayerIndex]));
     }
 
@@ -335,6 +337,7 @@ public partial class GameManager : Node
         resetSelection();
         _updatePhaseDisplay();
 
+        ArmySlider.hide();
         TabDisplayManager.selectTab(TabDisplayManager.Tab.Game);
     }
 
@@ -384,7 +387,7 @@ public partial class GameManager : Node
         activePlayerIndex = 0; // First player go !
         gamePhase = GamePhase.FirstDeploy;
 #if DEBUG
-        reinforcementLeft = 1; // speed things up while debuging
+        reinforcementLeft = fastFirstDeploy ? 1 : 40 / players.Count; // Able to speed things up while debuging
 #else
         reinforcementLeft = 40 / players.Count; // this can take quite the time, board game setup eh :: This could be a game setup parameter
 #endif
