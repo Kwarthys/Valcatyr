@@ -42,6 +42,8 @@ public partial class GameManager : Node
     private Dictionary<Player, ComputerAI> aiPerPlayer = new();
 
     public int reinforcementLeft {get; private set;} = 0;
+
+    private List<int> firstReinforcementLeftPerPlayer = new();
     public int movementLeft {get; private set;} = 0;
 
     public bool waitingForMovement = false;
@@ -220,13 +222,25 @@ public partial class GameManager : Node
             } break;
             case GamePhase.FirstDeploy:
             {
-                activePlayerIndex = (activePlayerIndex + 1) % players.Count; // One by one turn by turn, does not change phase but change active player
-                // Manage end of First Deploy phase
-                if(activePlayerIndex == 0) // each time all players have placed a pawn
+                firstReinforcementLeftPerPlayer[activePlayerIndex]--;
+
+                // Find next player that has troops to deploy
+                int tries = 0;
+                while(true)
                 {
-                    if(--reinforcementLeft <= 0)
-                        _startDeploymentPhase(); // End of phase
+                    activePlayerIndex = (activePlayerIndex + 1) % players.Count; // One by one turn by turn, does not change phase but change active player
+
+                    if(firstReinforcementLeftPerPlayer[activePlayerIndex] > 0)
+                        break;
+
+                    // Manage end of First Deploy phase when no players has troops left
+                    if(++tries > players.Count)
+                    {
+                        _startDeploymentPhase();
+                        break;
+                    }
                 }
+
                 AIVisualMarkerManager.Instance.setMarkerVisibility(players[activePlayerIndex].isHuman == false); // Display AI Marker if next player is AI
                 AIVisualMarkerManager.Instance.setMarkerColor(activePlayerIndex);
                 _updatePhaseDisplay();
@@ -384,13 +398,19 @@ public partial class GameManager : Node
 
     private void _startFirstDeployment()
     {
+        firstReinforcementLeftPerPlayer.Clear();
+        for(int i = 0; i < players.Count; ++i)
+        {
+#if DEBUG
+            // Able to speed things up while debuging
+            firstReinforcementLeftPerPlayer.Add(fastFirstDeploy ? 1 : 40 / players.Count + 2 * i);
+#else
+            firstReinforcementLeftPerPlayer.Add(40 / players.Count + 2 * i);
+#endif
+        }
+
         activePlayerIndex = 0; // First player go !
         gamePhase = GamePhase.FirstDeploy;
-#if DEBUG
-        reinforcementLeft = fastFirstDeploy ? 1 : 40 / players.Count; // Able to speed things up while debuging
-#else
-        reinforcementLeft = 40 / players.Count; // this can take quite the time, board game setup eh :: This could be a game setup parameter
-#endif
         _updatePhaseDisplay();
     }
 
@@ -482,7 +502,7 @@ public partial class GameManager : Node
         string s = "";
         switch(gamePhase)
         {
-            case GamePhase.FirstDeploy: // same
+            case GamePhase.FirstDeploy: s = firstReinforcementLeftPerPlayer[activePlayerIndex] + " reinforcement(s) left to place."; break;
             case GamePhase.Deploy: s = reinforcementLeft + " reinforcement(s) left to place."; break;
             case GamePhase.Attack: break;
             case GamePhase.Reinforce: s = movementLeft + " troop movement left."; break;
@@ -668,7 +688,7 @@ public partial class GameManager : Node
                 continentScore += c.score; // HUUUUGE bonus
         }
         // Combine state count and continent
-        return Mathf.Max(3, (int)Mathf.Ceil(_player.countries.Count / 3.0f) + continentScore);
+        return Mathf.Max(3, Mathf.FloorToInt(_player.countries.Count / 3.0f) + continentScore);
     }
 
     private void _initializeCountries()
