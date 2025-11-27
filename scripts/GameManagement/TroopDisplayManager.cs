@@ -33,6 +33,25 @@ public partial class TroopDisplayManager : Node3D
         pawnsMovements.Clear();
     }
 
+    public Vector3[] getPosRotOfAPawn(Country _c)
+    {
+        Vector3[] values = new Vector3[2];
+        Node3D pawn = null;
+        TroopsData data = troopsPerState[_c.state.id];
+        if(data.level2Pawns.Count > 0)
+        {
+            pawn = data.level2Pawns[0].instance;
+        }
+        else
+        {
+            pawn = data.level1Pawns[0].instance;
+        }
+
+        values[0] = pawn.Position;
+        values[1] = pawn.Rotation;
+        return values;
+    }
+
     public void movePawns(Country _origin, Country _destination, int _amount)
     {
         if (troopsPerState.ContainsKey(_origin.state.id) == false)

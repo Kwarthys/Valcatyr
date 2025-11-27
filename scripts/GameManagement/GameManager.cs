@@ -143,6 +143,8 @@ public partial class GameManager : Node
         triggerNextPhase();
 
         NewGameInterfacer.enable();
+
+        _endGameShow();
     }
 
     public static void startANewGame(bool _newMap, bool _newPlayers)
@@ -162,6 +164,8 @@ public partial class GameManager : Node
         countryIndexPerState.Clear();
         AIVisualMarkerManager.Instance.setMarkerVisibility(false);
         stateDisplayer.setVisible(false);
+
+        EndGameFXManager.Instance.destroyEveryFX();
 
         if(_newMap)
         {
@@ -353,6 +357,23 @@ public partial class GameManager : Node
 
         ArmySlider.hide();
         TabDisplayManager.selectTab(TabDisplayManager.Tab.Game);
+
+        _endGameShow();
+    }
+
+    private void _endGameShow()
+    {
+        List<Vector3> nodePositions = new();
+        List<Vector3> nodeRotations = new();
+        
+        foreach(Country c in players[activePlayerIndex].countries)
+        {
+            Vector3[] posRot = troopManager.getPosRotOfAPawn(c);
+            nodePositions.Add(posRot[0]);
+            nodeRotations.Add(posRot[1]);
+        }
+
+        EndGameFXManager.goNuts(nodePositions, nodeRotations);
     }
 
     private void _startDeploymentPhase()
