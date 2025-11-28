@@ -24,6 +24,11 @@ mat3 getZRotMatrix(float angle)
 				vec3(0.0, 0.0, 1.0));
 }
 
+float lerp(float v, float a, float b)
+{
+	return (1.0-v) * a + v * b;
+}
+
 void start()
 {
 	if(NUMBER % 3u == 0u)
@@ -53,10 +58,18 @@ void process()
 	}
 	else
 	{
-		VELOCITY.y -= 0.05;
-		VELOCITY *= 0.85;
+		vec3 planetDir = -TRANSFORM[3].xyz; // Planet dir is minus position, minus 2 in y
+		planetDir.y -= 2.0;
+		float distSquared = planetDir.x * planetDir.x + planetDir.y * planetDir.y + planetDir.z * planetDir.z;
+		float dist = sqrt(distSquared);
+		if(distSquared > 0.1)
+			planetDir = planetDir / dist; // normalize planet direciton
+		else
+			distSquared = 0.1;
 		
-		// Add parasitic X Z movements to mimic air resistance
+		float gravityMassConstant = 0.08;
+		VELOCITY += planetDir * gravityMassConstant / distSquared;
+		VELOCITY *= 0.85;
 		
 		// Random rotations
 		mat3 rot = mat3(TRANSFORM[0].xyz, TRANSFORM[1].xyz, TRANSFORM[2].xyz);

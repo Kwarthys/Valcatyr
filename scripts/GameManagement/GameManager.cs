@@ -143,8 +143,6 @@ public partial class GameManager : Node
         triggerNextPhase();
 
         NewGameInterfacer.enable();
-
-        _endGameShow();
     }
 
     public static void startANewGame(bool _newMap, bool _newPlayers)
