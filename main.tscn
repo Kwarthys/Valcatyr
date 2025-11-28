@@ -1,4 +1,4 @@
-[gd_scene load_steps=60 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=62 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
@@ -20,6 +20,7 @@
 [ext_resource type="Script" path="res://scripts/UIManagement/GameUI.cs" id="14_bob1v"]
 [ext_resource type="Script" path="res://scripts/GameManagement/CombatManager.cs" id="14_i4lgw"]
 [ext_resource type="Script" path="res://scripts/SoundManagement/ReinforcementSoundManager.cs" id="14_skotp"]
+[ext_resource type="AudioStream" uid="uid://dldppcvypsop2" path="res://assets/soundsFX/party_horns.wav" id="15_7wx4i"]
 [ext_resource type="Script" path="res://scripts/GameManagement/FreeMovementManager.cs" id="15_pk5q3"]
 [ext_resource type="Script" path="res://scripts/GameManagement/AIManagement/AIVisualMarkerManager.cs" id="17_o4gch"]
 [ext_resource type="Theme" uid="uid://c5uh4sjxrrsa0" path="res://UI/uiTextTheme.tres" id="17_ponek"]
@@ -43,6 +44,7 @@
 [ext_resource type="Texture2D" uid="uid://c7tnexr3fc4hl" path="res://Banners/Wardens.png" id="33_x6hfn"]
 [ext_resource type="Script" path="res://scripts/UIManagement/PlayerSetupManager.cs" id="34_xnweg"]
 [ext_resource type="Script" path="res://scripts/UIManagement/ArmySlider.cs" id="35_ggg4p"]
+[ext_resource type="Script" path="res://scripts/UIManagement/CombatLog.cs" id="44_8ge0s"]
 
 [sub_resource type="Curve" id="Curve_0lgr4"]
 _data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 0.5), 3.0, 3.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
@@ -159,6 +161,11 @@ bus = &"VFX"
 script = ExtResource("13_8jh5h")
 pitchRange = 0.05
 
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="Planet/CameraHorizontalHelper/CameraVerticalHelper/CameraShaker/Camera3D"]
+stream = ExtResource("15_7wx4i")
+volume_db = -2.5
+bus = &"VFX"
+
 [node name="DirectionalLight3D2" type="DirectionalLight3D" parent="Planet/CameraHorizontalHelper/CameraVerticalHelper"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3.7259)
 light_energy = 0.4
@@ -192,10 +199,11 @@ cloudsNoiseToAlpha = SubResource("Curve_3lt5j")
 
 [node name="Managers" type="Node" parent="."]
 
-[node name="GameManager" type="Node" parent="Managers" node_paths=PackedStringArray("troopManager", "stateDisplayer")]
+[node name="GameManager" type="Node" parent="Managers" node_paths=PackedStringArray("troopManager", "stateDisplayer", "victorySound")]
 script = ExtResource("13_37t2g")
 troopManager = NodePath("../../Planet/TroopDisplayManager")
 stateDisplayer = NodePath("../../GameUI/StateDisplayAnchor/StateDisplayer")
+victorySound = NodePath("../../Planet/CameraHorizontalHelper/CameraVerticalHelper/CameraShaker/Camera3D/AudioStreamPlayer3D")
 airPawnsHeightRatio = 1.08
 
 [node name="CombatManager" type="Node" parent="Managers"]
@@ -379,6 +387,7 @@ offset_right = 223.0
 offset_bottom = -46.0
 
 [node name="GameSetupHolder" type="Control" parent="GameUI"]
+visible = false
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 1
 anchors_preset = 15
@@ -756,6 +765,30 @@ text = "Attack with x troops"
 fit_content = true
 scroll_active = false
 autowrap_mode = 2
+
+[node name="CombatLogHolder" type="Control" parent="GameUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = -499.0
+offset_right = 279.0
+offset_bottom = -422.0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="CombatLog" type="RichTextLabel" parent="GameUI/CombatLogHolder"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+fit_content = true
+scroll_active = false
+script = ExtResource("44_8ge0s")
 
 [connection signal="pressed" from="GameUI/EndPhaseButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
 [connection signal="value_changed" from="GameUI/MovementUIHolder/HSlider" to="Managers/FreeMovementManager" method="onSliderUpdate"]

@@ -5,20 +5,16 @@ using System.Linq;
 
 public partial class GameManager : Node
 {
-    [Export]
-    private TroopDisplayManager troopManager;
+    [Export] private TroopDisplayManager troopManager;
 
 #if DEBUG
-    [Export]
-    private int startingTroops = 1; // Used for debug
-    [Export]
-    private bool fastFirstDeploy = false;
+    [Export] private int startingTroops = 1; // Used for debug
+    [Export] private bool fastFirstDeploy = false;
 #endif
-    [Export]
-    private StateDisplayerManager stateDisplayer;
+    [Export] private StateDisplayerManager stateDisplayer;
+    [Export] AudioStreamPlayer3D victorySound;
 
-    [Export]
-    private float airPawnsHeightRatio = 1.15f;
+    [Export] private float airPawnsHeightRatio = 1.15f;
 
     // Singleton
     public static GameManager Instance;
@@ -335,6 +331,8 @@ public partial class GameManager : Node
 
     private void _eliminatePlayerFromGame(Player _p)
     {
+        CombatLog.print(playersConfigData[_p.id].playerName + " has been eliminated");
+
         _p.hasLostTheGame = true;
         Player alivePlayerMemory = null;
         foreach (Player p in players)
@@ -372,6 +370,8 @@ public partial class GameManager : Node
         }
 
         EndGameFXManager.goNuts(nodePositions, nodeRotations);
+
+        victorySound.Play();
     }
 
     private void _startDeploymentPhase()
