@@ -130,6 +130,7 @@ public class MapManager
 
         // Start by creating a lot of tiny states
         _buildTinyStates();
+        _denoiseStatesBorders();
         _computeStatesBoundaries();
         _computeLandMassesStates();
         _buildAndApplyTexture();
@@ -447,6 +448,65 @@ public class MapManager
         CustomLogger.print("Created " + states.Count + " states");
     }
 
+    private void _denoiseStatesBorders()
+    {
+        Dictionary<int ,int> occurencePerNeigbhor = new();
+        for(int i = 0; i < map.Length; ++i)
+        {
+            MapNode node = map[i];
+            if(node.stateID == MapNode.INVALID_ID)
+                continue;
+
+            State state = getStateByStateID(node.stateID);
+
+            string debugText = i + ": " + node.stateID;
+
+            occurencePerNeigbhor.Clear();
+            occurencePerNeigbhor.Add(state.id, 1); // Owning state gets a bonus for a conservative cleanup
+            foreach(int neighbor in Planet.getNeighbours(node.fullMapIndex))
+            {
+                int stateID = map[neighbor].stateID;
+
+                debugText += ", " + stateID;
+
+                if(stateID == MapNode.INVALID_ID)
+                    continue;
+
+                if(occurencePerNeigbhor.ContainsKey(stateID) == false)
+                    occurencePerNeigbhor.Add(stateID, 1);
+                else
+                    occurencePerNeigbhor[stateID]++;
+            }
+
+            // Find state ids most represented
+            int mostPresentStateID = -1;
+            int max = -1;
+            foreach(KeyValuePair<int, int> pair in occurencePerNeigbhor)
+            {
+                if(max == -1 || pair.Value > max)
+                {
+                    mostPresentStateID = pair.Key;
+                    max = pair.Value;
+                }
+            }
+
+            debugText += " -> " + mostPresentStateID;
+
+            if(mostPresentStateID == -1 || state.id == mostPresentStateID)
+                continue; // no swap needed
+            
+            // swap land
+            //GD.Print(debugText);
+            State receivingState = getStateByStateID(mostPresentStateID);
+            state.land.Remove(node);
+            receivingState.land.Add(node);
+            map[i].stateID = mostPresentStateID;
+
+            if(state.land.Count == 0)
+                states.Remove(state);
+        }
+    }
+
     private List<int> _spreadState(int starter, int maxSpread = 150)
     {
         List<int> result = new();
@@ -493,6 +553,7 @@ public class MapManager
         _assignNonCollidingColors();
         _computeMapNodesContinentBorders();
         _computeContinentsGameScore();
+        _createStatesNames();
     }
 
     /// <summary>
@@ -1076,6 +1137,26 @@ public class MapManager
     private void _computeContinentsGameScore()
     {
         continents.ForEach((c) => c.computeScore(getStateByStateID));
+    }
+
+    private void _createStatesNames()
+    {
+        List<string> allNames = new();
+        continents.ForEach((c) =>
+        {
+            LangageRules langage = NameGenerator.getNewLangage();
+            c.stateIDs.ForEach((id) =>
+            {
+                string nameCandidate;
+                do
+                {
+                    nameCandidate = NameGenerator.generateStateName(langage);
+                }while(allNames.Contains(nameCandidate));
+
+                allNames.Add(nameCandidate);
+                getStateByStateID(id).name = nameCandidate;
+            });
+        });
     }
 
     /// <summary>

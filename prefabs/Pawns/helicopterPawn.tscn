@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://ct8nl1iy3sb8c"]
+
+[ext_resource type="Script" path="res://scripts/GameManagement/PawnColorManager.cs" id="1_mrjq8"]
+[ext_resource type="Script" path="res://scripts/utils/AltitudeWobbler.gd" id="2_gvptd"]
+[ext_resource type="PackedScene" uid="uid://cj27cgcudnrxh" path="res://assets/BlenderProjects/Helicopter/Helicopter.dae" id="3_wbxdy"]
+
+[node name="HelicopterPawn" type="Node3D"]
+script = ExtResource("1_mrjq8")
+
+[node name="ModelRotator" type="Node3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0.0228372, 0)
+script = ExtResource("2_gvptd")
+frequency = 0.6
+amplitude = 0.002
+
+[node name="ModelScaler" type="Node3D" parent="ModelRotator"]
+transform = Transform3D(0.02, 0, 0, 0, 0.02, 0, 0, 0, 0.02, 0, 0, 0)
+
+[node name="Helicopter" parent="ModelRotator/ModelScaler" instance=ExtResource("3_wbxdy")]

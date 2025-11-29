@@ -5,11 +5,16 @@ using System.Linq;
 
 public partial class GameManager : Node
 {
-    [Export]
-    private TroopDisplayManager troopManager;
+    [Export] private TroopDisplayManager troopManager;
 
-    [Export]
-    private StateDisplayerManager stateDisplayer;
+#if DEBUG
+    [Export] private int startingTroops = 1; // Used for debug
+    [Export] private bool fastFirstDeploy = false;
+#endif
+    [Export] private StateDisplayerManager stateDisplayer;
+    [Export] AudioStreamPlayer3D victorySound;
+
+    [Export] private float airPawnsHeightRatio = 1.15f;
 
     // Singleton
     public static GameManager Instance;
@@ -29,9 +34,12 @@ public partial class GameManager : Node
 
     private int activePlayerIndex = -1;
     private List<Player> players = new();
+    private List<PlayerData> playersConfigData;
     private Dictionary<Player, ComputerAI> aiPerPlayer = new();
 
     public int reinforcementLeft {get; private set;} = 0;
+
+    private List<int> firstReinforcementLeftPerPlayer = new();
     public int movementLeft {get; private set;} = 0;
 
     public bool waitingForMovement = false;
@@ -53,21 +61,59 @@ public partial class GameManager : Node
 
     public SelectionData currentSelection {get; private set;} = new();
 
-    public void initialize(Planet _planet)
+    private int readyReceived = 0;
+
+    public void onPlayersSetupReady(List<PlayerData> _playersData)
+    {
+        playersConfigData = _playersData;
+        playersConfigData.ForEach((data) =>
+        {
+            // Sanitizing if player forgot to enter a name
+            if (data.playerName == "")
+            {
+                if(data.isHuman)
+                    data.playerName = "Player " + (playersConfigData.IndexOf(data) + 1);
+                else
+                    data.playerName = "Bot " + (playersConfigData.IndexOf(data) + 1);
+            }
+        });
+
+        // Initialize Pawn colors
+        List<Color> playerColors = new();
+        playersConfigData.ForEach((data) =>
+        {
+            playerColors.Add(Parameters.colors[data.colorID]);
+        });
+        PawnColorManager.initialize(playerColors);
+
+        if (++readyReceived == 2)
+            initialize();
+        else
+            WidgetsManager.show("WorldBuilding"); // warn user(s) that they're waiting for world building to complete
+    }
+
+    public void onPlanetGenerationReady(Planet _planet)
+    {
+        planet = _planet;
+        if (++readyReceived == 2)
+        {
+            initialize();
+            WidgetsManager.hide("WorldBuilding");
+        }
+    }
+
+    public void initialize()
     {
         CustomLogger.print("Starting GameManager initialization");
-        planet = _planet;
         _initializeCountries();
 
-        List<int> hoomanIndices = new() { 0 }; // only one human for now, TODO: need game setup menu for local turn based versus
-
-        for (int i = 0; i < 4; ++i) // TODO Adjust number of player 3-6
+        foreach (PlayerData playerData in playersConfigData)
         {
-            players.Add(new(i));
-            if (hoomanIndices.Contains(i))
-                players[i].isHuman = true; // set player as human
+            players.Add(new(players.Count, playerData.colorID, playerData.factionID));
+            if (playerData.isHuman)
+                players.Last().isHuman = true;
             else
-                aiPerPlayer.Add(players[i], new(players[i])); // instantiate AI
+                aiPerPlayer.Add(players.Last(), new(players.Last())); // instantiate AI
         }
 
         _doCountriesRandomAttributions();
@@ -77,32 +123,66 @@ public partial class GameManager : Node
             if (p.isHuman) continue;
             aiPerPlayer[p].initializeStrategy();
         }
-        countries.ForEach((c) => { c.troops = 1; troopManager.updateDisplay(c); });
-        CustomLogger.print("GameManager initialized");
 
+        countries.ForEach((c) =>
+        {
+#if DEBUG
+            c.troops = Mathf.Clamp(startingTroops, 1, 99); // Arbitrary limits
+#else
+            c.troops = 1;
+#endif
+            troopManager.updateDisplay(c);
+        });
+
+        CustomLogger.print("GameManager initialized");
         _updatePhaseDisplay();
+        triggerNextPhase();
+
+        NewGameInterfacer.enable();
     }
 
-    private void _reset()
+    public static void startANewGame(bool _newMap, bool _newPlayers)
     {
-        // Making sure a new call to initialize would put us in a good start state
+        Instance?.doStartNewGame(_newMap, _newPlayers);
+    }
+
+    public void doStartNewGame(bool _newMap, bool _newPlayers)
+    {
+        // Parameters always reset
         gamePhase = GamePhase.Init;
+        _updatePhaseDisplay();
         players.Clear();
         aiPerPlayer.Clear();
-        planet = null;
         troopManager.reset();
         countries.Clear();
+        countryIndexPerState.Clear();
+        AIVisualMarkerManager.Instance.setMarkerVisibility(false);
+        stateDisplayer.setVisible(false);
 
-        _updatePhaseDisplay();
+        EndGameFXManager.Instance.destroyEveryFX();
+
+        if(_newMap)
+        {
+            planet.generate(); // Start new generation only if needed
+            readyReceived--;
+
+            if(!_newPlayers)
+                WidgetsManager.show("WorldBuilding");
+        }
+
+        if(_newPlayers)
+        {
+            PlayerSetupManager.show(); // Show player setup menu only if needed
+            readyReceived--;
+        }
+
+        if(readyReceived == 2)
+        {
+            // Quick restart, same map, same players
+            initialize();
+        }
+        // Else we will initialize on callbacks
     }
-
-    public void startANewGame()
-    {
-        Planet p = planet; // Saving the planet as our reset will clear our reference to it
-        _reset();
-        p.generate(); // Start new generation
-    }
-
 
     public override void _Process(double _dt)
     {
@@ -140,14 +220,27 @@ public partial class GameManager : Node
             } break;
             case GamePhase.FirstDeploy:
             {
-                activePlayerIndex = (activePlayerIndex + 1) % players.Count; // One by one turn by turn, does not change phase but change active player
-                // Manage end of First Deploy phase
-                if(activePlayerIndex == 0) // each time all players have placed a pawn
+                firstReinforcementLeftPerPlayer[activePlayerIndex]--;
+
+                // Find next player that has troops to deploy
+                int tries = 0;
+                while(true)
                 {
-                    if(--reinforcementLeft <= 0)
-                        _startDeploymentPhase(); // End of phase
+                    activePlayerIndex = (activePlayerIndex + 1) % players.Count; // One by one turn by turn, does not change phase but change active player
+
+                    if(firstReinforcementLeftPerPlayer[activePlayerIndex] > 0)
+                        break;
+
+                    // Manage end of First Deploy phase when no players has troops left
+                    if(++tries > players.Count)
+                    {
+                        _startDeploymentPhase();
+                        break;
+                    }
                 }
+
                 AIVisualMarkerManager.Instance.setMarkerVisibility(players[activePlayerIndex].isHuman == false); // Display AI Marker if next player is AI
+                AIVisualMarkerManager.Instance.setMarkerColor(activePlayerIndex);
                 _updatePhaseDisplay();
                 _amount = 1; // Cannot deploy more in FirstDeploy
             }break;
@@ -205,7 +298,7 @@ public partial class GameManager : Node
 
         _notifyCountryTroopUpdate(_attacker,_defender);
 
-        if(gamePhase == GamePhase.Attack) // Don't apply selection is game is over with this conquest
+        if(gamePhase == GamePhase.Attack) // Don't apply selection if game is over with this conquest
             _applySelection(HumanPlayerManager.processSelection(_attacker, players[activePlayerIndex]));
     }
 
@@ -215,6 +308,16 @@ public partial class GameManager : Node
             return;
         if(currentSelection.selected == _a || ( _b !=null && currentSelection.selected == _b ))
             stateDisplayer.setCountryToDisplay(currentSelection.selected); // Refresh display with new troops
+    }
+
+    public int getColorIDOfPlayer(int _playerID)
+    {
+        return players[_playerID].colorID;
+    }
+
+    public int getFactionIDOfPlayer(int _playerID)
+    {
+        return players[_playerID].factionID;
     }
 
     public AICharacteristicsData getAIPersonalityByPlayerID(int _id)
@@ -228,6 +331,8 @@ public partial class GameManager : Node
 
     private void _eliminatePlayerFromGame(Player _p)
     {
+        CombatLog.print(playersConfigData[_p.id].playerName + " has been eliminated");
+
         _p.hasLostTheGame = true;
         Player alivePlayerMemory = null;
         foreach (Player p in players)
@@ -245,6 +350,28 @@ public partial class GameManager : Node
         activePlayerIndex = players.IndexOf(alivePlayerMemory);
         resetSelection();
         _updatePhaseDisplay();
+
+        ArmySlider.hide();
+        TabDisplayManager.selectTab(TabDisplayManager.Tab.Game);
+
+        _endGameShow();
+    }
+
+    private void _endGameShow()
+    {
+        List<Vector3> nodePositions = new();
+        List<Vector3> nodeRotations = new();
+        
+        foreach(Country c in players[activePlayerIndex].countries)
+        {
+            Vector3[] posRot = troopManager.getPosRotOfAPawn(c);
+            nodePositions.Add(posRot[0]);
+            nodeRotations.Add(posRot[1]);
+        }
+
+        EndGameFXManager.goNuts(nodePositions, nodeRotations);
+
+        victorySound.Play();
     }
 
     private void _startDeploymentPhase()
@@ -258,6 +385,10 @@ public partial class GameManager : Node
     {
         // triggered when all troops deployed in deploy phase
         gamePhase = GamePhase.Attack;
+
+        if(players[activePlayerIndex].isHuman)
+            ArmySlider.show();
+
         _updatePhaseDisplay();
     }
 
@@ -276,18 +407,29 @@ public partial class GameManager : Node
         do
         {
             activePlayerIndex = (activePlayerIndex + 1) % players.Count;
-        }while(players[activePlayerIndex].hasLostTheGame);
+        } while (players[activePlayerIndex].hasLostTheGame);
 
         _startDeploymentPhase();
         // Only show marker when AIs are playing
         AIVisualMarkerManager.Instance.setMarkerVisibility(players[activePlayerIndex].isHuman == false);
+        AIVisualMarkerManager.Instance.setMarkerColor(activePlayerIndex);
     }
 
     private void _startFirstDeployment()
     {
+        firstReinforcementLeftPerPlayer.Clear();
+        for(int i = 0; i < players.Count; ++i)
+        {
+#if DEBUG
+            // Able to speed things up while debuging
+            firstReinforcementLeftPerPlayer.Add(fastFirstDeploy ? 1 : 40 / players.Count + 2 * i);
+#else
+            firstReinforcementLeftPerPlayer.Add(40 / players.Count + 2 * i);
+#endif
+        }
+
         activePlayerIndex = 0; // First player go !
         gamePhase = GamePhase.FirstDeploy;
-        reinforcementLeft = 40 / players.Count; // this can take quite the time, board game setup eh :: This could be a game setup parameter
         _updatePhaseDisplay();
     }
 
@@ -296,7 +438,7 @@ public partial class GameManager : Node
         switch (gamePhase)
         {
             case GamePhase.Init: _startFirstDeployment(); return;
-            case GamePhase.Attack: _startReinforcePhase(); return;
+            case GamePhase.Attack: _startReinforcePhase(); ArmySlider.hide(); return;
             case GamePhase.Reinforce: _startNextPlayerTurn(); return; // Go Back to Deploy phase
 
             case GamePhase.FirstDeploy:
@@ -324,9 +466,15 @@ public partial class GameManager : Node
 
     public string getActivePlayerAsString()
     {
-        Player active = players[activePlayerIndex];
-        string s = active.isHuman ? "Player " : "Bot ";
-        return s + (activePlayerIndex+1);
+        return getPlayerAsString(activePlayerIndex);
+    }
+
+    public string getPlayerAsString(int _playerID)
+    {
+        if(_playerID < 0 || _playerID > playersConfigData.Count)
+            return "invalidPlayerID";
+
+        return playersConfigData[_playerID].playerName;
     }
 
     private void _updatePhaseDisplay()
@@ -344,8 +492,6 @@ public partial class GameManager : Node
         }
 
         GameUI.setPhaseButtonVisibility(_shouldDisplayEndPhaseButton());
-        GameUI.setGameButtonVisibility(_shouldDisplayStartGameButton());
-        GameUI.setNewGameButtonVisibility(_shouldDisplayNewGameButton());
     }
 
     private bool _shouldDisplayEndPhaseButton()
@@ -375,7 +521,7 @@ public partial class GameManager : Node
         string s = "";
         switch(gamePhase)
         {
-            case GamePhase.FirstDeploy: // same
+            case GamePhase.FirstDeploy: s = firstReinforcementLeftPerPlayer[activePlayerIndex] + " reinforcement(s) left to place."; break;
             case GamePhase.Deploy: s = reinforcementLeft + " reinforcement(s) left to place."; break;
             case GamePhase.Attack: break;
             case GamePhase.Reinforce: s = movementLeft + " troop movement left."; break;
@@ -561,7 +707,7 @@ public partial class GameManager : Node
                 continentScore += c.score; // HUUUUGE bonus
         }
         // Combine state count and continent
-        return Mathf.Max(3, (int)Mathf.Ceil(_player.countries.Count / 3.0f) + continentScore);
+        return Mathf.Max(3, Mathf.FloorToInt(_player.countries.Count / 3.0f) + continentScore);
     }
 
     private void _initializeCountries()
@@ -658,6 +804,7 @@ public partial class GameManager : Node
                 {
                     planet.getVertexAndNormal(index, out Vector3 vertex, out Vector3 normal);
                     c.referencePoints.Add(new(vertex, normal));
+                    c.airReferencePoints.Add(new(vertex * airPawnsHeightRatio, normal));
                 }
             }
         }

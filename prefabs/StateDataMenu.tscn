@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://ce27jvse606x8"]
 
-[ext_resource type="Theme" uid="uid://djt7yn1lbupv2" path="res://UI/StateDisplayTextsTheme.tres" id="1_6cnj8"]
 [ext_resource type="Script" path="res://scripts/UIManagement/StateDisplayerManager.cs" id="1_ww37e"]
+[ext_resource type="Theme" uid="uid://kl52bmmklff4" path="res://UI/StateCardTexts.tres" id="2_fcert"]
 
 [sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_onvv7"]
 size = Vector2(100, 100)
@@ -14,9 +14,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_ww37e")
-stateNameLabel = NodePath("VBoxContainer/TextContainers/Display1")
-playerLabel = NodePath("VBoxContainer/TextContainers/Display2")
-troopsLabel = NodePath("VBoxContainer/TextContainers/Display3")
+stateNameLabel = NodePath("VBoxContainer/Control/TextContainers/Display1")
+playerLabel = NodePath("VBoxContainer/Control/TextContainers/Display2")
+troopsLabel = NodePath("VBoxContainer/Control/TextContainers/Display3")
 stateShapeDisplay = NodePath("VBoxContainer/TextureRect")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -26,7 +26,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(1, 1, 0.862745, 0.745098)
+color = Color(0, 0, 0.0392157, 0.784314)
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -36,30 +36,40 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TextContainers" type="VBoxContainer" parent="VBoxContainer"]
+[node name="Control" type="Control" parent="VBoxContainer"]
 layout_mode = 2
-size_flags_vertical = 0
+size_flags_vertical = 2
+size_flags_stretch_ratio = 0.2
 
-[node name="Display1" type="RichTextLabel" parent="VBoxContainer/TextContainers"]
+[node name="TextContainers" type="VBoxContainer" parent="VBoxContainer/Control"]
 layout_mode = 2
-theme = ExtResource("1_6cnj8")
+offset_left = 10.0
+offset_top = 6.0
+offset_right = 1162.0
+offset_bottom = 85.0
+size_flags_vertical = 0
+theme_override_constants/separation = 5
+
+[node name="Display1" type="RichTextLabel" parent="VBoxContainer/Control/TextContainers"]
+layout_mode = 2
+theme = ExtResource("2_fcert")
 text = "STATE
 "
 fit_content = true
 scroll_active = false
 autowrap_mode = 0
 
-[node name="Display2" type="RichTextLabel" parent="VBoxContainer/TextContainers"]
+[node name="Display2" type="RichTextLabel" parent="VBoxContainer/Control/TextContainers"]
 layout_mode = 2
-theme = ExtResource("1_6cnj8")
+theme = ExtResource("2_fcert")
 text = "PLAYER"
 fit_content = true
 scroll_active = false
 autowrap_mode = 0
 
-[node name="Display3" type="RichTextLabel" parent="VBoxContainer/TextContainers"]
+[node name="Display3" type="RichTextLabel" parent="VBoxContainer/Control/TextContainers"]
 layout_mode = 2
-theme = ExtResource("1_6cnj8")
+theme = ExtResource("2_fcert")
 text = "TROOPS"
 fit_content = true
 scroll_active = false

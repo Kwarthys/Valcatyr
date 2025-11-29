@@ -88,7 +88,7 @@ public partial class Planet : MeshInstance3D
         if (notifyGameManagerGenerationComplete && GameManager.Instance != null)
         {
             notifyGameManagerGenerationComplete = false;
-            GameManager.Instance.initialize(this);
+            GameManager.Instance.onPlanetGenerationReady(this);
         }
 
         if (scanForBridgesRequests)
@@ -151,6 +151,7 @@ public partial class Planet : MeshInstance3D
         colors.Clear();
 
         bridgeBuilder.destroyAllBridges();
+        trianglesNormalsPerVertex.Clear();
 
         Vector3[] ups = new Vector3[SIDE_COUNT];
         Vector3[] forwards = new Vector3[SIDE_COUNT];

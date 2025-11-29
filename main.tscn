@@ -1,4 +1,4 @@
-[gd_scene load_steps=55 format=3 uid="uid://ds7srp2nknpnv"]
+[gd_scene load_steps=62 format=3 uid="uid://ds7srp2nknpnv"]
 
 [ext_resource type="Material" uid="uid://67pefqa2e6rn" path="res://materials/PlanetMaterial.tres" id="2_4fh88"]
 [ext_resource type="Script" path="res://scripts/MapBuilding/Planet.cs" id="2_hkox7"]
@@ -7,9 +7,7 @@
 [ext_resource type="Material" uid="uid://y5bil6ynkqr7" path="res://materials/AtmosphereMaterial.tres" id="5_3hgdn"]
 [ext_resource type="Script" path="res://scripts/GameManagement/TroopDisplayManager.cs" id="5_aytuo"]
 [ext_resource type="Script" path="res://scripts/GameManagement/PlanetInputManager.cs" id="5_qons3"]
-[ext_resource type="PackedScene" uid="uid://dnry3u2p0r6da" path="res://prefabs/level1Pawn.tscn" id="6_6k61a"]
 [ext_resource type="Material" uid="uid://cypmok4bg16vl" path="res://materials/SkyBoxMaterial.tres" id="6_73edm"]
-[ext_resource type="PackedScene" uid="uid://cjux8np2ds5ot" path="res://prefabs/Level2Pawn.tscn" id="7_7c1ts"]
 [ext_resource type="PackedScene" uid="uid://ckgk4ej1kuana" path="res://prefabs/explosionFx.tscn" id="7_n7v4k"]
 [ext_resource type="PackedScene" uid="uid://ltuob0u7ymlp" path="res://prefabs/AIPresenceMarker.tscn" id="8_lhd5y"]
 [ext_resource type="PackedScene" uid="uid://dydvj77wsdj6m" path="res://prefabs/pawnSlideSoundPlayer.tscn" id="8_qc8h7"]
@@ -22,17 +20,31 @@
 [ext_resource type="Script" path="res://scripts/UIManagement/GameUI.cs" id="14_bob1v"]
 [ext_resource type="Script" path="res://scripts/GameManagement/CombatManager.cs" id="14_i4lgw"]
 [ext_resource type="Script" path="res://scripts/SoundManagement/ReinforcementSoundManager.cs" id="14_skotp"]
+[ext_resource type="AudioStream" uid="uid://dldppcvypsop2" path="res://assets/soundsFX/party_horns.wav" id="15_7wx4i"]
 [ext_resource type="Script" path="res://scripts/GameManagement/FreeMovementManager.cs" id="15_pk5q3"]
 [ext_resource type="Script" path="res://scripts/GameManagement/AIManagement/AIVisualMarkerManager.cs" id="17_o4gch"]
 [ext_resource type="Theme" uid="uid://c5uh4sjxrrsa0" path="res://UI/uiTextTheme.tres" id="17_ponek"]
 [ext_resource type="PackedScene" uid="uid://ce27jvse606x8" path="res://prefabs/StateDataMenu.tscn" id="18_12su4"]
 [ext_resource type="Script" path="res://scripts/PreloadManager.cs" id="19_g6tlq"]
 [ext_resource type="Script" path="res://scripts/SoundManagement/AudioVolumeManager.cs" id="20_1xxrl"]
-[ext_resource type="Script" path="res://scripts/UIManagement/AICookingWidgetManager.cs" id="20_uq872"]
-[ext_resource type="Texture2D" uid="uid://bviorge2u5ei" path="res://assets/TieKPOW_SHEET.png" id="21_ed6oq"]
+[ext_resource type="Script" path="res://scripts/UIManagement/EndGameFXManager.cs" id="24_gd4ma"]
 [ext_resource type="Script" path="res://scripts/GameManagement/TweakableParametersManager.cs" id="24_nd18h"]
 [ext_resource type="PackedScene" uid="uid://dare37ynf6xvx" path="res://prefabs/optionSlider.tscn" id="24_ylvgt"]
-[ext_resource type="Script" path="res://scripts/UIManagement/OptionsDisplayManager.cs" id="26_hobwf"]
+[ext_resource type="PackedScene" uid="uid://bcs0j1t5tr527" path="res://prefabs/victory_fx.tscn" id="25_6iv5g"]
+[ext_resource type="Script" path="res://scripts/UIManagement/TabDisplayManager.cs" id="26_hobwf"]
+[ext_resource type="Texture2D" uid="uid://bftlny3c3yq02" path="res://Banners/Valcateers.png" id="28_fvo3e"]
+[ext_resource type="Texture2D" uid="uid://bgh4hm6chixv" path="res://Banners/Strikers.png" id="29_jpppu"]
+[ext_resource type="Texture2D" uid="uid://dxvse3prdfw8h" path="res://Banners/Armada.png" id="30_vfdjq"]
+[ext_resource type="Texture2D" uid="uid://cqmmblhy8ffjg" path="res://Banners/Travelers.png" id="31_jrib3"]
+[ext_resource type="Theme" uid="uid://devhp3bn3w0sx" path="res://UI/GameMenuButton.tres" id="31_mrrg8"]
+[ext_resource type="Script" path="res://scripts/GameManagement/NewGameInterfacer.cs" id="31_ogxsw"]
+[ext_resource type="Texture2D" uid="uid://nuyglqsswjda" path="res://Banners/Wanderers.png" id="32_kvdul"]
+[ext_resource type="Script" path="res://scripts/UIManagement/TextWidgetAnimator.cs" id="33_4ahd2"]
+[ext_resource type="Script" path="res://scripts/UIManagement/WidgetsManager.cs" id="33_4gdmt"]
+[ext_resource type="Texture2D" uid="uid://c7tnexr3fc4hl" path="res://Banners/Wardens.png" id="33_x6hfn"]
+[ext_resource type="Script" path="res://scripts/UIManagement/PlayerSetupManager.cs" id="34_xnweg"]
+[ext_resource type="Script" path="res://scripts/UIManagement/ArmySlider.cs" id="35_ggg4p"]
+[ext_resource type="Script" path="res://scripts/UIManagement/CombatLog.cs" id="44_8ge0s"]
 
 [sub_resource type="Curve" id="Curve_0lgr4"]
 _data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 0.5), 3.0, 3.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
@@ -63,61 +75,13 @@ colors = PackedColorArray(2.31028e-06, 0, 0.70509, 1, 0.284417, 0.639377, 0.5451
 metadata/_snap_enabled = true
 metadata/_snap_count = 12
 
+[sub_resource type="Gradient" id="Gradient_6wq70"]
+interpolation_mode = 2
+colors = PackedColorArray(0, 0, 0, 1, 0.235294, 0.235294, 0.392157, 1)
+
 [sub_resource type="Curve" id="Curve_3lt5j"]
 _data = [Vector2(0.1, 0), 0.0, 0.0, 0, 0, Vector2(0.4, 1), 0.775511, 0.0, 0, 1, Vector2(1, 1), 0.0, 0.0, 1, 0]
 point_count = 3
-
-[sub_resource type="Curve" id="Curve_4hvma"]
-_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 0.5), 4.51532, 4.51532, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
-point_count = 3
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_dnfkl"]
-atlas = ExtResource("21_ed6oq")
-region = Rect2(0, 0, 30, 30)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_fu2fp"]
-atlas = ExtResource("21_ed6oq")
-region = Rect2(30, 0, 30, 30)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_80tgy"]
-atlas = ExtResource("21_ed6oq")
-region = Rect2(60, 0, 30, 30)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_o0xwt"]
-atlas = ExtResource("21_ed6oq")
-region = Rect2(90, 0, 30, 30)
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_kwpd3"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_dnfkl")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_fu2fp")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_80tgy")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_o0xwt")
-}, {
-"duration": 1.0,
-"texture": null
-}, {
-"duration": 1.0,
-"texture": null
-}, {
-"duration": 1.0,
-"texture": null
-}, {
-"duration": 1.0,
-"texture": null
-}],
-"loop": true,
-"name": &"default",
-"speed": 12.0
-}]
 
 [sub_resource type="Theme" id="Theme_e8o0g"]
 default_font_size = 50
@@ -125,22 +89,22 @@ default_font_size = 50
 [sub_resource type="Theme" id="Theme_bsgaf"]
 default_font_size = 25
 
-[sub_resource type="Theme" id="Theme_6fxdb"]
-Button/font_sizes/font_size = 30
-
 [sub_resource type="Theme" id="Theme_5n5qb"]
 default_font_size = 25
 
-[sub_resource type="Theme" id="Theme_1pjst"]
-Button/font_sizes/font_size = 30
+[sub_resource type="Theme" id="Theme_ro45o"]
+RichTextLabel/font_sizes/bold_font_size = 20
+RichTextLabel/font_sizes/bold_italics_font_size = 16
 
-[sub_resource type="Curve" id="Curve_gsjg8"]
-_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 0.5), 4.34009, 4.34009, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+[sub_resource type="Curve" id="Curve_pydc2"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.5, 0.5), 5.36609, 5.36609, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
 point_count = 3
 
 [sub_resource type="Theme" id="Theme_103vo"]
-RichTextLabel/font_sizes/bold_font_size = 14
-RichTextLabel/font_sizes/normal_font_size = 14
+RichTextLabel/font_sizes/bold_font_size = 15
+RichTextLabel/font_sizes/normal_font_size = 15
+
+[sub_resource type="Theme" id="Theme_b0yki"]
 
 [node name="SceneRoot" type="Node3D"]
 
@@ -154,11 +118,13 @@ script = ExtResource("4_yu05o")
 
 [node name="TroopDisplayManager" type="Node3D" parent="Planet"]
 script = ExtResource("5_aytuo")
-level1PawnScene = ExtResource("6_6k61a")
-level2PawnScene = ExtResource("7_7c1ts")
 explosionFX = ExtResource("7_n7v4k")
 movementSoundFX = ExtResource("8_qc8h7")
 pawnMovementSpeedCurve = SubResource("Curve_0lgr4")
+
+[node name="EndGameFXManager" type="Node3D" parent="Planet"]
+script = ExtResource("24_gd4ma")
+fx = ExtResource("25_6iv5g")
 
 [node name="ClickCollider" type="Area3D" parent="Planet" node_paths=PackedStringArray("planet", "gameManager", "camera")]
 script = ExtResource("5_qons3")
@@ -168,6 +134,9 @@ camera = NodePath("../CameraHorizontalHelper/CameraVerticalHelper/CameraShaker/C
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Planet/ClickCollider"]
 shape = SubResource("SphereShape3D_nvriv")
+
+[node name="GPUParticlesCollisionSphere3D" type="GPUParticlesCollisionSphere3D" parent="Planet"]
+radius = 2.01
 
 [node name="AIPresenceMarker" parent="Planet" instance=ExtResource("8_lhd5y")]
 
@@ -191,6 +160,11 @@ panning_strength = 4.0
 bus = &"VFX"
 script = ExtResource("13_8jh5h")
 pitchRange = 0.05
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="Planet/CameraHorizontalHelper/CameraVerticalHelper/CameraShaker/Camera3D"]
+stream = ExtResource("15_7wx4i")
+volume_db = -2.5
+bus = &"VFX"
 
 [node name="DirectionalLight3D2" type="DirectionalLight3D" parent="Planet/CameraHorizontalHelper/CameraVerticalHelper"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3.7259)
@@ -220,14 +194,17 @@ script = ExtResource("9_gnn7f")
 shader = ExtResource("6_73edm")
 starColors = SubResource("Gradient_hdbyp")
 cloudColors = SubResource("Gradient_stbvo")
+galaxyBackgroundColors = SubResource("Gradient_6wq70")
 cloudsNoiseToAlpha = SubResource("Curve_3lt5j")
 
 [node name="Managers" type="Node" parent="."]
 
-[node name="GameManager" type="Node" parent="Managers" node_paths=PackedStringArray("troopManager", "stateDisplayer")]
+[node name="GameManager" type="Node" parent="Managers" node_paths=PackedStringArray("troopManager", "stateDisplayer", "victorySound")]
 script = ExtResource("13_37t2g")
 troopManager = NodePath("../../Planet/TroopDisplayManager")
 stateDisplayer = NodePath("../../GameUI/StateDisplayAnchor/StateDisplayer")
+victorySound = NodePath("../../Planet/CameraHorizontalHelper/CameraVerticalHelper/CameraShaker/Camera3D/AudioStreamPlayer3D")
+airPawnsHeightRatio = 1.08
 
 [node name="CombatManager" type="Node" parent="Managers"]
 script = ExtResource("14_i4lgw")
@@ -246,25 +223,14 @@ marker = NodePath("../../Planet/AIPresenceMarker")
 [node name="PreloadManager" type="Node" parent="Managers"]
 script = ExtResource("19_g6tlq")
 explosionSoundPaths = PackedStringArray("res://assets/bomb-explosion-sfx-352274.mp3", "res://assets/medium-explosion-40472.mp3")
+gameDataPath = "res://configFiles/GameData.json"
+pawnsRootFolder = "res://prefabs/Pawns/"
 
 [node name="AudioVolumeManager" type="Node" parent="Managers" node_paths=PackedStringArray("fxVolumeOption")]
 script = ExtResource("20_1xxrl")
 fxVolumeOption = NodePath("../../GameUI/OptionsHolder/OptionsPanel/GridContainer/FXVolumeChoice")
 
-[node name="AICookingHolder" type="Node2D" parent="."]
-position = Vector2(100, 100)
-script = ExtResource("20_uq872")
-movementCurve = SubResource("Curve_4hvma")
-
-[node name="Node2D" type="Node2D" parent="AICookingHolder"]
-scale = Vector2(4, 4)
-
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="AICookingHolder/Node2D"]
-sprite_frames = SubResource("SpriteFrames_kwpd3")
-autoplay = "default"
-frame_progress = 0.861227
-
-[node name="GameUI" type="Control" parent="." node_paths=PackedStringArray("primaryText", "secondaryText", "endTurnButton", "startGameButton", "newGameButton")]
+[node name="GameUI" type="Control" parent="." node_paths=PackedStringArray("primaryText", "secondaryText", "endTurnButton")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -276,56 +242,36 @@ script = ExtResource("14_bob1v")
 primaryText = NodePath("MainLabel")
 secondaryText = NodePath("SecondaryLabel")
 endTurnButton = NodePath("EndPhaseButton")
-startGameButton = NodePath("StartGameButton")
-newGameButton = NodePath("NewGameButton")
 
 [node name="MainLabel" type="RichTextLabel" parent="GameUI"]
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -46.0
-offset_right = 46.0
-offset_bottom = 23.0
-grow_horizontal = 2
+offset_left = 20.0
+offset_right = 602.0
+offset_bottom = 69.0
 localize_numeral_system = false
+mouse_filter = 2
 theme = SubResource("Theme_e8o0g")
+theme_override_constants/outline_size = 10
 bbcode_enabled = true
+text = "[b]Player 1[/b]: Please do stuff"
 fit_content = true
 scroll_active = false
 autowrap_mode = 0
 
 [node name="SecondaryLabel" type="RichTextLabel" parent="GameUI"]
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -40.0
-offset_top = 71.7
-offset_right = 40.0
-offset_bottom = 111.7
-grow_horizontal = 2
+offset_left = 20.0
+offset_top = 70.0
+offset_right = 248.0
+offset_bottom = 110.0
+mouse_filter = 2
 theme = SubResource("Theme_bsgaf")
+theme_override_constants/outline_size = 10
 bbcode_enabled = true
+text = "So much stuff here"
 fit_content = true
 scroll_active = false
 autowrap_mode = 0
-
-[node name="StartGameButton" type="Button" parent="GameUI"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -4.0
-offset_top = -4.0
-offset_right = 4.0
-offset_bottom = 4.0
-grow_horizontal = 2
-grow_vertical = 2
-theme = SubResource("Theme_6fxdb")
-text = "Start Game"
 
 [node name="EndPhaseButton" type="Button" parent="GameUI"]
 layout_mode = 1
@@ -343,35 +289,19 @@ grow_vertical = 0
 theme = SubResource("Theme_5n5qb")
 text = "End Phase"
 
-[node name="NewGameButton" type="Button" parent="GameUI"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -4.0
-offset_top = -4.0
-offset_right = 4.0
-offset_bottom = 4.0
-grow_horizontal = 2
-grow_vertical = 2
-theme = SubResource("Theme_1pjst")
-text = "New Game"
-
 [node name="MovementUIHolder" type="Control" parent="GameUI"]
 layout_mode = 1
-anchors_preset = 8
+anchors_preset = 7
 anchor_left = 0.5
-anchor_top = 0.5
+anchor_top = 1.0
 anchor_right = 0.5
-anchor_bottom = 0.5
+anchor_bottom = 1.0
 offset_left = -150.0
-offset_top = -38.0
+offset_top = -273.595
 offset_right = 150.0
-offset_bottom = 59.0
+offset_bottom = -176.595
 grow_horizontal = 2
-grow_vertical = 2
+grow_vertical = 0
 
 [node name="HSlider" type="HSlider" parent="GameUI/MovementUIHolder"]
 layout_mode = 1
@@ -449,38 +379,171 @@ offset_right = 40.0
 grow_vertical = 0
 
 [node name="StateDisplayer" parent="GameUI/StateDisplayAnchor" instance=ExtResource("18_12su4")]
+clip_contents = true
 layout_mode = 1
 offset_left = 49.0
 offset_top = -353.0
 offset_right = 223.0
 offset_bottom = -46.0
 
-[node name="OptionsHolder" type="Control" parent="GameUI" node_paths=PackedStringArray("optionsUIHolder")]
+[node name="GameSetupHolder" type="Control" parent="GameUI"]
+visible = false
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="GameUI/GameSetupHolder"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_ro45o")
+theme_override_constants/margin_left = 100
+theme_override_constants/margin_top = 100
+theme_override_constants/margin_right = 100
+theme_override_constants/margin_bottom = 100
+
+[node name="ColorRect" type="ColorRect" parent="GameUI/GameSetupHolder/MarginContainer"]
+layout_mode = 2
+color = Color(0, 0, 0.0196078, 0.733333)
+
+[node name="MarginContainer" type="MarginContainer" parent="GameUI/GameSetupHolder/MarginContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="AddAIButton" type="Button" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Add AI"
+
+[node name="AddPlayerButton" type="Button" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Add Player"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GridContainer" type="GridContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2" node_paths=PackedStringArray("addAiButton", "addPlayerButton", "startGameButton", "setupMenuHolder")]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 5
+script = ExtResource("34_xnweg")
+addAiButton = NodePath("../../HBoxContainer/AddAIButton")
+addPlayerButton = NodePath("../../HBoxContainer/AddPlayerButton")
+startGameButton = NodePath("../../StartGameButton")
+setupMenuHolder = NodePath("../../../../..")
+
+[node name="VBoxContainer" type="GridContainer" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 3
+
+[node name="TextureRect8" type="TextureRect" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/VBoxContainer"]
+custom_minimum_size = Vector2(108, 192)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("28_fvo3e")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="TextureRect9" type="TextureRect" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/VBoxContainer"]
+custom_minimum_size = Vector2(108, 192)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("29_jpppu")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="TextureRect10" type="TextureRect" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/VBoxContainer"]
+custom_minimum_size = Vector2(108, 192)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("30_vfdjq")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="TextureRect11" type="TextureRect" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/VBoxContainer"]
+custom_minimum_size = Vector2(108, 192)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("31_jrib3")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="TextureRect12" type="TextureRect" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/VBoxContainer"]
+custom_minimum_size = Vector2(108, 192)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("32_kvdul")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="TextureRect13" type="TextureRect" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/VBoxContainer"]
+custom_minimum_size = Vector2(108, 192)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("33_x6hfn")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="StartGameButton" type="Button" parent="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 8
+text = "Start Game"
+
+[node name="OptionsHolder" type="Control" parent="GameUI"]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -127.0
-offset_bottom = 70.0
+offset_left = -202.0
+offset_bottom = 40.0
 grow_horizontal = 0
-script = ExtResource("26_hobwf")
-optionsUIHolder = NodePath("OptionsPanel")
-movementCurve = SubResource("Curve_gsjg8")
 
-[node name="Button" type="Button" parent="GameUI/OptionsHolder"]
+[node name="TabBar" type="TabBar" parent="GameUI/OptionsHolder" node_paths=PackedStringArray("uiHolders")]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -35.0
-offset_top = -15.5
-offset_right = 35.0
-offset_bottom = 15.5
-grow_horizontal = 2
-grow_vertical = 2
-text = "Options"
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -204.0
+offset_bottom = 40.0
+grow_horizontal = 0
+clip_tabs = false
+scrolling_enabled = false
+scroll_to_selected = false
+deselect_enabled = true
+tab_count = 3
+tab_0/title = "Help"
+tab_1/title = "Options"
+tab_2/title = "Game"
+script = ExtResource("26_hobwf")
+uiHolders = [NodePath("../HelpHolder"), NodePath("../OptionsPanel"), NodePath("../GameControlsPanel")]
+movementCurve = SubResource("Curve_pydc2")
+duration = 0.25
 
 [node name="OptionsPanel" type="Control" parent="GameUI/OptionsHolder"]
 layout_mode = 1
@@ -540,18 +603,28 @@ autowrap_mode = 0
 [node name="CameraShakeChoice" parent="GameUI/OptionsHolder/OptionsPanel/GridContainer" instance=ExtResource("24_ylvgt")]
 layout_mode = 2
 
-[node name="RichTextLabel" type="RichTextLabel" parent="GameUI/OptionsHolder/OptionsPanel"]
+[node name="HelpHolder" type="Control" parent="GameUI/OptionsHolder"]
 layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -407.0
+offset_top = 61.0
+offset_right = -23.0
+offset_bottom = 575.0
+grow_horizontal = 0
+
+[node name="RichTextLabel2" type="RichTextLabel" parent="GameUI/OptionsHolder/HelpHolder"]
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
-grow_vertical = 0
+grow_vertical = 2
 theme = SubResource("Theme_103vo")
 bbcode_enabled = true
-text = "- Use arrows/WASD to move the camera around
-- Left clic a Country to select it and display information about it
+text = "Use arrows/WASD to move the camera around
+Left clic a Country to [b]select it[/b] and display information about it
 
 [b]Game Phases[/b]:
 - [b]Initial Deployment[/b]: Right clic one of your country to deploy an army, each player deploys one army at a time.
@@ -561,11 +634,170 @@ text = "- Use arrows/WASD to move the camera around
 fit_content = true
 scroll_active = false
 
-[connection signal="pressed" from="GameUI/StartGameButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
+[node name="GameControlsPanel" type="Control" parent="GameUI/OptionsHolder" node_paths=PackedStringArray("regenMap", "editPlayers", "newGameButton")]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -271.0
+offset_top = 90.0
+offset_right = -30.0
+offset_bottom = 151.0
+grow_horizontal = 0
+script = ExtResource("31_ogxsw")
+regenMap = NodePath("VBoxContainer/NewMap")
+editPlayers = NodePath("VBoxContainer/NewFactions")
+newGameButton = NodePath("VBoxContainer/NewGameButton")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameUI/OptionsHolder/GameControlsPanel"]
+layout_direction = 3
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -52.5
+offset_bottom = 52.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="NewMap" type="CheckButton" parent="GameUI/OptionsHolder/GameControlsPanel/VBoxContainer"]
+layout_mode = 2
+text = "Regenerate Map"
+
+[node name="NewFactions" type="CheckButton" parent="GameUI/OptionsHolder/GameControlsPanel/VBoxContainer"]
+layout_mode = 2
+text = "Change properties"
+
+[node name="NewGameButton" type="Button" parent="GameUI/OptionsHolder/GameControlsPanel/VBoxContainer"]
+layout_mode = 2
+theme = ExtResource("31_mrrg8")
+text = "New Game"
+
+[node name="WidgetsHolder" type="Control" parent="GameUI" node_paths=PackedStringArray("widgets")]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -40.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("33_4gdmt")
+labels = Array[String](["WorldBuilding", "AIThinking"])
+widgets = [NodePath("WorldBuildingWidget"), NodePath("AiThinkingWidget")]
+aiWidgetDelayBeforeShow = 2.0
+
+[node name="WorldBuildingWidget" type="RichTextLabel" parent="GameUI/WidgetsHolder"]
+layout_mode = 1
+offset_left = -216.0
+offset_top = -16.0
+offset_right = -38.9999
+offset_bottom = 19.0
+theme_override_font_sizes/normal_font_size = 25
+theme_override_font_sizes/bold_font_size = 25
+text = "World Building"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+script = ExtResource("33_4ahd2")
+timePerPoint = 0.7
+maxPoints = 5
+
+[node name="AiThinkingWidget" type="RichTextLabel" parent="GameUI/WidgetsHolder"]
+layout_mode = 1
+offset_left = -292.0
+offset_top = -16.0
+offset_right = -39.0
+offset_bottom = 24.0
+theme = SubResource("Theme_b0yki")
+theme_override_font_sizes/normal_font_size = 25
+theme_override_font_sizes/bold_font_size = 25
+text = "Computer is thinking"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+script = ExtResource("33_4ahd2")
+timePerPoint = 0.7
+maxPoints = 5
+
+[node name="ArmySliderHolder" type="Control" parent="GameUI" node_paths=PackedStringArray("subtitle", "slider")]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -241.0
+offset_right = 91.0
+grow_vertical = 0
+script = ExtResource("35_ggg4p")
+subtitle = NodePath("VBoxContainer/RichTextLabel")
+slider = NodePath("VBoxContainer/ArmySlider")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameUI/ArmySliderHolder"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 300.255
+offset_top = -80.52
+offset_right = 300.255
+offset_bottom = -80.52
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ArmySlider" type="VSlider" parent="GameUI/ArmySliderHolder/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 1
+size_flags_vertical = 3
+max_value = 3.0
+value = 1.0
+tick_count = 4
+ticks_on_borders = true
+
+[node name="RichTextLabel" type="RichTextLabel" parent="GameUI/ArmySliderHolder/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.2
+mouse_filter = 1
+text = "Attack with x troops"
+fit_content = true
+scroll_active = false
+autowrap_mode = 2
+
+[node name="CombatLogHolder" type="Control" parent="GameUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = -499.0
+offset_right = 279.0
+offset_bottom = -422.0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="CombatLog" type="RichTextLabel" parent="GameUI/CombatLogHolder"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+fit_content = true
+scroll_active = false
+script = ExtResource("44_8ge0s")
+
 [connection signal="pressed" from="GameUI/EndPhaseButton" to="Managers/GameManager" method="onEndTurnButtonPressed"]
-[connection signal="pressed" from="GameUI/NewGameButton" to="Managers/GameManager" method="startANewGame"]
 [connection signal="value_changed" from="GameUI/MovementUIHolder/HSlider" to="Managers/FreeMovementManager" method="onSliderUpdate"]
 [connection signal="pressed" from="GameUI/MovementUIHolder/ButtonsHolder/MoveNoneButton" to="Managers/FreeMovementManager" method="onMoveNone"]
 [connection signal="pressed" from="GameUI/MovementUIHolder/ButtonsHolder/MoveTroopsButton" to="Managers/FreeMovementManager" method="onMovementValidation"]
 [connection signal="pressed" from="GameUI/MovementUIHolder/ButtonsHolder/MoveAllButton" to="Managers/FreeMovementManager" method="onMoveAll"]
-[connection signal="pressed" from="GameUI/OptionsHolder/Button" to="GameUI/OptionsHolder" method="onToggleShow"]
+[connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer/AddAIButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/GridContainer" method="onAddAIPressed"]
+[connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer/AddPlayerButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/GridContainer" method="onAddPlayerPressed"]
+[connection signal="pressed" from="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/StartGameButton" to="GameUI/GameSetupHolder/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer2/GridContainer" method="onStartGamePressed"]
+[connection signal="tab_clicked" from="GameUI/OptionsHolder/TabBar" to="GameUI/OptionsHolder/TabBar" method="onTabClic"]
+[connection signal="button_up" from="GameUI/OptionsHolder/GameControlsPanel/VBoxContainer/NewGameButton" to="GameUI/OptionsHolder/GameControlsPanel" method="onNewGameClic"]
+[connection signal="value_changed" from="GameUI/ArmySliderHolder/VBoxContainer/ArmySlider" to="GameUI/ArmySliderHolder" method="onValueChanged"]

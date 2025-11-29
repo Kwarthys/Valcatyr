@@ -7,10 +7,6 @@ using System.Linq;
 public partial class TroopDisplayManager : Node3D
 {
     [Export]
-    private PackedScene level1PawnScene;
-    [Export]
-    private PackedScene level2PawnScene;
-    [Export]
     private PackedScene explosionFX;
     [Export]
     private PackedScene movementSoundFX;
@@ -35,6 +31,25 @@ public partial class TroopDisplayManager : Node3D
         }
         troopsPerState.Clear();
         pawnsMovements.Clear();
+    }
+
+    public Vector3[] getPosRotOfAPawn(Country _c)
+    {
+        Vector3[] values = new Vector3[2];
+        Node3D pawn = null;
+        TroopsData data = troopsPerState[_c.state.id];
+        if(data.level2Pawns.Count > 0)
+        {
+            pawn = data.level2Pawns[0].instance;
+        }
+        else
+        {
+            pawn = data.level1Pawns[0].instance;
+        }
+
+        values[0] = pawn.Position;
+        values[1] = pawn.Rotation;
+        return values;
     }
 
     public void movePawns(Country _origin, Country _destination, int _amount)
@@ -67,8 +82,8 @@ public partial class TroopDisplayManager : Node3D
         });
 
         // Get destination points, preferably not overlapping, but it is allowed as a merge will can occur at arrival
-        List<ReferencePoint> l1Targets = _getReferencePoints(l1Moving, _destination, troopsPerState[_destination.state.id].level1Pawns, false);
-        List<ReferencePoint> l2Targets = _getReferencePoints(l2Moving, _destination, troopsPerState[_destination.state.id].level2Pawns, false);
+        List<ReferencePoint> l1Targets = _getGroundReferencePoints(l1Moving, _destination, troopsPerState[_destination.state.id].level1Pawns, false);
+        List<ReferencePoint> l2Targets = _getAirReferencePoints(l2Moving, _destination, troopsPerState[_destination.state.id].level2Pawns, false);
 
         TroopsData destinationData = troopsPerState[_destination.state.id];
 
@@ -207,37 +222,52 @@ public partial class TroopDisplayManager : Node3D
         }
     }
 
-
     private void _spawnLevelOnes(int _n, Country _c)
     {
         List<PawnData> pawns = troopsPerState[_c.state.id].level1Pawns;
-        _spawnPawn(_n, level1PawnScene, pawns, _c, false);
+        int factionID = GameManager.Instance.getFactionIDOfPlayer(_c.playerID);
+        PackedScene pawnScene = PreloadManager.getPawnScene(factionID, 1);
+        if(pawnScene != null)
+            _spawnPawn(_n, pawnScene, pawns, false, _c, false);
     }
 
     private void _spawnLevelTwos(int _n, Country _c)
     {
         List<PawnData> pawns = troopsPerState[_c.state.id].level2Pawns;
-        _spawnPawn(_n, level2PawnScene, pawns, _c, false);
+        int factionID = GameManager.Instance.getFactionIDOfPlayer(_c.playerID);
+        PackedScene pawnScene = PreloadManager.getPawnScene(factionID, 2);
+        if(pawnScene != null)
+            _spawnPawn(_n, pawnScene, pawns, true, _c, false);
     }
 
-    private List<ReferencePoint> _getReferencePoints(int _n, Country _c, List<PawnData> _spawnedPawns, bool _enforceAvailablePoint = true)
+    private List<ReferencePoint> _getAirReferencePoints(int _n, Country _c, List<PawnData> _spawnedPawns, bool _enforceAvailablePoint = true)
     {
-        List<ReferencePoint> availablePoints = new(_c.referencePoints);
+        return _getReferencePoints(_n, _spawnedPawns, _enforceAvailablePoint, _c.airReferencePoints);
+    }
+
+    private List<ReferencePoint> _getGroundReferencePoints(int _n, Country _c, List<PawnData> _spawnedPawns, bool _enforceAvailablePoint = true)
+    {
+        return _getReferencePoints(_n, _spawnedPawns, _enforceAvailablePoint, _c.referencePoints);
+    }
+
+    private List<ReferencePoint> _getReferencePoints(int _n, List<PawnData> _spawnedPawns, bool _enforceAvailablePoint, List<ReferencePoint> _pointList)
+    {
+        List<ReferencePoint> availablePoints = new(_pointList);
         List<ReferencePoint> selectedPoints = new();
         _spawnedPawns.ForEach((data) => availablePoints.Remove(data.point)); // Remove already taken reference points
 
-        for(int i = 0; i < _n; ++i)
+        for (int i = 0; i < _n; ++i)
         {
-            if(availablePoints.Count == 0)
+            if (availablePoints.Count == 0)
             {
-                if(_enforceAvailablePoint)
+                if (_enforceAvailablePoint)
                 {
                     GD.PrintErr("TroopDisplayManager._spawnPawn Ran out of ReferencePoints");
                     break; // stop right here if we cannot provide available point
                 }
                 else
                 {
-                    availablePoints = new(_c.referencePoints); // We're allowed to use a taken point, add all points to the available list
+                    availablePoints = new(_pointList); // We're allowed to use a taken point, add all points to the available list
                 }
             }
             int index = (int)(GD.Randf() * availablePoints.Count);
@@ -247,10 +277,15 @@ public partial class TroopDisplayManager : Node3D
         return selectedPoints;
     }
 
-    private int _spawnPawn(int _n, PackedScene _pawnScene, List<PawnData> _spawnedPawns, Country _c, bool _enforceAvailablePoint = true)
+    private int _spawnPawn(int _n, PackedScene _pawnScene, List<PawnData> _spawnedPawns, bool _isAir, Country _c, bool _enforceAvailablePoint = true)
     {
-        List<ReferencePoint> availablePoints = _getReferencePoints(_n, _c, _spawnedPawns, _enforceAvailablePoint);
-        foreach(ReferencePoint p in availablePoints)
+        List<ReferencePoint> availablePoints;
+        if(_isAir)
+            availablePoints = _getAirReferencePoints(_n, _c, _spawnedPawns, _enforceAvailablePoint);
+        else
+            availablePoints = _getGroundReferencePoints(_n, _c, _spawnedPawns, _enforceAvailablePoint);
+
+        foreach (ReferencePoint p in availablePoints)
         {
             Node3D pawn = _pawnScene.Instantiate<Node3D>();
             AddChild(pawn);
@@ -260,7 +295,7 @@ public partial class TroopDisplayManager : Node3D
             pawn.LookAt(ToGlobal(p.vertex + localForward), ToGlobal(p.normal));
 
             PawnColorManager helper = (PawnColorManager)pawn;   // Getting the script attached to the root of the pawn scene
-            helper.setColor(Parameters.colors[_c.playerID]);    // Apply player color (player ID for now, maybe player choice later)
+            helper.setColor(_c.playerID);    // Apply player color
 
             PawnData pawnData = new() { instance = pawn, point = p };
             _spawnedPawns.Add(pawnData);

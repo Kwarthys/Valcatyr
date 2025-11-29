@@ -52,7 +52,10 @@ public static class HumanPlayerManager
             processSelection(_interactedCountry, _player); // Select newly acquired country
         }
         else
+        {
+            ArmySlider.setMaxArmy(attacker.troops - 1);
             GameManager.Instance.updateCountryTroopsDisplay(attacker, _interactedCountry);
+        }
         
     }
 
@@ -100,6 +103,7 @@ public static class HumanPlayerManager
                     else
                         selection.enemies.Add(c);
                 }
+                ArmySlider.setMaxArmy(_interactedCountry.troops - 1, true);
                 break;
             }
             case GameManager.GamePhase.Reinforce:

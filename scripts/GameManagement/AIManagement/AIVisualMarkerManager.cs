@@ -7,18 +7,22 @@ public partial class AIVisualMarkerManager : Node
     [Export]
     private Node3D marker;
 
+    private PawnColorManager markerColorManager;
+
     public static AIVisualMarkerManager Instance;
 
     public const float MARKER_ALTITUDE = 3.0f;
     public const double MOVEMENT_DURATION = 1.0;
     private double dtAccumulator = 0.0f;
     private bool moving = false;
-    private Vector3[] movementCheckpoints = new Vector3[5]; // Origin - Quarter - Helf - 3Quarters - Destination
+    private Vector3[] movementCheckpoints = new Vector3[5]; // Origin - Quarter - Half - 3Quarters - Destination
 
     public override void _Ready()
     {
         marker.Visible = false;
         marker.Position = new Vector3(GD.Randf(), GD.Randf(), GD.Randf()).Normalized() * MARKER_ALTITUDE;
+
+        markerColorManager = (PawnColorManager)marker;
 
         Instance = this;
     }
@@ -50,6 +54,7 @@ public partial class AIVisualMarkerManager : Node
         return movementCheckpoints[originIndex].Lerp(movementCheckpoints[originIndex+1], evaluateTime).Normalized() * MARKER_ALTITUDE;
     }
 
+    public void setMarkerColor(int _playerID){ markerColorManager.setColor(_playerID); }
     public void setMarkerVisibility(bool _status) { marker.Visible = _status; }
     public void hideMarker(){ setMarkerVisibility(false); }
     public void showMarker(){ setMarkerVisibility(true); }

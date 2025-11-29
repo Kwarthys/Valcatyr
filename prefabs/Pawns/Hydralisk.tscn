@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://gguqm3xpgx3w"]
+
+[ext_resource type="Script" path="res://scripts/GameManagement/PawnColorManager.cs" id="1_sy21r"]
+[ext_resource type="PackedScene" uid="uid://bbvkhmsoufs5w" path="res://assets/BlenderProjects/Hydralisk/Hydralisk.glb" id="2_sr6is"]
+
+[node name="Hydralisk" type="Node3D"]
+script = ExtResource("1_sy21r")
+
+[node name="PosScaler" type="Node3D" parent="."]
+transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0.00222015, 0)
+
+[node name="Rotator" type="Node3D" parent="PosScaler"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0, 0)
+
+[node name="Hydralisk" parent="PosScaler/Rotator" instance=ExtResource("2_sr6is")]

@@ -5,6 +5,7 @@ var accumulatedDT = 0.0
 @export var amplitude = 1.0
 func _ready():
 	wobbleOffset = position
+	accumulatedDT += randf()
 
 func _process(dt):
 	accumulatedDT += dt

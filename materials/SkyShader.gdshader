@@ -18,7 +18,7 @@ void sky()
 {
 	// make nice stars with custom made texture noise
 	vec3 skyColor = texture(skyPanorama, SKY_COORDS).xyz;
-	
+
 	// Display Sun
 	float angle = dot(EYEDIR, sunDir);
 	float sunMixAmount = 0.0;

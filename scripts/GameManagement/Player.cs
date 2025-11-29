@@ -4,11 +4,13 @@ using System.Collections.Generic;
 
 public class Player
 {
-    public Player(int _id){ id = _id; }
+    public Player(int _id, int _colorID, int _factionID){ id = _id; colorID = _colorID; factionID = _factionID; }
     public bool isHuman = false;
     public bool hasLostTheGame = false; // hehe
     public int id = -1;
-    public List<Country> countries {get; private set;} = new();
+    public int colorID = -1;
+    public int factionID = -1;
+    public List<Country> countries { get; private set; } = new();
     public Dictionary<Continent, int> stateCountPerContinents {get; private set;} = new();
 
     public void addCountry(Country _c)

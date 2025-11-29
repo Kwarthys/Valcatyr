@@ -1,0 +1,30 @@
+[gd_scene load_steps=5 format=3 uid="uid://bcs0j1t5tr527"]
+
+[ext_resource type="Shader" path="res://materials/victory_fx.gdshader" id="1_i6v63"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nh6c2"]
+shader = ExtResource("1_i6v63")
+shader_parameter/colorA = Color(1, 0, 0, 1)
+shader_parameter/colorB = Color(0, 1, 0, 1)
+shader_parameter/colorC = Color(0, 0, 1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dcr5f"]
+vertex_color_use_as_albedo = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_sni6f"]
+material = SubResource("StandardMaterial3D_dcr5f")
+size = Vector3(0.01, 0.01, 0.001)
+
+[node name="VictoryFX" type="Node3D"]
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="."]
+emitting = false
+amount = 1000
+lifetime = 600.0
+one_shot = true
+explosiveness = 1.0
+local_coords = true
+process_material = SubResource("ShaderMaterial_nh6c2")
+draw_pass_1 = SubResource("BoxMesh_sni6f")
+
+[connection signal="ready" from="GPUParticles3D" to="GPUParticles3D" method="restart"]

@@ -6,14 +6,10 @@ using System;
 /// </summary>
 public partial class FreeMovementManager : Node
 {
-    [Export]
-    private CanvasItem uiContainer;
-    [Export]
-    private Slider slider;
-    [Export]
-    private RichTextLabel originLabel;
-    [Export]
-    private RichTextLabel destinationLabel;
+    [Export] private Control uiContainer;
+    [Export] private Slider slider;
+    [Export] private RichTextLabel originLabel;
+    [Export] private RichTextLabel destinationLabel;
 
     // Singleton
     public static FreeMovementManager Instance {get; private set;}

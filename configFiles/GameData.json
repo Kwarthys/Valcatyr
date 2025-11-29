@@ -1,0 +1,35 @@
+{
+    "Factions":
+    [
+        {
+            "Name": "Valcateers",
+            "Level1Pawn": "TankPawn.tscn",
+            "Level2Pawn": "helicopterPawn.tscn"
+        },
+        {
+            "Name": "Strikers",
+            "Level1Pawn": "bazook.tscn",
+            "Level2Pawn": "zeppelin.tscn"
+        },
+        {
+            "Name": "Armada",
+            "Level1Pawn": "Mech.tscn",
+            "Level2Pawn":"Spaceship.tscn"
+        },
+        {
+            "Name":"Travelers",
+            "Level1Pawn": "Alien.tscn",
+            "Level2Pawn": "UFO.tscn"
+        },
+        {
+            "Name":"Wanderers",
+            "Level1Pawn": "Hydralisk.tscn",
+            "Level2Pawn": "Dragon.tscn"
+        },
+        {
+            "Name":"Wardens",
+            "Level1Pawn": "Tree.tscn",
+            "Level2Pawn": "Eagle.tscn"
+        }
+    ]
+}

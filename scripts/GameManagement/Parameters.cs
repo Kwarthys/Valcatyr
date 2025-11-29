@@ -14,10 +14,35 @@ public class Parameters
         new(0.94f, 0.89f, 0.26f), // Yellow
     };
 
+    public static string[] colorNames =
+    {
+        "Gold",
+        "Cyan",
+        "Green",
+        "Pink",
+        "Cream",
+        "Yellow"
+    };
+
     public static Color rogueIslandColor = new(0.89f, 0.90f, 0.66f);
 
     public static int getRandomColorID()
     {
         return (int)(GD.Randf() * (colors.Length - 1));
+    }
+
+    public static string[] factionNames { get; private set; }
+
+    public static void setFactionNames(string[] _names)
+    {
+        factionNames = _names;
+        OnFactionNamesReceived();
+    }
+
+    public static event EventHandler factionNamesReceived; // Use an event in case loading takes too much time or happens after others that need it
+
+    protected static void OnFactionNamesReceived()
+    {
+        factionNamesReceived?.Invoke(typeof(Parameters), EventArgs.Empty);
     }
 }

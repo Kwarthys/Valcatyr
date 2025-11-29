@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://k1r1qgmsbt5u"]
+
+[ext_resource type="Script" path="res://scripts/GameManagement/PawnColorManager.cs" id="1_asn77"]
+[ext_resource type="PackedScene" uid="uid://b1wcp6ys4nj3x" path="res://assets/BlenderProjects/Tank/Tank.dae" id="1_pyxv7"]
+
+[node name="Tank" type="Node3D"]
+script = ExtResource("1_asn77")
+
+[node name="Rotator" type="Node3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0, 0)
+
+[node name="Scaler" type="Node3D" parent="Rotator"]
+transform = Transform3D(0.025, 0, 0, 0, 0.025, 0, 0, 0, 0.025, 0, 0.00779605, 0)
+
+[node name="Tank" parent="Rotator/Scaler" instance=ExtResource("1_pyxv7")]
+
+[editable path="Rotator/Scaler/Tank"]
