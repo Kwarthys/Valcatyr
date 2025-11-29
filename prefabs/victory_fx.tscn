@@ -18,7 +18,6 @@ size = Vector3(0.01, 0.01, 0.001)
 [node name="VictoryFX" type="Node3D"]
 
 [node name="GPUParticles3D" type="GPUParticles3D" parent="."]
-emitting = false
 amount = 1000
 lifetime = 600.0
 one_shot = true
