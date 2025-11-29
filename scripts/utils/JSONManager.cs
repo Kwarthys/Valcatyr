@@ -9,8 +9,7 @@ public class JSONManager
 {
     public static T Read<T>(string filePath)
     {
-        filePath = ProjectSettings.GlobalizePath(filePath);
-        string text = File.ReadAllText(filePath);
+        string text = Godot.FileAccess.Open(filePath, Godot.FileAccess.ModeFlags.Read).GetAsText();
         return JsonSerializer.Deserialize<T>(text);
     }
 }
